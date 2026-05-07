@@ -38,8 +38,15 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 .gkv{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:11px 13px}
 .gkn{font-size:1.2rem;font-weight:800;color:#fff}.gkl{font-size:.63rem;color:var(--muted);margin-top:2px}
 .pkr{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-.pkc{display:flex;flex-direction:column;align-items:center;padding:8px 14px;border-radius:8px;min-width:80px;text-align:center}
-.pkn{font-size:1.5rem;font-weight:900;line-height:1}.pkl{font-size:.58rem;margin-top:3px}
+.pkc{display:flex;flex-direction:column;align-items:center;padding:10px 16px;border-radius:8px;min-width:96px;text-align:center;background:rgba(0,0,0,.18);border:1px solid rgba(128,128,128,.25)}
+.pkn{font-size:1.55rem;font-weight:900;line-height:1}.pkl{font-size:.6rem;margin-top:3px;font-weight:700}
+.pkc.q{background:rgba(226,75,74,.12);border-color:rgba(226,75,74,.45)}.pkc.q .pkn,.pkc.q .pkl{color:var(--q)}
+.pkc.r{background:rgba(232,197,42,.12);border-color:rgba(232,197,42,.45)}.pkc.r .pkn,.pkc.r .pkl{color:var(--rT)}
+.pkc.m{background:rgba(232,123,42,.12);border-color:rgba(232,123,42,.45)}.pkc.m .pkn,.pkc.m .pkl{color:var(--mT)}
+.pkc.n{background:rgba(99,153,34,.12);border-color:rgba(99,153,34,.45)}.pkc.n .pkn,.pkc.n .pkl{color:var(--n)}
+.pkc.s{background:rgba(55,138,221,.12);border-color:rgba(55,138,221,.45)}.pkc.s .pkn,.pkc.s .pkl{color:var(--s)}
+.pkc.c5{background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.45)}.pkc.c5 .pkn,.pkc.c5 .pkl{color:var(--v)}
+.pkc.so{background:rgba(36,120,201,.12);border-color:rgba(36,120,201,.45)}.pkc.so .pkn,.pkc.so .pkl{color:var(--so)}
 .fr{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
 .sb{background:#232840;border:1px solid var(--border);border-radius:5px;padding:5px 11px;color:var(--muted);font-size:.71rem;cursor:pointer;transition:all .15s}
 .sb.active,.sb:hover:not(.active){background:#6366f1;border-color:#6366f1;color:#fff}
@@ -109,9 +116,12 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 <div class="tabs">
   <div class="tab active" onclick="showTab(0)">📊 Resumen</div>
   <div class="tab" onclick="showTab(1)">👷 Planificadores</div>
-  <div class="tab" onclick="showTab(2)">📈 Gerencial</div>
+  <div class="tab" onclick="showTab(2)">📦 Inventarios</div>
   <div class="tab" onclick="showTab(3)">♻️ Mermas</div>
-  <div class="tab" onclick="showTab(4)">🔍 KPIs Avanzados</div>
+  <div class="tab" onclick="showTab(4)">💰 Capital inmovilizado</div>
+  <div class="tab" onclick="showTab(5)">📡 Desviación forecast</div>
+  <div class="tab" onclick="showTab(6)">🔄 Rotación inventario</div>
+  <div class="tab" onclick="showTab(7)">🔒 Stock bloqueado</div>
 </div>
 
 <div id="t0" class="pg active"><div class="cards-grid" id="rcards"></div>
@@ -173,53 +183,44 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 </div>
 
 <div id="t4" class="pg">
-  <div class="tab-kpi-row">
-    <button class="tab-kpi on" onclick="swKpi(0)">💰 Capital inmovilizado</button>
-    <button class="tab-kpi" onclick="swKpi(1)">📡 Desviación forecast</button>
-    <button class="tab-kpi" onclick="swKpi(2)">🔄 Rotación inventario</button>
-    <button class="tab-kpi" onclick="swKpi(3)">🔒 Stock bloqueado</button>
+  <div class="kpia" id="cap-kpis"></div>
+  <div class="cb" style="margin-bottom:12px">
+    <div class="ct">Capital inmovilizado por grupo — exceso sobre 10 semanas · clic en barra para ver SKUs</div>
+    <div class="cw" style="height:230px"><canvas id="cCAP" style="cursor:pointer"></canvas></div>
+    <div class="hint">capital_exc = (cob_actual − 10) × consumo_4w × precio_unit | Solo SKUs con cobertura &gt; 10 sem</div>
   </div>
+  <div class="stt">Detalle por grupo</div>
+  <div class="tw"><table><thead><tr><th>Grupo</th><th>SKUs</th><th>$Valor stock sobrestock</th><th>Capital exceso</th><th>% inmovilizado</th></tr></thead><tbody id="cap-tbl"></tbody></table></div>
+</div>
 
-  <div id="kp0" class="kpi-pn on">
-    <div class="kpia" id="cap-kpis"></div>
-    <div class="cb" style="margin-bottom:12px">
-      <div class="ct">Capital inmovilizado por grupo — exceso sobre 10 semanas · clic en barra para ver SKUs</div>
-      <div class="cw" style="height:230px"><canvas id="cCAP" style="cursor:pointer"></canvas></div>
-      <div class="hint">capital_exc = (cob_actual − 10) × consumo_4w × precio_unit | Solo SKUs con cobertura &gt; 10 sem</div>
-    </div>
-    <div class="stt">Detalle por grupo</div>
-    <div class="tw"><table><thead><tr><th>Grupo</th><th>SKUs</th><th>$Valor stock sobrestock</th><th>Capital exceso</th><th>% inmovilizado</th></tr></thead><tbody id="cap-tbl"></tbody></table></div>
+<div id="t5" class="pg">
+  <div class="kpia" id="bias-kpis"></div>
+  <div class="cb" style="margin-bottom:12px">
+    <div class="ct">Bias por grupo — negativo=FC subestima · positivo=FC sobreestima · clic para ver SKUs</div>
+    <div class="cw" style="height:230px"><canvas id="cBIAS" style="cursor:pointer"></canvas></div>
+    <div class="hint">bias = (avg_FC_S19-23 − avg_real_S14-18) ÷ avg_real_S14-18 × 100 | Ventana: S14-18 vs S19-23</div>
   </div>
+  <div class="stt">Detalle por grupo</div>
+  <div class="tw"><table><thead><tr><th>Grupo</th><th>SKUs</th><th>Bias prom.</th><th>Bias mediano</th><th>MAPE</th><th>Señal</th></tr></thead><tbody id="bias-tbl"></tbody></table></div>
+</div>
 
-  <div id="kp1" class="kpi-pn">
-    <div class="kpia" id="bias-kpis"></div>
-    <div class="cb" style="margin-bottom:12px">
-      <div class="ct">Bias por grupo — negativo=FC subestima · positivo=FC sobreestima · clic para ver SKUs</div>
-      <div class="cw" style="height:230px"><canvas id="cBIAS" style="cursor:pointer"></canvas></div>
-      <div class="hint">bias = (avg_FC_S19-23 − avg_real_S14-18) ÷ avg_real_S14-18 × 100 | Ventana: S14-18 vs S19-23</div>
-    </div>
-    <div class="stt">Detalle por grupo</div>
-    <div class="tw"><table><thead><tr><th>Grupo</th><th>SKUs</th><th>Bias prom.</th><th>Bias mediano</th><th>MAPE</th><th>Señal</th></tr></thead><tbody id="bias-tbl"></tbody></table></div>
+<div id="t6" class="pg">
+  <div class="kpia" id="rot-kpis"></div>
+  <div class="cb" style="margin-bottom:12px">
+    <div class="ct">Rotación mediana por grupo (veces/año) · excluye granel/maxisaco · clic para ver SKUs</div>
+    <div class="cw" style="height:240px"><canvas id="cROT" style="cursor:pointer"></canvas></div>
+    <div class="hint">rotación = (consumo_4w × 52) ÷ stock_total | días_inv = 365 ÷ rotación | Mediana del grupo</div>
   </div>
+  <div class="stt">Detalle por grupo</div>
+  <div class="tw"><table><thead><tr><th>Grupo</th><th>Tipo</th><th>SKUs c/rot.</th><th>Rotación med.</th><th>Días inv. med.</th><th>$Valor stock</th><th>Señal</th></tr></thead><tbody id="rot-tbl"></tbody></table></div>
+</div>
 
-  <div id="kp2" class="kpi-pn">
-    <div class="kpia" id="rot-kpis"></div>
-    <div class="cb" style="margin-bottom:12px">
-      <div class="ct">Rotación mediana por grupo (veces/año) · excluye granel/maxisaco · clic para ver SKUs</div>
-      <div class="cw" style="height:240px"><canvas id="cROT" style="cursor:pointer"></canvas></div>
-      <div class="hint">rotación = (consumo_4w × 52) ÷ stock_total | días_inv = 365 ÷ rotación | Mediana del grupo</div>
-    </div>
-    <div class="stt">Detalle por grupo</div>
-    <div class="tw"><table><thead><tr><th>Grupo</th><th>Tipo</th><th>SKUs c/rot.</th><th>Rotación med.</th><th>Días inv. med.</th><th>$Valor stock</th><th>Señal</th></tr></thead><tbody id="rot-tbl"></tbody></table></div>
-  </div>
-
-  <div id="kp3" class="kpi-pn">
-    <div class="kpia" id="bloq-kpis"></div>
-    <div class="cr" style="margin-bottom:12px">
-      <div class="cb"><div class="ct">Valor bloqueado BL01 por Comprador ($MM CLP)</div><div class="cw"><canvas id="cBLOQ"></canvas></div></div>
-      <div class="cb"><div class="ct">Resumen por comprador</div>
-        <div style="overflow-x:auto"><table><thead><tr><th>Comprador</th><th>SKUs</th><th>$Valor bloqueado</th><th>% del total</th></tr></thead><tbody id="bloq-tbl"></tbody></table></div>
-      </div>
+<div id="t7" class="pg">
+  <div class="kpia" id="bloq-kpis"></div>
+  <div class="cr" style="margin-bottom:12px">
+    <div class="cb"><div class="ct">Valor bloqueado BL01 por Comprador ($MM CLP)</div><div class="cw"><canvas id="cBLOQ"></canvas></div></div>
+    <div class="cb"><div class="ct">Resumen por comprador</div>
+      <div style="overflow-x:auto"><table><thead><tr><th>Comprador</th><th>SKUs</th><th>$Valor bloqueado</th><th>% del total</th></tr></thead><tbody id="bloq-tbl"></tbody></table></div>
     </div>
   </div>
 </div>
@@ -260,12 +261,12 @@ var KD=[{k:'q',rk:'quiebre',lbl:'Quiebre',cls:'q'},{k:'r',rk:'riesgo',lbl:'Riesg
 var f0=function(v){return Math.round(v).toLocaleString('es-CL');};
 var fMM=function(v){return (v/1e6).toFixed(1)+' MM';};
 var fP=function(v){return Number(v).toFixed(2)+'%';};
+var fC=function(v){return (v===null||v===undefined||v>=999)?'—':Number(v).toFixed(2);};
 var el=function(id){return document.getElementById(id);};
 function ba(a){var m={quiebre:'baq',riesgo:'bar_',monitorear:'bam',normal:'ban',sobrestock:'bas'};var c=m[a]||'';return '<span class="ba '+c+'">'+a+'</span>';}
 function tbar(v,color){var w=Math.min(v*8,100);return '<div class="tbw"><div class="tbr"><div class="tbf" style="width:'+w+'%;background:'+color+'"></div></div><span>'+fP(v)+'</span></div>';}
 function distBar(segs,w,h){var tot=Math.max(segs.reduce(function(a,s){return a+s[0];},0),1);return '<div style="display:flex;height:'+(h||7)+'px;border-radius:3px;overflow:hidden;width:'+(w||100)+'px">'+segs.map(function(s){return s[0]>0?'<div style="width:'+(s[0]/tot*100).toFixed(1)+'%;height:100%;background:'+s[1]+'"></div>':'';}).join('')+'</div>';}
 function showTab(i){document.querySelectorAll('.tab').forEach(function(t,j){t.classList.toggle('active',i===j);});document.querySelectorAll('.pg').forEach(function(p,j){p.classList.toggle('active',i===j);});}
-function swKpi(i){document.querySelectorAll('.tab-kpi').forEach(function(t,j){t.classList.toggle('on',i===j);});document.querySelectorAll('.kpi-pn').forEach(function(p,j){p.classList.toggle('on',i===j);});}
 function kpill(c,l){return '<span class="kpill kp'+c+'">'+l+'</span>';}
 function pAlerta(a){var m={quiebre:'q Quiebre',riesgo:'r Riesgo',monitorear:'m Monitorear',normal:'n Normal',sobrestock:'s Sobrestock',sin_fc:'sf Sin FC'};var p=(m[a]||'sf ?').split(' ');return kpill(p[0],p.slice(1).join(' '));}
 
@@ -348,7 +349,7 @@ function opKpi(comp,key){
             '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:right;position:sticky;top:0;z-index:1;white-space:nowrap">Cob.c/OC 12w</th>'+
             '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:left;position:sticky;top:0;z-index:1;white-space:nowrap">Estado</th>'+
           '</tr></thead>'+
-          '<tbody>'+rows.map(function(r){return '<tr style="border-bottom:1px solid rgba(45,52,82,.4)"><td style="padding:6px 9px">'+r[0]+'</td><td style="padding:6px 9px">'+r[1]+'</td><td style="padding:6px 9px">'+r[2]+'</td><td style="padding:6px 9px">'+r[3]+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[5])+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[6])+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[7])+'</td><td style="padding:6px 9px;text-align:right;font-weight:700">'+r[9]+'</td><td style="padding:6px 9px;text-align:right;color:var(--v)">'+r[10]+'</td><td style="padding:6px 9px;text-align:right;color:var(--so)">'+r[11]+'</td><td style="padding:6px 9px">'+ba(r[12])+'</td></tr>';}).join('')+
+          '<tbody>'+rows.map(function(r){return '<tr style="border-bottom:1px solid rgba(45,52,82,.4)"><td style="padding:6px 9px">'+r[0]+'</td><td style="padding:6px 9px">'+r[1]+'</td><td style="padding:6px 9px">'+r[2]+'</td><td style="padding:6px 9px">'+r[3]+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[8])+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[9])+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[10])+'</td><td style="padding:6px 9px;text-align:right;font-weight:700">'+fC(r[12])+'</td><td style="padding:6px 9px;text-align:right;color:var(--v)">'+fC(r[13])+'</td><td style="padding:6px 9px;text-align:right;color:var(--so)">'+fC(r[14])+'</td><td style="padding:6px 9px">'+ba(r[15])+'</td></tr>';}).join('')+
           '</tbody></table>'+
       '</div>'+
     '</div>'+
