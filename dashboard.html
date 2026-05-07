@@ -121,10 +121,18 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 #t8 .kpia-card.qb-pct{border-left:4px solid #f97316}
 #t8 .kpia-card.qb-pct .kpia-n{color:#ea580c}
 #t8 table{border-collapse:collapse;width:100%}
-#t8 table th{background:#f1f5f9;color:#334155;font-size:.72rem;padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:1}
-#t8 table td{padding:5px 8px;font-size:.74rem;border-bottom:1px solid #f1f5f9;color:#1e293b}
+#t8 table th{background:#f1f5f9;color:#334155;font-size:.7rem;padding:4px 6px;text-align:left;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:1}
+#t8 table td{padding:3px 6px;font-size:.7rem;border-bottom:1px solid #f1f5f9;color:#1e293b;line-height:1.25}
 #t8 table tbody tr:hover{background:#f8fafc}
-#t8 .cw{height:280px}</style>
+#t8 .cw{height:280px}
+/* Tabla Desviaciones — compacta para pegar en PPT */
+#qb-desv{font-family:'Segoe UI',Arial,sans-serif}
+#qb-desv th,#qb-desv td{padding:2px 5px;font-size:.66rem;line-height:1.15}
+#qb-desv th{font-weight:600;letter-spacing:.02em}
+#qb-desv td:nth-child(1){font-weight:600;color:#475569;width:54px}
+#qb-desv td:nth-child(2){max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#qb-desv td:nth-child(3){text-align:center;color:#64748b;width:60px;font-size:.62rem}
+#qb-desv td:nth-child(n+4){min-width:50px;font-variant-numeric:tabular-nums}</style>
 </head>
 <body>
 <div class="header">
@@ -606,18 +614,12 @@ function qbDataLabelsDonut(){
     return p<5?'':(p.toFixed(0)+'%');
   }};
 }
-function qbRegisterPlugin(){
-  if(window.ChartDataLabels && !window._qbPluginRegistered){
-    Chart.register(window.ChartDataLabels);
-    // No queremos labels globales en otros gráficos del dashboard
-    Chart.defaults.plugins.datalabels = Chart.defaults.plugins.datalabels || {};
-    Chart.defaults.plugins.datalabels.display = false;
-    window._qbPluginRegistered=true;
-  }
+function qbPlugins(){
+  // Aplicar datalabels solo a los charts de Quiebres SEM (sin afectar resto del dashboard)
+  return window.ChartDataLabels ? [window.ChartDataLabels] : [];
 }
 
 function buildQuiebres(QB){
-  qbRegisterPlugin();
   window._QB_CACHE=QB;
   var Q=QB.QUIEBRES||{},D=QB.DESV||{};
   var sem=QB.SEM;
@@ -642,7 +644,7 @@ function buildQuiebres(QB){
     window._cQBdia=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:Q.por_dia.labels,datasets:[
       {label:'Informados',data:Q.por_dia.informados,backgroundColor:QB_PAL.inf+'cc',borderColor:QB_PAL.inf,borderWidth:1.5,borderRadius:4},
       {label:'Reales',    data:Q.por_dia.reales,    backgroundColor:QB_PAL.real+'cc',borderColor:QB_PAL.real,borderWidth:1.5,borderRadius:4}
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#334155',font:{size:11}}},datalabels:Object.assign({display:true},qbDataLabelsBar())},scales:{x:{ticks:{color:'#475569',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#475569',font:{size:10}},grid:{color:'#e2e8f0'},beginAtZero:true}},onClick:function(e,el){if(el.length){var idx=el[0].index;opQbDia(Q.por_dia.labels[idx],idx);}}}});
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#334155',font:{size:11}}},datalabels:qbDataLabelsBar()},scales:{x:{ticks:{color:'#475569',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#475569',font:{size:10}},grid:{color:'#e2e8f0'},beginAtZero:true}},onClick:function(e,el){if(el.length){var idx=el[0].index;opQbDia(Q.por_dia.labels[idx],idx);}},plugins:qbPlugins()});
   }
 
   // Vista 2: Tipos de quiebres (barra vertical)
@@ -650,21 +652,21 @@ function buildQuiebres(QB){
   if(c2 && Q.tipos){
     if(window._cQBtipo) window._cQBtipo.destroy();
     var tCols=Q.tipos.labels.map(function(_,i){return QB_PAL.bar[i%QB_PAL.bar.length];});
-    window._cQBtipo=new Chart(c2.getContext('2d'),{type:'bar',data:{labels:Q.tipos.labels,datasets:[{data:Q.tipos.values,backgroundColor:tCols.map(function(c){return c+'cc';}),borderColor:tCols,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:Object.assign({display:true},qbDataLabelsBar()),tooltip:{callbacks:{label:function(x){return x.raw+' quiebres';}}}},scales:{x:{ticks:{color:'#475569',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#475569',font:{size:10}},grid:{color:'#e2e8f0'},beginAtZero:true}}}});
+    window._cQBtipo=new Chart(c2.getContext('2d'),{type:'bar',data:{labels:Q.tipos.labels,datasets:[{data:Q.tipos.values,backgroundColor:tCols.map(function(c){return c+'cc';}),borderColor:tCols,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:qbDataLabelsBar(),tooltip:{callbacks:{label:function(x){return x.raw+' quiebres';}}}},scales:{x:{ticks:{color:'#475569',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#475569',font:{size:10}},grid:{color:'#e2e8f0'},beginAtZero:true}},plugins:qbPlugins()});
   }
 
   // Vista 3: Motivos (donut con %)
   var c3=document.getElementById('cQBmot');
   if(c3 && Q.motivos){
     if(window._cQBmot) window._cQBmot.destroy();
-    window._cQBmot=new Chart(c3.getContext('2d'),{type:'doughnut',data:{labels:Q.motivos.labels,datasets:[{data:Q.motivos.values,backgroundColor:Q.motivos.labels.map(function(_,i){return QB_PAL.donut[i%QB_PAL.donut.length];}),borderWidth:2,borderColor:'#ffffff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:10},padding:6}},datalabels:Object.assign({display:true},qbDataLabelsDonut()),tooltip:{callbacks:{label:function(x){var t=x.dataset.data.reduce(function(a,b){return a+b;},0);var p=t?(x.raw/t*100).toFixed(1):0;return x.label+': '+x.raw+' ('+p+'%)';}}}}}});
+    window._cQBmot=new Chart(c3.getContext('2d'),{type:'doughnut',data:{labels:Q.motivos.labels,datasets:[{data:Q.motivos.values,backgroundColor:Q.motivos.labels.map(function(_,i){return QB_PAL.donut[i%QB_PAL.donut.length];}),borderWidth:2,borderColor:'#ffffff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:10},padding:6}},datalabels:qbDataLabelsDonut(),tooltip:{callbacks:{label:function(x){var t=x.dataset.data.reduce(function(a,b){return a+b;},0);var p=t?(x.raw/t*100).toFixed(1):0;return x.label+': '+x.raw+' ('+p+'%)';}}}},plugins:qbPlugins()});
   }
 
   // Vista 4: Categorías (donut con %)
   var c4=document.getElementById('cQBcat');
   if(c4 && Q.categorias){
     if(window._cQBcat) window._cQBcat.destroy();
-    window._cQBcat=new Chart(c4.getContext('2d'),{type:'doughnut',data:{labels:Q.categorias.labels,datasets:[{data:Q.categorias.values,backgroundColor:Q.categorias.labels.map(function(_,i){return QB_PAL.donut[(i+2)%QB_PAL.donut.length];}),borderWidth:2,borderColor:'#ffffff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:10},padding:6}},datalabels:Object.assign({display:true},qbDataLabelsDonut()),tooltip:{callbacks:{label:function(x){var t=x.dataset.data.reduce(function(a,b){return a+b;},0);var p=t?(x.raw/t*100).toFixed(1):0;return x.label+': '+x.raw+' ('+p+'%)';}}}}}});
+    window._cQBcat=new Chart(c4.getContext('2d'),{type:'doughnut',data:{labels:Q.categorias.labels,datasets:[{data:Q.categorias.values,backgroundColor:Q.categorias.labels.map(function(_,i){return QB_PAL.donut[(i+2)%QB_PAL.donut.length];}),borderWidth:2,borderColor:'#ffffff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:10},padding:6}},datalabels:qbDataLabelsDonut(),tooltip:{callbacks:{label:function(x){var t=x.dataset.data.reduce(function(a,b){return a+b;},0);var p=t?(x.raw/t*100).toFixed(1):0;return x.label+': '+x.raw+' ('+p+'%)';}}}},plugins:qbPlugins()});
   }
 
   // Tabla desviaciones (sin proveedor, ambas semanas, nuevos colores)
