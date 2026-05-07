@@ -104,7 +104,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 <div class="header">
   <div style="width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.9rem">📦</div>
   <h1>Dashboard Abastecimiento</h1><span class="hbadge">Supply Chain</span>
-  <span class="hsem">Semana 18 · 05/05/2026</span>
+  <span class="hsem" id="hsem-txt">Cargando…</span>
 </div>
 <div class="tabs">
   <div class="tab active" onclick="showTab(0)">📊 Resumen</div>
@@ -557,6 +557,9 @@ fetch('data.json?v='+Date.now())
     R=_D.R;SD=_D.SD;PA=_D.PA;PC=_D.PC;PS=_D.PS;G=_D.G;GR=_D.GR;GD=_D.GD;
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;BLOQ=_D.BLOQ;SEM=_D.SEM;
+
+    var _h=document.getElementById('hsem-txt');
+    if(_h) _h.textContent='Semana '+SEM+(_D.FECHA?(' · '+_D.FECHA):'');
 
     buildResumen();buildGer();updPlan();updMKpis();updMCharts(TA);bldSemTbl(TA);bldTop10();buildKpiAv();
 
