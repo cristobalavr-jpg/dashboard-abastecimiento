@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard Abastecimiento — Semana 18 · 2026</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>*{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;font-size:13px}
 :root{--q:#E24B4A;--r:#E8C52A;--rT:#C9A800;--m:#E87B2A;--mT:#C96000;--n:#639922;--s:#378ADD;--v:#7c3aed;--so:#2478c9;--card:#1a1f2e;--border:#2d3452;--muted:#8892b0}
@@ -105,7 +106,25 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 .kps{background:rgba(55,138,221,.12);color:var(--s)}.kpsf{background:#232840;color:var(--muted)}
 .kpalta{background:rgba(99,153,34,.12);color:var(--n)}.kpnorm{background:#232840;color:var(--muted)}
 .kpbaja{background:rgba(186,117,23,.12);color:var(--rT)}.kpmuy{background:rgba(226,75,74,.12);color:var(--q)}
-.kpac{background:rgba(99,153,34,.12);color:var(--n)}.kpmod{background:rgba(186,117,23,.12);color:var(--rT)}.kpalto{background:rgba(226,75,74,.12);color:var(--q)}</style>
+.kpac{background:rgba(99,153,34,.12);color:var(--n)}.kpmod{background:rgba(186,117,23,.12);color:var(--rT)}.kpalto{background:rgba(226,75,74,.12);color:var(--q)}
+/* ── Tema claro · Quiebres SEM ──────────────────────────────── */
+#t8{background:#f8fafc;color:#0f172a;padding:14px;border-radius:10px}
+#t8 .cb{background:#ffffff;border:1px solid #e2e8f0;color:#0f172a;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+#t8 .ct{color:#1e293b;border-bottom:1px solid #e2e8f0}
+#t8 .kpia-card{background:#ffffff;border:1px solid #e2e8f0}
+#t8 .kpia-n{color:#0f172a}
+#t8 .kpia-l{color:#64748b}
+#t8 .kpia-card.qb-inf{border-left:4px solid #0ea5e9}
+#t8 .kpia-card.qb-inf .kpia-n{color:#0284c7}
+#t8 .kpia-card.qb-real{border-left:4px solid #ef4444}
+#t8 .kpia-card.qb-real .kpia-n{color:#dc2626}
+#t8 .kpia-card.qb-pct{border-left:4px solid #f97316}
+#t8 .kpia-card.qb-pct .kpia-n{color:#ea580c}
+#t8 table{border-collapse:collapse;width:100%}
+#t8 table th{background:#f1f5f9;color:#334155;font-size:.72rem;padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:1}
+#t8 table td{padding:5px 8px;font-size:.74rem;border-bottom:1px solid #f1f5f9;color:#1e293b}
+#t8 table tbody tr:hover{background:#f8fafc}
+#t8 .cw{height:280px}</style>
 </head>
 <body>
 <div class="header">
@@ -229,22 +248,20 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 <div id="t8" class="pg">
   <div class="kpia" id="qb-kpis"></div>
   <div class="cr" style="margin-bottom:12px">
-    <div class="cb"><div class="ct">Quiebres por día — Informados vs Reales (SEM <span id="qb-sem"></span>)</div><div class="cw"><canvas id="cQBdia"></canvas></div></div>
-    <div class="cb"><div class="ct">Categorías de Quiebres Reales</div><div class="cw"><canvas id="cQBcat"></canvas></div></div>
+    <div class="cb"><div class="ct">Quiebres por día — Informados vs Reales (SEM <span id="qb-sem"></span>) · clic en barra para detalle</div><div class="cw"><canvas id="cQBdia" style="cursor:pointer"></canvas></div></div>
+    <div class="cb"><div class="ct">Tipos de quiebres SEM</div><div class="cw"><canvas id="cQBtipo"></canvas></div></div>
   </div>
   <div class="cr" style="margin-bottom:12px">
     <div class="cb"><div class="ct">Motivos de Quiebres Reales</div><div class="cw"><canvas id="cQBmot"></canvas></div></div>
-    <div class="cb"><div class="ct">Detalle de quiebres SEM</div>
-      <div style="overflow-x:auto;max-height:280px"><table><thead><tr><th>Día</th><th>SKU</th><th>Descripción</th><th>Categoría</th><th>Tipo</th><th>Motivo</th></tr></thead><tbody id="qb-tbl"></tbody></table></div>
-    </div>
+    <div class="cb"><div class="ct">Categorías de Quiebres Reales</div><div class="cw"><canvas id="cQBcat"></canvas></div></div>
   </div>
   <div class="cb" style="margin-bottom:12px"><div class="ct">Desviaciones MP frescas — proyección vs consumo real (SEM <span id="qb-sem2"></span>)</div>
-    <div style="overflow-x:auto;max-height:520px"><table id="qb-desv"><thead></thead><tbody></tbody></table></div>
-    <div style="font-size:.7rem;color:#8892b0;margin-top:8px;padding:0 8px">
-      <span style="display:inline-block;width:14px;height:14px;background:#16a34a;vertical-align:middle;margin-right:4px;border-radius:3px"></span>|desv| ≤ 25% &nbsp;
-      <span style="display:inline-block;width:14px;height:14px;background:#eab308;vertical-align:middle;margin-right:4px;border-radius:3px"></span>25–75% &nbsp;
-      <span style="display:inline-block;width:14px;height:14px;background:#dc2626;vertical-align:middle;margin-right:4px;border-radius:3px"></span>&gt; 75%
-      &nbsp;·&nbsp; valor positivo = consumo &gt; proyección · negativo = consumo &lt; proyección
+    <div style="overflow-x:auto;max-height:560px"><table id="qb-desv"><thead></thead><tbody></tbody></table></div>
+    <div style="font-size:.72rem;color:#475569;margin-top:8px;padding:0 8px">
+      <span style="display:inline-block;width:14px;height:14px;background:#dc2626;vertical-align:middle;margin-right:4px;border-radius:3px"></span>≥ 50% &nbsp;
+      <span style="display:inline-block;width:14px;height:14px;background:#fbbf24;vertical-align:middle;margin-right:4px;border-radius:3px"></span>20% – 49,9% &nbsp;
+      <span style="display:inline-block;width:14px;height:14px;background:#7dd3fc;vertical-align:middle;margin-right:4px;border-radius:3px"></span>-20% a -100% &nbsp;
+      &nbsp;·&nbsp; positivo = consumo &gt; proyección
     </div>
   </div>
 </div>
@@ -570,91 +587,170 @@ function opBloqDw(comp){
 // ── INIT ──
 
 // ── QUIEBRES SEM ────────────────────────────────────────────────────────────
+window._QB_CACHE=null;
+// Paleta clara para tab Quiebres SEM
+var QB_PAL={
+  inf:'#0ea5e9', real:'#ef4444',
+  donut:['#0ea5e9','#f97316','#10b981','#8b5cf6','#facc15','#ec4899','#06b6d4','#84cc16','#f43f5e','#a855f7'],
+  bar :['#6366f1','#10b981','#f97316','#8b5cf6','#06b6d4','#facc15','#ef4444']
+};
+function qbDataLabelsBar(){
+  return {anchor:'end',align:'top',color:'#0f172a',font:{weight:'700',size:11},formatter:function(v){return v||v===0?v:'';}};
+}
+function qbDataLabelsDonut(){
+  return {color:'#fff',font:{weight:'700',size:11},formatter:function(v,ctx){
+    var arr=ctx.chart.data.datasets[0].data;
+    var tot=arr.reduce(function(a,b){return a+(b||0);},0);
+    if(!tot||!v) return '';
+    var p=(v/tot*100);
+    return p<5?'':(p.toFixed(0)+'%');
+  }};
+}
+function qbRegisterPlugin(){
+  if(window.ChartDataLabels && !window._qbPluginRegistered){
+    Chart.register(window.ChartDataLabels);
+    // No queremos labels globales en otros gráficos del dashboard
+    Chart.defaults.plugins.datalabels = Chart.defaults.plugins.datalabels || {};
+    Chart.defaults.plugins.datalabels.display = false;
+    window._qbPluginRegistered=true;
+  }
+}
+
 function buildQuiebres(QB){
+  qbRegisterPlugin();
+  window._QB_CACHE=QB;
   var Q=QB.QUIEBRES||{},D=QB.DESV||{};
   var sem=QB.SEM;
   var s1=document.getElementById('qb-sem'); if(s1) s1.textContent=sem;
-  var s2=document.getElementById('qb-sem2'); if(s2) s2.textContent=sem;
+  var s2=document.getElementById('qb-sem2'); if(s2) s2.textContent=(sem-1)+' y '+sem;
 
-  // KPIs cabecera
+  // KPIs cabecera (3 cajas, sin SKUs frescos)
   var kp=document.getElementById('qb-kpis');
   if(kp){
     var totInf=Q.total_informados||0, totReal=Q.total_reales||0;
     var pctReal=totInf?Math.round(totReal/totInf*100):0;
     kp.innerHTML=
-      '<div class="kpia-card warn"><div class="kpia-n">'+totInf+'</div><div class="kpia-l">Informados SEM'+sem+'</div></div>'+
-      '<div class="kpia-card danger"><div class="kpia-n">'+totReal+'</div><div class="kpia-l">Reales SEM'+sem+'</div></div>'+
-      '<div class="kpia-card info"><div class="kpia-n">'+pctReal+'%</div><div class="kpia-l">% Reales / Informados</div></div>'+
-      '<div class="kpia-card ok"><div class="kpia-n">'+(D.skus?D.skus.length:0)+'</div><div class="kpia-l">SKUs frescos monitoreados</div></div>';
+      '<div class="kpia-card qb-inf"><div class="kpia-n">'+totInf+'</div><div class="kpia-l">Informados SEM'+sem+'</div></div>'+
+      '<div class="kpia-card qb-real"><div class="kpia-n">'+totReal+'</div><div class="kpia-l">Reales SEM'+sem+'</div></div>'+
+      '<div class="kpia-card qb-pct"><div class="kpia-n">'+pctReal+'%</div><div class="kpia-l">% Reales / Informados</div></div>';
   }
 
-  // Vista 1: Quiebres por día
+  // Vista 1: Quiebres por día (clic abre drawer)
   var c1=document.getElementById('cQBdia');
   if(c1 && Q.por_dia){
     if(window._cQBdia) window._cQBdia.destroy();
     window._cQBdia=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:Q.por_dia.labels,datasets:[
-      {label:'Informados',data:Q.por_dia.informados,backgroundColor:'#E87B2A99',borderColor:'#E87B2A',borderWidth:1.5,borderRadius:4},
-      {label:'Reales',    data:Q.por_dia.reales,    backgroundColor:'#E24B4A99',borderColor:'#E24B4A',borderWidth:1.5,borderRadius:4}
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#e2e8f0',font:{size:10}}}},scales:{x:{ticks:{color:'#8892b0',font:{size:10}}},y:{ticks:{color:'#8892b0',font:{size:10}},grid:{color:'#2d3452'},beginAtZero:true}}}});
+      {label:'Informados',data:Q.por_dia.informados,backgroundColor:QB_PAL.inf+'cc',borderColor:QB_PAL.inf,borderWidth:1.5,borderRadius:4},
+      {label:'Reales',    data:Q.por_dia.reales,    backgroundColor:QB_PAL.real+'cc',borderColor:QB_PAL.real,borderWidth:1.5,borderRadius:4}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#334155',font:{size:11}}},datalabels:Object.assign({display:true},qbDataLabelsBar())},scales:{x:{ticks:{color:'#475569',font:{size:11}},grid:{display:false}},y:{ticks:{color:'#475569',font:{size:10}},grid:{color:'#e2e8f0'},beginAtZero:true}},onClick:function(e,el){if(el.length){var idx=el[0].index;opQbDia(Q.por_dia.labels[idx],idx);}}}});
   }
 
-  // Vista 2: Categorías
-  var c2=document.getElementById('cQBcat');
-  if(c2 && Q.categorias){
-    if(window._cQBcat) window._cQBcat.destroy();
-    var palC=['#E24B4A','#E8C52A','#E87B2A','#639922','#378ADD','#9333ea','#06b6d4','#f43f5e','#84cc16','#a855f7'];
-    window._cQBcat=new Chart(c2.getContext('2d'),{type:'doughnut',data:{labels:Q.categorias.labels,datasets:[{data:Q.categorias.values,backgroundColor:Q.categorias.labels.map(function(_,i){return palC[i%palC.length];}),borderWidth:2,borderColor:'#1a1f2e'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e2e8f0',font:{size:10},padding:6}}}}});
+  // Vista 2: Tipos de quiebres (barra vertical)
+  var c2=document.getElementById('cQBtipo');
+  if(c2 && Q.tipos){
+    if(window._cQBtipo) window._cQBtipo.destroy();
+    var tCols=Q.tipos.labels.map(function(_,i){return QB_PAL.bar[i%QB_PAL.bar.length];});
+    window._cQBtipo=new Chart(c2.getContext('2d'),{type:'bar',data:{labels:Q.tipos.labels,datasets:[{data:Q.tipos.values,backgroundColor:tCols.map(function(c){return c+'cc';}),borderColor:tCols,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:Object.assign({display:true},qbDataLabelsBar()),tooltip:{callbacks:{label:function(x){return x.raw+' quiebres';}}}},scales:{x:{ticks:{color:'#475569',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#475569',font:{size:10}},grid:{color:'#e2e8f0'},beginAtZero:true}}}});
   }
 
-  // Vista 3: Motivos
+  // Vista 3: Motivos (donut con %)
   var c3=document.getElementById('cQBmot');
   if(c3 && Q.motivos){
     if(window._cQBmot) window._cQBmot.destroy();
-    var palM=['#E24B4A','#E8C52A','#E87B2A','#639922','#378ADD','#9333ea','#06b6d4'];
-    window._cQBmot=new Chart(c3.getContext('2d'),{type:'doughnut',data:{labels:Q.motivos.labels,datasets:[{data:Q.motivos.values,backgroundColor:Q.motivos.labels.map(function(_,i){return palM[i%palM.length];}),borderWidth:2,borderColor:'#1a1f2e'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e2e8f0',font:{size:10},padding:6}}}}});
+    window._cQBmot=new Chart(c3.getContext('2d'),{type:'doughnut',data:{labels:Q.motivos.labels,datasets:[{data:Q.motivos.values,backgroundColor:Q.motivos.labels.map(function(_,i){return QB_PAL.donut[i%QB_PAL.donut.length];}),borderWidth:2,borderColor:'#ffffff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:10},padding:6}},datalabels:Object.assign({display:true},qbDataLabelsDonut()),tooltip:{callbacks:{label:function(x){var t=x.dataset.data.reduce(function(a,b){return a+b;},0);var p=t?(x.raw/t*100).toFixed(1):0;return x.label+': '+x.raw+' ('+p+'%)';}}}}}});
   }
 
-  // Tabla de detalle
-  var tb=document.getElementById('qb-tbl');
-  if(tb && Q.detalle){
-    var det=Q.detalle.slice().sort(function(a,b){return (a.dia||'').localeCompare(b.dia||'');});
-    tb.innerHTML=det.map(function(r){
-      var d=r.dia?r.dia.substring(8,10)+'/'+r.dia.substring(5,7):'';
-      var col=r.tipo&&r.tipo.toLowerCase().indexOf('quiebre real')>-1?'#E24B4A':'#8892b0';
-      return '<tr><td>'+d+'</td><td>'+r.sku+'</td><td>'+r.desc+'</td><td>'+r.cat+'</td><td style="color:'+col+'">'+r.tipo+'</td><td>'+(r.motivo||'—')+'</td></tr>';
-    }).join('');
+  // Vista 4: Categorías (donut con %)
+  var c4=document.getElementById('cQBcat');
+  if(c4 && Q.categorias){
+    if(window._cQBcat) window._cQBcat.destroy();
+    window._cQBcat=new Chart(c4.getContext('2d'),{type:'doughnut',data:{labels:Q.categorias.labels,datasets:[{data:Q.categorias.values,backgroundColor:Q.categorias.labels.map(function(_,i){return QB_PAL.donut[(i+2)%QB_PAL.donut.length];}),borderWidth:2,borderColor:'#ffffff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:10},padding:6}},datalabels:Object.assign({display:true},qbDataLabelsDonut()),tooltip:{callbacks:{label:function(x){var t=x.dataset.data.reduce(function(a,b){return a+b;},0);var p=t?(x.raw/t*100).toFixed(1):0;return x.label+': '+x.raw+' ('+p+'%)';}}}}}});
   }
 
-  // Vista 4: heatmap de desviaciones
+  // Tabla desviaciones (sin proveedor, ambas semanas, nuevos colores)
   var dt=document.getElementById('qb-desv');
   if(dt && D.skus && D.skus.length){
     var thead=dt.querySelector('thead'),tbody=dt.querySelector('tbody');
-    var ths='<tr><th>SKU</th><th>Descripción</th><th>Proveedor</th><th>LT</th>';
-    D.dias.forEach(function(d){ths+='<th>'+d+'</th>';});
+    var ths='<tr><th>SKU</th><th>Descripción</th><th>LT</th>';
+    D.dias.forEach(function(d){ths+='<th style="text-align:center">'+d+'</th>';});
     ths+='</tr>';
     thead.innerHTML=ths;
 
     function colorFor(v){
-      if(v===null||v===undefined) return '#1a1f2e';
-      var a=Math.abs(v);
-      if(a<=25)  return 'rgba(22,163,74,0.55)';
-      if(a<=75)  return 'rgba(234,179,8,0.55)';
-      return 'rgba(220,38,38,0.65)';
+      if(v===null||v===undefined) return {bg:'#f8fafc',fg:'#94a3b8'};
+      if(v>=50) return {bg:'#dc2626',fg:'#ffffff'};
+      if(v>=20) return {bg:'#fbbf24',fg:'#1e293b'};
+      if(v<=-20 && v>=-100) return {bg:'#7dd3fc',fg:'#0c4a6e'};
+      return {bg:'#ffffff',fg:'#1e293b'};
     }
     var html='';
     for(var i=0;i<D.skus.length;i++){
       var s=D.skus[i],vals=D.data[i]||[];
-      html+='<tr><td>'+s.sku+'</td><td>'+s.desc+'</td><td>'+s.prov+'</td><td>'+s.lt+'</td>';
+      html+='<tr><td>'+s.sku+'</td><td>'+s.desc+'</td><td>'+s.lt+'</td>';
       for(var j=0;j<vals.length;j++){
         var v=vals[j];
+        var c=colorFor(v);
         var txt=(v===null||v===undefined)?'—':((v>0?'+':'')+v.toFixed(0)+'%');
-        html+='<td style="background:'+colorFor(v)+';color:#fff;text-align:center;font-weight:500">'+txt+'</td>';
+        html+='<td style="background:'+c.bg+';color:'+c.fg+';text-align:center;font-weight:600">'+txt+'</td>';
       }
       html+='</tr>';
     }
     tbody.innerHTML=html;
   }
 }
+
+// Drawer al hacer clic en barra de Quiebres por día
+function opQbDia(label, idx){
+  var QB=window._QB_CACHE; if(!QB) return;
+  var Q=QB.QUIEBRES||{};
+  var lbl=Q.por_dia.labels[idx];
+  // Recuperar la fecha (y-m-d) del detalle que matchee el día/mes del label
+  var m=lbl.match(/(\d{2})\/(\d{2})/);
+  var dd=m?m[1]:null, mm=m?m[2]:null;
+  var rows=(Q.detalle||[]).filter(function(r){
+    if(!r.dia) return false;
+    return r.dia.substring(5,7)===mm && r.dia.substring(8,10)===dd;
+  });
+  // Ordenar: reales arriba
+  rows.sort(function(a,b){
+    var ar=(a.tipo||'').toLowerCase().indexOf('real')>-1?0:1;
+    var br=(b.tipo||'').toLowerCase().indexOf('real')>-1?0:1;
+    return ar-br;
+  });
+
+  var tit=document.getElementById('dw-tit');
+  if(tit) tit.textContent='Quiebres '+label+' — '+rows.length+' SKUs ('+rows.filter(function(r){return (r.tipo||'').toLowerCase().indexOf('real')>-1;}).length+' reales)';
+
+  // Ocultar filtros y paginación que no aplican
+  var flt=document.querySelector('#dww .dw-flt'); if(flt) flt.style.display='none';
+  var pag=document.getElementById('dw-pag'); if(pag) pag.style.display='none';
+  var stat=document.getElementById('dw-stat'); if(stat) stat.style.display='none';
+
+  var body=document.getElementById('dw-body');
+  if(body){
+    var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#1a1f2e"><th style="padding:7px 10px;text-align:left;font-size:.72rem;color:#8892b0">SKU</th><th style="padding:7px 10px;text-align:left;font-size:.72rem;color:#8892b0">Descripción</th><th style="padding:7px 10px;text-align:left;font-size:.72rem;color:#8892b0">Categoría</th><th style="padding:7px 10px;text-align:left;font-size:.72rem;color:#8892b0">Tipo</th><th style="padding:7px 10px;text-align:left;font-size:.72rem;color:#8892b0">Motivo</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      var isReal=(r.tipo||'').toLowerCase().indexOf('real')>-1;
+      var col=isReal?'#ef4444':'#94a3b8';
+      html+='<tr style="border-bottom:1px solid #2d3452"><td style="padding:6px 10px;font-size:.78rem;color:#e2e8f0">'+r.sku+'</td><td style="padding:6px 10px;font-size:.78rem;color:#e2e8f0">'+r.desc+'</td><td style="padding:6px 10px;font-size:.78rem;color:#cbd5e1">'+r.cat+'</td><td style="padding:6px 10px;font-size:.78rem;color:'+col+';font-weight:600">'+r.tipo+'</td><td style="padding:6px 10px;font-size:.78rem;color:#cbd5e1">'+(r.motivo||'—')+'</td></tr>';
+    });
+    html+='</tbody></table></div>';
+    body.innerHTML=html;
+  }
+  document.getElementById('dww').classList.add('open');
+}
+
+// Restaurar filtros/paginación al cerrar (si fueron ocultados desde Quiebres)
+(function(){
+  var orig=window.closeDw;
+  window.closeDw=function(){
+    var flt=document.querySelector('#dww .dw-flt'); if(flt) flt.style.display='';
+    var pag=document.getElementById('dw-pag'); if(pag) pag.style.display='';
+    var stat=document.getElementById('dw-stat'); if(stat) stat.style.display='';
+    if(orig) orig();
+    else document.getElementById('dww').classList.remove('open');
+  };
+})();
 
 
 // ── LOAD DATA & INIT ────────────────────────────────────────────────────────
