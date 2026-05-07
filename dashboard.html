@@ -122,6 +122,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   <div class="tab" onclick="showTab(5)">📡 Desviación forecast</div>
   <div class="tab" onclick="showTab(6)">🔄 Rotación inventario</div>
   <div class="tab" onclick="showTab(7)">🔒 Stock bloqueado</div>
+  <div class="tab" onclick="showTab(8)">⚠️ Quiebres SEM</div>
 </div>
 
 <div id="t0" class="pg active"><div class="cards-grid" id="rcards"></div>
@@ -224,6 +225,25 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
     </div>
   </div>
 </div>
+
+<!-- Quiebres SEM (vista aislada vía iframe — no comparte JS/CSS con otras pestañas) -->
+<div id="t8" class="pg">
+  <iframe id="qb-frame" title="Quiebres SEM" style="width:100%;height:1500px;border:0;border-radius:10px;background:#f8fafc;display:block" loading="lazy"></iframe>
+</div>
+<script>
+// Carga diferida del iframe: solo se setea el src cuando el usuario abre la pestaña.
+(function(){
+  var loaded=false;
+  document.querySelectorAll('.tabs .tab').forEach(function(t,i){
+    t.addEventListener('click',function(){
+      if(i===8 && !loaded){
+        document.getElementById('qb-frame').src='quiebres.html?v='+Date.now();
+        loaded=true;
+      }
+    });
+  });
+})();
+</script>
 
 <!-- DRAWER -->
 <div class="dw-wrap" id="dww">
