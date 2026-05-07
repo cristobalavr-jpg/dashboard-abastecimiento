@@ -122,6 +122,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   <div class="tab" onclick="showTab(5)">📡 Desviación forecast</div>
   <div class="tab" onclick="showTab(6)">🔄 Rotación inventario</div>
   <div class="tab" onclick="showTab(7)">🔒 Stock bloqueado</div>
+  <div class="tab" onclick="showTab(8)">⚠️ Quiebres SEM</div>
 </div>
 
 <div id="t0" class="pg active"><div class="cards-grid" id="rcards"></div>
@@ -221,6 +222,29 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
     <div class="cb"><div class="ct">Valor bloqueado BL01 por Comprador ($MM CLP)</div><div class="cw"><canvas id="cBLOQ"></canvas></div></div>
     <div class="cb"><div class="ct">Resumen por comprador</div>
       <div style="overflow-x:auto"><table><thead><tr><th>Comprador</th><th>SKUs</th><th>$Valor bloqueado</th><th>% del total</th></tr></thead><tbody id="bloq-tbl"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<div id="t8" class="pg">
+  <div class="kpia" id="qb-kpis"></div>
+  <div class="cr" style="margin-bottom:12px">
+    <div class="cb"><div class="ct">Quiebres por día — Informados vs Reales (SEM <span id="qb-sem"></span>)</div><div class="cw"><canvas id="cQBdia"></canvas></div></div>
+    <div class="cb"><div class="ct">Categorías de Quiebres Reales</div><div class="cw"><canvas id="cQBcat"></canvas></div></div>
+  </div>
+  <div class="cr" style="margin-bottom:12px">
+    <div class="cb"><div class="ct">Motivos de Quiebres Reales</div><div class="cw"><canvas id="cQBmot"></canvas></div></div>
+    <div class="cb"><div class="ct">Detalle de quiebres SEM</div>
+      <div style="overflow-x:auto;max-height:280px"><table><thead><tr><th>Día</th><th>SKU</th><th>Descripción</th><th>Categoría</th><th>Tipo</th><th>Motivo</th></tr></thead><tbody id="qb-tbl"></tbody></table></div>
+    </div>
+  </div>
+  <div class="cb" style="margin-bottom:12px"><div class="ct">Desviaciones MP frescas — proyección vs consumo real (SEM <span id="qb-sem2"></span>)</div>
+    <div style="overflow-x:auto;max-height:520px"><table id="qb-desv"><thead></thead><tbody></tbody></table></div>
+    <div style="font-size:.7rem;color:#8892b0;margin-top:8px;padding:0 8px">
+      <span style="display:inline-block;width:14px;height:14px;background:#16a34a;vertical-align:middle;margin-right:4px;border-radius:3px"></span>|desv| ≤ 25% &nbsp;
+      <span style="display:inline-block;width:14px;height:14px;background:#eab308;vertical-align:middle;margin-right:4px;border-radius:3px"></span>25–75% &nbsp;
+      <span style="display:inline-block;width:14px;height:14px;background:#dc2626;vertical-align:middle;margin-right:4px;border-radius:3px"></span>&gt; 75%
+      &nbsp;·&nbsp; valor positivo = consumo &gt; proyección · negativo = consumo &lt; proyección
     </div>
   </div>
 </div>
@@ -545,7 +569,92 @@ function opBloqDw(comp){
 
 // ── INIT ──
 
+// ── QUIEBRES SEM ────────────────────────────────────────────────────────────
+function buildQuiebres(QB){
+  var Q=QB.QUIEBRES||{},D=QB.DESV||{};
+  var sem=QB.SEM;
+  var s1=document.getElementById('qb-sem'); if(s1) s1.textContent=sem;
+  var s2=document.getElementById('qb-sem2'); if(s2) s2.textContent=sem;
 
+  // KPIs cabecera
+  var kp=document.getElementById('qb-kpis');
+  if(kp){
+    var totInf=Q.total_informados||0, totReal=Q.total_reales||0;
+    var pctReal=totInf?Math.round(totReal/totInf*100):0;
+    kp.innerHTML=
+      '<div class="kpia-card warn"><div class="kpia-n">'+totInf+'</div><div class="kpia-l">Informados SEM'+sem+'</div></div>'+
+      '<div class="kpia-card danger"><div class="kpia-n">'+totReal+'</div><div class="kpia-l">Reales SEM'+sem+'</div></div>'+
+      '<div class="kpia-card info"><div class="kpia-n">'+pctReal+'%</div><div class="kpia-l">% Reales / Informados</div></div>'+
+      '<div class="kpia-card ok"><div class="kpia-n">'+(D.skus?D.skus.length:0)+'</div><div class="kpia-l">SKUs frescos monitoreados</div></div>';
+  }
+
+  // Vista 1: Quiebres por día
+  var c1=document.getElementById('cQBdia');
+  if(c1 && Q.por_dia){
+    if(window._cQBdia) window._cQBdia.destroy();
+    window._cQBdia=new Chart(c1.getContext('2d'),{type:'bar',data:{labels:Q.por_dia.labels,datasets:[
+      {label:'Informados',data:Q.por_dia.informados,backgroundColor:'#E87B2A99',borderColor:'#E87B2A',borderWidth:1.5,borderRadius:4},
+      {label:'Reales',    data:Q.por_dia.reales,    backgroundColor:'#E24B4A99',borderColor:'#E24B4A',borderWidth:1.5,borderRadius:4}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#e2e8f0',font:{size:10}}}},scales:{x:{ticks:{color:'#8892b0',font:{size:10}}},y:{ticks:{color:'#8892b0',font:{size:10}},grid:{color:'#2d3452'},beginAtZero:true}}}});
+  }
+
+  // Vista 2: Categorías
+  var c2=document.getElementById('cQBcat');
+  if(c2 && Q.categorias){
+    if(window._cQBcat) window._cQBcat.destroy();
+    var palC=['#E24B4A','#E8C52A','#E87B2A','#639922','#378ADD','#9333ea','#06b6d4','#f43f5e','#84cc16','#a855f7'];
+    window._cQBcat=new Chart(c2.getContext('2d'),{type:'doughnut',data:{labels:Q.categorias.labels,datasets:[{data:Q.categorias.values,backgroundColor:Q.categorias.labels.map(function(_,i){return palC[i%palC.length];}),borderWidth:2,borderColor:'#1a1f2e'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e2e8f0',font:{size:10},padding:6}}}}});
+  }
+
+  // Vista 3: Motivos
+  var c3=document.getElementById('cQBmot');
+  if(c3 && Q.motivos){
+    if(window._cQBmot) window._cQBmot.destroy();
+    var palM=['#E24B4A','#E8C52A','#E87B2A','#639922','#378ADD','#9333ea','#06b6d4'];
+    window._cQBmot=new Chart(c3.getContext('2d'),{type:'doughnut',data:{labels:Q.motivos.labels,datasets:[{data:Q.motivos.values,backgroundColor:Q.motivos.labels.map(function(_,i){return palM[i%palM.length];}),borderWidth:2,borderColor:'#1a1f2e'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e2e8f0',font:{size:10},padding:6}}}}});
+  }
+
+  // Tabla de detalle
+  var tb=document.getElementById('qb-tbl');
+  if(tb && Q.detalle){
+    var det=Q.detalle.slice().sort(function(a,b){return (a.dia||'').localeCompare(b.dia||'');});
+    tb.innerHTML=det.map(function(r){
+      var d=r.dia?r.dia.substring(8,10)+'/'+r.dia.substring(5,7):'';
+      var col=r.tipo&&r.tipo.toLowerCase().indexOf('quiebre real')>-1?'#E24B4A':'#8892b0';
+      return '<tr><td>'+d+'</td><td>'+r.sku+'</td><td>'+r.desc+'</td><td>'+r.cat+'</td><td style="color:'+col+'">'+r.tipo+'</td><td>'+(r.motivo||'—')+'</td></tr>';
+    }).join('');
+  }
+
+  // Vista 4: heatmap de desviaciones
+  var dt=document.getElementById('qb-desv');
+  if(dt && D.skus && D.skus.length){
+    var thead=dt.querySelector('thead'),tbody=dt.querySelector('tbody');
+    var ths='<tr><th>SKU</th><th>Descripción</th><th>Proveedor</th><th>LT</th>';
+    D.dias.forEach(function(d){ths+='<th>'+d+'</th>';});
+    ths+='</tr>';
+    thead.innerHTML=ths;
+
+    function colorFor(v){
+      if(v===null||v===undefined) return '#1a1f2e';
+      var a=Math.abs(v);
+      if(a<=25)  return 'rgba(22,163,74,0.55)';
+      if(a<=75)  return 'rgba(234,179,8,0.55)';
+      return 'rgba(220,38,38,0.65)';
+    }
+    var html='';
+    for(var i=0;i<D.skus.length;i++){
+      var s=D.skus[i],vals=D.data[i]||[];
+      html+='<tr><td>'+s.sku+'</td><td>'+s.desc+'</td><td>'+s.prov+'</td><td>'+s.lt+'</td>';
+      for(var j=0;j<vals.length;j++){
+        var v=vals[j];
+        var txt=(v===null||v===undefined)?'—':((v>0?'+':'')+v.toFixed(0)+'%');
+        html+='<td style="background:'+colorFor(v)+';color:#fff;text-align:center;font-weight:500">'+txt+'</td>';
+      }
+      html+='</tr>';
+    }
+    tbody.innerHTML=html;
+  }
+}
 
 
 // ── LOAD DATA & INIT ────────────────────────────────────────────────────────
@@ -563,6 +672,11 @@ fetch('data.json?v='+Date.now())
     if(_h) _h.textContent='Semana '+SEM+(_D.FECHA?(' · '+_D.FECHA):'');
 
     buildResumen();buildGer();updPlan();updMKpis();updMCharts(TA);bldSemTbl(TA);bldTop10();buildKpiAv();
+
+    fetch('quiebres_data.json?v='+Date.now())
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(QB){if(QB) buildQuiebres(QB);})
+      .catch(function(){});
 
     var ov=document.getElementById('ld-overlay');
     if(ov) ov.remove();
