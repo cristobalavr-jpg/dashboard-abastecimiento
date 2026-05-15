@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Abastecimiento — Semana 18 · 2026</title>
+<title>Dashboard Abastecimiento — Semana 20 · 2026</title>
+<meta property="og:title" content="Dashboard Abastecimiento — Semana 20 · 2026">
+<meta property="og:description" content="Supply Chain · KPIs de inventario, mermas, capital inmovilizado, desviación de forecast y bloqueado">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>*{box-sizing:border-box;margin:0;padding:0}
@@ -1154,6 +1158,9 @@ fetch('data.json?v='+Date.now())
       var vsT = (DELTAS && DELTAS.sem_prev) ? (' · vs SEM '+DELTAS.sem_prev) : '';
       _h.textContent='Semana '+SEM+(_D.FECHA?(' · '+_D.FECHA):'')+vsT;
     }
+    // Actualizar title dinámico (para browser tab; el del HTML lo escribe el script Python al publicar)
+    var _y = (_D.FECHA && _D.FECHA.length>=10) ? _D.FECHA.slice(-4) : new Date().getFullYear();
+    document.title = 'Dashboard Abastecimiento — Semana ' + SEM + ' · ' + _y;
 
     buildResumen();rndEstado();buildGer();updPlan();updMKpis();updMCharts(TA);bldSemTbl(TA);bldTop10();buildKpiAv();
 
