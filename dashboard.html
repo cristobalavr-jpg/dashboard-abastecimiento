@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard Abastecimiento — Semana 18 · 2026</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>*{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;font-size:13px}
 :root{--q:#E24B4A;--r:#E8C52A;--rT:#C9A800;--m:#E87B2A;--mT:#C96000;--n:#639922;--s:#378ADD;--v:#7c3aed;--so:#2478c9;--card:#1a1f2e;--border:#2d3452;--muted:#8892b0}
@@ -111,6 +112,10 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 <div class="header">
   <div style="width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.9rem">📦</div>
   <h1>Dashboard Abastecimiento</h1><span class="hbadge">Supply Chain</span>
+  <label style="margin-left:14px;font-size:.7rem;color:var(--muted)">Comprador:</label>
+  <select id="gComp" onchange="onGComp()" style="background:#232840;color:#fff;border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:.75rem;cursor:pointer">
+    <option value="">Todos</option><option>HECTOR</option><option>JAVIERA</option><option>JOSE</option><option>MATIAS</option><option>VICENTE</option>
+  </select>
   <span class="hsem" id="hsem-txt">Cargando…</span>
 </div>
 <div class="tabs">
@@ -118,9 +123,8 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   <div class="tab" onclick="showTab(1)">👷 Planificadores</div>
   <div class="tab" onclick="showTab(2)">📦 Inventarios</div>
   <div class="tab" onclick="showTab(3)">♻️ Mermas</div>
-  <div class="tab" onclick="showTab(4)">💰 Capital inmovilizado</div>
+  <div class="tab" onclick="showTab(4)">💰 Capital Inmovilizado</div>
   <div class="tab" onclick="showTab(5)">📡 Desviación forecast</div>
-  <div class="tab" onclick="showTab(6)">🔄 Rotación inventario</div>
   <div class="tab" onclick="showTab(7)">🔒 Stock bloqueado</div>
   <div class="tab" onclick="showTab(8)">⚠️ Quiebres SEM</div>
 </div>
@@ -134,22 +138,23 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
     <div class="cb"><div class="ct">Mermas por Comprador — Valor neto ($CLP)</div><div class="cw"><canvas id="cMC"></canvas></div></div>
     <div class="cb"><div class="ct">Resumen Mermas (neta 551−552)</div><div style="overflow-x:auto"><table><thead><tr><th>Comprador</th><th>Qty neta</th><th>$Valor neto</th><th>Tasa vol.</th><th>Tasa val.</th></tr></thead><tbody id="mctb"></tbody></table></div></div>
   </div>
-  <div class="dp" id="mdp"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span id="mdt" style="font-size:.76rem;font-weight:700;color:#c0caf5"></span><button onclick="document.getElementById('mdp').classList.remove('show')" style="background:none;border:none;color:var(--muted);cursor:pointer">✕</button></div><div id="mdc" style="max-height:320px;overflow-y:auto"></div></div>
+  <div class="stt" style="margin-top:18px">🔎 Estado por SKU <span id="es-info" style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:8px"></span> <button onclick="expXls('es-tb','estado_por_sku')" style="float:right;background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
+  <div class="fr" style="margin-bottom:6px"><input type="text" id="es-search" placeholder="Buscar por SKU o descripción..." oninput="rndEstado()" style="background:#13182a;color:#e2e8f0;border:1px solid var(--border);border-radius:5px;padding:5px 9px;font-size:.75rem;width:280px"><select id="es-est" onchange="rndEstado()" style="background:#13182a;color:#e2e8f0;border:1px solid var(--border);border-radius:5px;padding:5px 9px;font-size:.72rem;margin-left:6px"><option value="">Todos estados</option><option value="quiebre">Quiebre</option><option value="riesgo">Riesgo</option><option value="monitorear">Monitorear</option><option value="normal">Normal</option><option value="sobrestock">Sobrestock</option></select></div>
+  <div class="tw" style="margin-bottom:6px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Comprador</th><th style="text-align:right" title="Centro Distribución (4120)">StockCD</th><th style="text-align:right" title="Centro 4010">Quilicura</th><th style="text-align:right" title="Centro 4020">Huechuraba</th><th style="text-align:right">Stock total</th><th style="text-align:right">OC tránsito</th><th style="text-align:right">Cons 4w real</th><th style="text-align:right">FC 4w</th><th style="text-align:right" title="Sesgo del FC vs consumo real últimas 4 sem">Δ FC %</th><th style="text-align:right" title="Veces por año">Rot.</th><th>Estado</th><th style="text-align:right">Cob.</th><th style="text-align:right">Cob.c/OC</th></tr></thead><tbody id="es-tb"></tbody></table></div>
+  <div class="pag" id="es-pag"></div>
 </div>
 
 <div id="t1" class="pg">
-  <div class="fr" style="margin-bottom:12px"><label style="font-size:.75rem;color:var(--muted)">Comprador:</label>
-    <select id="pcomp" class="csel" onchange="updPlan()"><option value="">Todos</option><option>HECTOR</option><option>JAVIERA</option><option>JOSE</option><option>MATIAS</option><option>VICENTE</option></select></div>
   <div class="pkr" id="pkpis"></div>
-  <div class="stt">Alertas — Stock actual insuficiente</div>
+  <div class="stt">Alertas — Stock actual insuficiente <button onclick="expXls('patb','alertas_stock_insuficiente')" style="float:right;background:#E24B4A30;color:#E24B4A;border:1px solid #E24B4A;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="fr"><button class="sb active" id="pa-ta" onclick="sPF('PA','t','')">Todos</button><button class="sb" id="pa-tz" onclick="sPF('PA','t','ZMPR')">ZMPR</button><button class="sb" id="pa-te" onclick="sPF('PA','t','ZEMP')">ZEMP</button><input type="text" class="si" id="pas" placeholder="Buscar..." oninput="sPSr('PA',this.value)"></div>
   <div class="tw" style="margin-bottom:6px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>StockCD</th><th>Quilicura</th><th>Huechuraba</th><th>Total</th><th>Cons/sem</th><th>Cob.</th><th>Estado</th></tr></thead><tbody id="patb"></tbody></table></div>
   <div class="pag" id="papag"></div>
-  <div class="stt" style="margin-top:18px">Cobertura c/OC &lt; 5 semanas</div>
+  <div class="stt" style="margin-top:18px">Cobertura c/OC &lt; 5 semanas <button onclick="expXls('pctb','cobertura_oc_menor_5')" style="float:right;background:#7c3aed30;color:#7c3aed;border:1px solid #7c3aed;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="fr"><button class="sb active" id="pc-ta" onclick="sPF('PC','t','')">Todos</button><button class="sb" id="pc-tz" onclick="sPF('PC','t','ZMPR')">ZMPR</button><button class="sb" id="pc-te" onclick="sPF('PC','t','ZEMP')">ZEMP</button><input type="text" class="si" id="pcs" placeholder="Buscar..." oninput="sPSr('PC',this.value)"></div>
   <div class="tw" style="margin-bottom:6px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>OC</th><th>Stock+OC</th><th>Cons</th><th>Cob.</th><th style="color:var(--v)">Cob.c/OC</th><th>Estado</th></tr></thead><tbody id="pctb"></tbody></table></div>
   <div class="pag" id="pcpag"></div>
-  <div class="stt" style="margin-top:18px">Sobrestock c/OC &gt; 20 semanas (con OC en tránsito)</div>
+  <div class="stt" style="margin-top:18px">Sobrestock c/OC &gt; 20 semanas (con OC en tránsito) <button onclick="expXls('pstb','sobrestock_oc')" style="float:right;background:#247AC930;color:#2478c9;border:1px solid #2478c9;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="fr"><button class="sb active" id="ps-ta" onclick="sPF('PS','t','')">Todos</button><button class="sb" id="ps-tz" onclick="sPF('PS','t','ZMPR')">ZMPR</button><button class="sb" id="ps-te" onclick="sPF('PS','t','ZEMP')">ZEMP</button><input type="text" class="si" id="pss" placeholder="Buscar..." oninput="sPSr('PS',this.value)"></div>
   <div class="tw" style="margin-bottom:6px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>OC</th><th>Stock+OC</th><th style="color:var(--so)">Cob.c/OC 12w</th></tr></thead><tbody id="pstb"></tbody></table></div>
   <div class="pag" id="pspag"></div>
@@ -167,9 +172,8 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 </div>
 
 <div id="t3" class="pg">
-  <div class="fr" style="margin-bottom:12px"><label style="font-size:.75rem;color:var(--muted)">Comprador:</label>
-    <select id="msel" class="csel" onchange="onMerma()"><option value="">Todos</option><option>HECTOR</option><option>JAVIERA</option><option>JOSE</option><option>MATIAS</option><option>VICENTE</option></select>
-    <span style="font-size:.67rem;color:var(--muted);margin-left:6px">Merma neta: mov.551 − mov.552</span></div>
+  <div class="fr" style="margin-bottom:12px">
+    <span style="font-size:.67rem;color:var(--muted)">Merma neta: mov.551 − mov.552 · Usa el <b>filtro global</b> del header para ver mermas de un comprador específico</span></div>
   <div class="mk" id="mkpis"></div>
   <div class="cr">
     <div class="cb"><div class="ct">Valor mermado por semana · clic en barra para detalle</div><div class="cw"><canvas id="cMV" style="cursor:pointer"></canvas></div></div>
@@ -178,20 +182,50 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   <div class="dp" id="sdp"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px"><span id="sdt" style="font-size:.76rem;font-weight:700;color:#c0caf5"></span><button onclick="document.getElementById('sdp').classList.remove('show')" style="background:none;border:none;color:var(--muted);cursor:pointer">✕</button></div><div class="tw"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Qty mermada</th><th>Valor ($)</th><th>Precio unit</th></tr></thead><tbody id="sdtb"></tbody></table></div></div>
   <div class="stt" style="margin-top:8px">Semanas 2026</div>
   <div class="tw" style="margin-bottom:14px"><table><thead><tr><th>Semana</th><th>Qty mermada</th><th>Val.merma ($)</th><th>Qty consumida</th><th>Val.consumo (MM)</th><th>Tasa vol.</th><th>Tasa val.</th></tr></thead><tbody id="tsem"></tbody></table></div>
-  <div class="stt">Top 10 Materiales por Valor Mermado</div>
+  <div class="stt">Top 10 Materiales por Valor Mermado <button onclick="expXls('tp10','top10_mermas')" style="float:right;background:#E87B2A30;color:#E87B2A;border:1px solid #E87B2A;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="tw"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Qty</th><th>Valor ($)</th><th>Tasa vol.</th><th>Tasa val.</th></tr></thead><tbody id="tp10"></tbody></table></div>
   <div class="fbox">Merma neta = 551 − 552 | Tasa Vol. = qty_neta/(qty_consumo+qty_neta)×100 | Tasa Val. = val_neta/(qty_consumo×pu+val_neta)×100</div>
 </div>
 
 <div id="t4" class="pg">
-  <div class="kpia" id="cap-kpis"></div>
-  <div class="cb" style="margin-bottom:12px">
-    <div class="ct">Capital inmovilizado por grupo — exceso sobre 10 semanas · clic en barra para ver SKUs</div>
-    <div class="cw" style="height:230px"><canvas id="cCAP" style="cursor:pointer"></canvas></div>
-    <div class="hint">capital_exc = (cob_actual − 10) × consumo_4w × precio_unit | Solo SKUs con cobertura &gt; 10 sem</div>
+  <div style="background:rgba(55,138,221,.06);border:1px solid rgba(55,138,221,.25);border-radius:7px;padding:8px 12px;margin-bottom:10px;font-size:.7rem;color:#a4cef0">
+    💡 <b>Capital atrapado</b> = stock que no rota lo suficiente. Se mide por <b>3 lentes complementarios</b>: (1) <b>exceso sobre 10 semanas de cobertura</b> (sobrestock financiero), (2) <b>slow movers</b> con rotación &lt; 6×/año, (3) <b>stock muerto</b> sin consumo en las últimas 8 semanas. Rot 4,7× significa que el stock rota 4,7 veces al año (≈78 días de inventario). Objetivo SKUs secos: 12-15×; frescos: 26×+.
   </div>
-  <div class="stt">Detalle por grupo</div>
-  <div class="tw"><table><thead><tr><th>Grupo</th><th>SKUs</th><th>$Valor stock sobrestock</th><th>Capital exceso</th><th>% inmovilizado</th></tr></thead><tbody id="cap-tbl"></tbody></table></div>
+  <div class="kpia" id="cap-kpis"></div>
+  <div class="cr" style="margin-bottom:12px">
+    <div class="cb">
+      <div class="ct">Exceso sobre 10 semanas por grupo (capital inmovilizado financiero · clic ver SKUs)</div>
+      <div class="cw" style="height:240px"><canvas id="cCAP" style="cursor:pointer"></canvas></div>
+      <div class="hint">capital_exc = (cob_actual − 10) × consumo_4w × precio_unit · solo SKUs con cob &gt; 10 sem</div>
+    </div>
+    <div class="cb">
+      <div class="ct">$ stock por grupo apilado · Activo / Slow / Muerto · clic ver SKUs</div>
+      <div class="cw" style="height:240px"><canvas id="cROT" style="cursor:pointer"></canvas></div>
+      <div class="hint">Activo = rot ≥6×/año · Slow = rot &lt;6×/año · Muerto = sin consumo 8 sem</div>
+    </div>
+  </div>
+  <div class="cb" style="margin-bottom:12px">
+    <div class="ct">Mapa SKUs · días inventario vs $ valor · clic para drill-down</div>
+    <div class="cw" style="height:380px"><canvas id="cSCAT" style="cursor:pointer"></canvas></div>
+    <div class="hint">Eje X log: días inv. real · Eje Y log: $ valor stock · Color = bucket · Solo SKUs con stock ≥ $100.000 · <b>Derecha-arriba</b> = capital atrapado en SKUs lentos = prioridad de acción</div>
+  </div>
+  <div class="cr" style="margin-bottom:12px">
+    <div class="cb">
+      <div class="ct">Distribución del stock por velocidad de rotación (%$ valor)</div>
+      <div class="cw" style="height:230px"><canvas id="cROTbk"></canvas></div>
+      <div class="hint">Rápido ≥26× · Normal 12-26× · Lento 6-12× · Slow &lt;6× · Muerto = 8 sem sin mov.</div>
+    </div>
+    <div class="cb" style="padding:8px 10px">
+      <div class="ct" style="margin-bottom:6px">Detalle por grupo · cobertura financiera <button class="xls-btn" onclick="expXls('cap-tbl','capital_por_grupo')" style="float:right;background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:5px;padding:1px 6px;font-size:.62rem;cursor:pointer">📥 Excel</button></div>
+      <div style="max-height:240px;overflow-y:auto"><table style="font-size:.66rem"><thead><tr><th style="padding:4px 5px">Grupo</th><th style="padding:4px 5px;text-align:right">SKUs</th><th style="padding:4px 5px;text-align:right">$Sob.</th><th style="padding:4px 5px;text-align:right">$Exc.</th><th style="padding:4px 5px;text-align:right">%</th></tr></thead><tbody id="cap-tbl"></tbody></table></div>
+    </div>
+  </div>
+  <div class="stt">🪦 Stock muerto — sin movimiento en las últimas 8 semanas <button class="xls-btn" onclick="expXls('rot-dead','stock_muerto')" style="float:right;background:#1D9E7530;color:#1D9E75;border:1px solid #1D9E75;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
+  <div class="tw" style="margin-bottom:14px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>$Valor</th><th>Cons.8w</th></tr></thead><tbody id="rot-dead"></tbody></table></div>
+  <div class="stt">🐌 Slow movers — rotación &lt; 6×/año <button class="xls-btn" onclick="expXls('rot-slow','slow_movers')" style="float:right;background:#E87B2A30;color:#E87B2A;border:1px solid #E87B2A;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
+  <div class="tw" style="margin-bottom:14px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>$Valor</th><th>Rot.</th><th>Días</th></tr></thead><tbody id="rot-slow"></tbody></table></div>
+  <div class="stt">Detalle por grupo · velocidad rotación</div>
+  <div class="tw"><table><thead><tr><th>Grupo</th><th>Tipo</th><th>SKUs</th><th>Rot. med.</th><th>Días inv. med.</th><th>$Valor total</th><th>Slow</th><th>Muerto</th><th>$Atrapado</th></tr></thead><tbody id="rot-tbl"></tbody></table></div>
 </div>
 
 <div id="t5" class="pg">
@@ -216,39 +250,11 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
     <div class="cw" style="height:380px"><canvas id="cBSCAT" style="cursor:pointer"></canvas></div>
     <div class="hint">Eje X = sesgo % (Δ vs consumo real, clipado a ±200/+300%) · Eje Y = $ valor stock (escala log) · Solo SKUs con stock ≥ $100.000 · Banda verde [-30%,+30%] = aceptable · <b>Derecha-arriba</b> = caro con FC inflado → riesgo merma · <b>Izquierda-arriba</b> = caro con FC bajo → riesgo quiebre</div>
   </div>
-  <div class="stt">Detalle por grupo</div>
+  <div class="stt">Detalle por grupo <button onclick="expXls('bias-tbl','bias_fc_por_grupo')" style="float:right;background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="tw"><table><thead><tr><th>Grupo</th><th>SKUs</th><th>Bias dir.</th><th>WAPE</th><th style="color:var(--mT)">SKUs sobreestima</th><th style="color:var(--q)">SKUs subestima</th><th>$ stock en riesgo</th><th>Señal</th></tr></thead><tbody id="bias-tbl"></tbody></table></div>
 </div>
 
-<div id="t6" class="pg">
-  <div class="kpia" id="rot-kpis"></div>
-  <div style="background:rgba(55,138,221,.06);border:1px solid rgba(55,138,221,.25);border-radius:7px;padding:8px 12px;margin-bottom:10px;font-size:.7rem;color:#a4cef0">
-    💡 <b>Cómo leer la rotación:</b> rot <b>4,7×</b> significa que el stock actual <b>rota 4,7 veces en un año</b> al ritmo de consumo de las últimas 4 semanas. Equivale a <b>78 días de inventario</b> (365 ÷ 4,7) — es decir, lo que hay en bodega cubre 78 días de consumo. Para SKUs secos un objetivo razonable es 12-15× (≈30 días); para frescos 26×+ (≤14 días).
-  </div>
-  <div class="cr" style="margin-bottom:12px">
-    <div class="cb">
-      <div class="ct">Distribución del stock por velocidad de rotación (%$ valor)</div>
-      <div class="cw" style="height:230px"><canvas id="cROTbk"></canvas></div>
-      <div class="hint">Rápido ≥26×/año · Normal 12-26 · Lento 6-12 · Slow &lt;6 · Muerto = sin consumo 8 sem</div>
-    </div>
-    <div class="cb">
-      <div class="ct">$ stock por grupo y velocidad · clic para ver SKUs</div>
-      <div class="cw" style="height:230px"><canvas id="cROT" style="cursor:pointer"></canvas></div>
-      <div class="hint">Barras apiladas — proporción de Activo (rot ≥6×) vs Slow vs Muerto en cada grupo</div>
-    </div>
-  </div>
-  <div class="cb" style="margin-bottom:12px">
-    <div class="ct">Mapa SKUs · días de inventario vs $ valor stock · clic en un punto para drill-down</div>
-    <div class="cw" style="height:380px"><canvas id="cSCAT" style="cursor:pointer"></canvas></div>
-    <div class="hint">Eje X = días inv. (consumo real, escala log) · Eje Y = $ valor stock (escala log) · Color = bucket · Solo SKUs con stock ≥ $100.000 · Líneas de referencia en 30/60/120 días · El cuadrante <b>derecha-arriba</b> = capital atrapado en SKUs lentos = prioridad de acción</div>
-  </div>
-  <div class="stt">🪦 Stock muerto — sin movimiento en últimas 8 semanas</div>
-  <div class="tw" style="margin-bottom:14px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>$Valor</th><th>Cons.8w</th></tr></thead><tbody id="rot-dead"></tbody></table></div>
-  <div class="stt">🐌 Slow movers — rotación &lt; 6×/año</div>
-  <div class="tw" style="margin-bottom:14px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>$Valor</th><th>Rot.</th><th>Días</th></tr></thead><tbody id="rot-slow"></tbody></table></div>
-  <div class="stt">Detalle por grupo</div>
-  <div class="tw"><table><thead><tr><th>Grupo</th><th>Tipo</th><th>SKUs</th><th>Rot. med.</th><th>Días inv. med.</th><th>$Valor total</th><th>Slow</th><th>Muerto</th><th>$Atrapado</th></tr></thead><tbody id="rot-tbl"></tbody></table></div>
-</div>
+<!-- t6 eliminado: contenido consolidado en t4 (💰 Capital Inmovilizado) -->
 
 <div id="t7" class="pg">
   <div class="kpia" id="bloq-kpis"></div>
@@ -264,20 +270,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 <div id="t8" class="pg">
   <iframe id="qb-frame" title="Quiebres SEM" style="width:100%;height:1500px;border:0;border-radius:10px;background:#f8fafc;display:block" loading="lazy"></iframe>
 </div>
-<script>
-// Carga diferida del iframe: solo se setea el src cuando el usuario abre la pestaña.
-(function(){
-  var loaded=false;
-  document.querySelectorAll('.tabs .tab').forEach(function(t,i){
-    t.addEventListener('click',function(){
-      if(i===8 && !loaded){
-        document.getElementById('qb-frame').src='quiebres.html?v='+Date.now();
-        loaded=true;
-      }
-    });
-  });
-})();
-</script>
+<!-- lazy load del iframe ahora se maneja dentro de showTab() -->
 
 <!-- DRAWER -->
 <div class="dw-wrap" id="dww">
@@ -302,7 +295,219 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 
 
 // ── GLOBAL DATA NAMESPACE ───────────────────────────────────────────────────
-var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,BLOQ,SEM;
+var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS;
+var gCompFilter='';  // filtro global de comprador
+
+// ── Helper: indicador delta (flecha ↑↓) ──
+// invert=true → caída es buena (ej. quiebres, mermas, capital). invert=false → subida es buena (ej. normal, $consumo).
+function dArrow(v, invert){
+  if(v===undefined||v===null||v===0||isNaN(v)) return '';
+  var up=v>0;
+  var good = invert ? !up : up;
+  var col = good ? 'var(--n)' : 'var(--q)';
+  var arrow = up?'▲':'▼';
+  var fmt = (typeof v==='number'&&Math.abs(v)>=1000)?fMM(v):(typeof v==='number'?(Math.abs(v)<1?v.toFixed(1):f0(v)):v);
+  return '<span style="font-size:.62rem;font-weight:700;color:'+col+';margin-left:4px;white-space:nowrap">'+arrow+' '+(up?'+':'-')+fmt+'</span>';
+}
+function dArrowPct(v, invert){
+  if(v===undefined||v===null||v===0||isNaN(v)) return '';
+  var up=v>0;var good=invert?!up:up;var col=good?'var(--n)':'var(--q)';
+  return '<span style="font-size:.62rem;font-weight:700;color:'+col+';margin-left:4px">'+ (up?'▲ +':'▼ ') + v.toFixed(1) + 'pp</span>';
+}
+
+// ── Filtro global de comprador ──
+// Helpers de agregación desde SKUS plano (para recalcular cuando hay filtro)
+function curSkus(){
+  if(!gCompFilter) return SKUS||[];
+  return (SKUS||[]).filter(function(s){return s.comp===gCompFilter;});
+}
+
+// Recalcular G (KPIs Inventarios) desde subset SKUs
+function aggG(skus){
+  var fc=skus.filter(function(s){return (s.c4||0)>0;});
+  return {
+    vt:skus.reduce(function(a,s){return a+(s.val||0);},0),
+    vz:skus.filter(function(s){return s.tipo==='ZMPR';}).reduce(function(a,s){return a+(s.val||0);},0),
+    ve:skus.filter(function(s){return s.tipo==='ZEMP';}).reduce(function(a,s){return a+(s.val||0);},0),
+    st:skus.length,
+    ss:skus.filter(function(s){return (s.stock||0)>0;}).length,
+    q:fc.filter(function(s){return s.alerta==='quiebre';}).length,
+    r:fc.filter(function(s){return s.alerta==='riesgo';}).length,
+    m:fc.filter(function(s){return s.alerta==='monitorear';}).length,
+    n:fc.filter(function(s){return s.alerta==='normal';}).length,
+    s:fc.filter(function(s){return s.alerta==='sobrestock';}).length,
+    so:fc.filter(function(s){return !!s.a_sob_oc;}).length,
+    c5:fc.filter(function(s){return !!s.a_coc5;}).length,
+  };
+}
+
+// Recalcular GR (categorías) y GD (categoría/grupo) desde SKUS
+function aggGroupedByTipo(skus){
+  var byTipo={};
+  skus.forEach(function(s){
+    if(!byTipo[s.tipo]) byTipo[s.tipo]={skus:0,stock:0,valor:0,cobs:[],q:0,r:0,m:0,s:0,n:0};
+    var t=byTipo[s.tipo];
+    t.skus++;t.stock+=s.stock||0;t.valor+=s.val||0;
+    if(s.cob!==null && s.cob!==undefined && s.cob>=0) t.cobs.push(s.cob);
+    if(s.alerta==='quiebre')t.q++;else if(s.alerta==='riesgo')t.r++;else if(s.alerta==='monitorear')t.m++;else if(s.alerta==='sobrestock')t.s++;else if(s.alerta==='normal')t.n++;
+  });
+  var rows=[];
+  Object.keys(byTipo).forEach(function(k){var t=byTipo[k];var avg=t.cobs.length?t.cobs.reduce(function(a,b){return a+b;},0)/t.cobs.length:0;rows.push([k,t.skus,Math.round(t.stock),Math.round(t.valor),+avg.toFixed(1),t.q,t.r,t.m,t.s,t.n]);});
+  rows.sort(function(a,b){return b[3]-a[3];});return rows;
+}
+function aggGroupedByGrupo(skus){
+  var byG={};
+  skus.forEach(function(s){
+    var k=s.tipo+'||'+s.grupo;
+    if(!byG[k]) byG[k]={tipo:s.tipo,grupo:s.grupo,skus:0,stock:0,valor:0,cobs:[],q:0,r:0,m:0,s:0,n:0};
+    var t=byG[k];
+    t.skus++;t.stock+=s.stock||0;t.valor+=s.val||0;
+    if(s.cob!==null && s.cob!==undefined && s.cob>=0) t.cobs.push(s.cob);
+    if(s.alerta==='quiebre')t.q++;else if(s.alerta==='riesgo')t.r++;else if(s.alerta==='monitorear')t.m++;else if(s.alerta==='sobrestock')t.s++;else if(s.alerta==='normal')t.n++;
+  });
+  var rows=[];
+  Object.keys(byG).forEach(function(k){var t=byG[k];var avg=t.cobs.length?t.cobs.reduce(function(a,b){return a+b;},0)/t.cobs.length:0;rows.push([t.tipo,t.grupo,t.skus,Math.round(t.stock),Math.round(t.valor),+avg.toFixed(1),t.q,t.r,t.m,t.s,t.n]);});
+  rows.sort(function(a,b){if(a[0]!==b[0])return a[0]<b[0]?-1:1;return b[4]-a[4];});
+  return rows;
+}
+
+// Recalcular CAP desde SKUS
+function aggCAP(skus){
+  var sob=skus.filter(function(s){return s.alerta==='sobrestock';});
+  var exc=skus.filter(function(s){return (s.cap_exc||0)>0;});
+  var byG={};
+  exc.forEach(function(s){
+    if(!byG[s.grupo]) byG[s.grupo]={n:0,capital:0,valor:0};
+    byG[s.grupo].n++; byG[s.grupo].capital+=s.cap_exc||0; byG[s.grupo].valor+=s.val||0;
+  });
+  var grupos=Object.keys(byG).map(function(g){return {grupo_articulo:g,n:byG[g].n,capital:Math.round(byG[g].capital),valor:Math.round(byG[g].valor)};}).sort(function(a,b){return b.capital-a.capital;});
+  return {
+    total:Math.round(skus.reduce(function(a,s){return a+(s.cap_exc||0);},0)),
+    val_sob:Math.round(sob.reduce(function(a,s){return a+(s.val||0);},0)),
+    n_sob:sob.length,
+    grupos:grupos
+  };
+}
+
+// Recalcular ROT desde SKUS
+function aggROT(skus){
+  var slow=skus.filter(function(s){return s.rot_bucket==='slow';});
+  var mue=skus.filter(function(s){return s.rot_bucket==='muerto';});
+  // bucket dist
+  var BO=['rapido','normal','lento','slow','muerto'];
+  var bd=BO.map(function(b){var sub=skus.filter(function(s){return s.rot_bucket===b;});return {b:b,n:sub.length,val:Math.round(sub.reduce(function(a,s){return a+(s.val||0);},0))};});
+  // doh ponderado por $
+  var valTot=skus.reduce(function(a,s){return a+(s.val||0);},0);
+  var consAnual=skus.reduce(function(a,s){return a+((s.c4_real||0)*(s.pu||0)*52);},0);
+  var doh=consAnual>0?Math.round(valTot/consAnual*365):0;
+  // por grupo
+  var byG={};
+  skus.forEach(function(s){
+    if(!byG[s.grupo]) byG[s.grupo]={tipo:s.tipo,n:0,rots:[],dias:[],val:0,n_slow:0,n_muerto:0,val_slow:0,val_muerto:0};
+    var t=byG[s.grupo];
+    t.val+=s.val||0;
+    if(s.rot!==null && s.rot!==undefined){t.n++;t.rots.push(s.rot);t.dias.push(s.dias||0);}
+    if(s.rot_bucket==='slow'){t.n_slow++;t.val_slow+=s.val||0;}
+    if(s.rot_bucket==='muerto'){t.n_muerto++;t.val_muerto+=s.val||0;}
+  });
+  function median(arr){if(!arr.length)return 0;var s=arr.slice().sort(function(a,b){return a-b;});return s[Math.floor(s.length/2)];}
+  var grupos=Object.keys(byG).map(function(g){var t=byG[g];return {g:g,t:t.tipo,n:t.n,rot:+median(t.rots).toFixed(1),dias:median(t.dias),val:Math.round(t.val),n_slow:t.n_slow,n_muerto:t.n_muerto,val_slow:Math.round(t.val_slow),val_muerto:Math.round(t.val_muerto)};}).sort(function(a,b){return b.val-a.val;});
+  return {
+    doh_pond:doh,val_total:Math.round(valTot),
+    val_slow:Math.round(slow.reduce(function(a,s){return a+(s.val||0);},0)),
+    val_muerto:Math.round(mue.reduce(function(a,s){return a+(s.val||0);},0)),
+    n_slow:slow.length,n_muerto:mue.length,
+    umb_slow:6,sem_dead:8,
+    bucket_dist:bd,grupos:grupos,
+    top_muerto:mue.slice().sort(function(a,b){return (b.val||0)-(a.val||0);}).slice(0,50),
+    top_slow:slow.slice().sort(function(a,b){return (b.val||0)-(a.val||0);}).slice(0,50),
+    scatter:skus.filter(function(s){return (s.val||0)>=100000;}).map(function(s){
+      var dias=(s.rot_bucket==='muerto'||!s.dias)?999:s.dias;
+      return {sku:s.sku,desc:s.desc,grupo:s.grupo,comp:s.comp,dias:dias,val:s.val||0,stock:s.stock||0,rot:s.rot||0,bucket:s.rot_bucket};
+    }),
+    scatter_umbral_val:100000
+  };
+}
+
+// Recalcular BIAS desde SKUS
+function aggBIAS(skus){
+  var valid=skus.filter(function(s){return (s.c4_real||0)>0 && s.delta_pct!==null && s.delta_pct!==undefined;});
+  var totReal=valid.reduce(function(a,s){return a+((s.c4_real||0)*(s.pu||0));},0);
+  var totDeltaVal=valid.reduce(function(a,s){return a+(((s.c4||0)-(s.c4_real||0))*(s.pu||0));},0);
+  var totAbs=valid.reduce(function(a,s){return a+(Math.abs(((s.c4||0)-(s.c4_real||0)))*(s.pu||0));},0);
+  var UMB=30;
+  var nMer=valid.filter(function(s){return s.delta_pct>UMB;}).length;
+  var nQuie=valid.filter(function(s){return s.delta_pct<-UMB;}).length;
+  var valR=valid.filter(function(s){return Math.abs(s.delta_pct)>UMB;}).reduce(function(a,s){return a+(s.val||0);},0);
+  var byG={};
+  valid.forEach(function(s){
+    if(!byG[s.grupo]) byG[s.grupo]={n:0,real:0,delta:0,abs:0,nM:0,nQ:0,valR:0};
+    var t=byG[s.grupo];t.n++;
+    t.real+=(s.c4_real||0)*(s.pu||0);
+    t.delta+=((s.c4||0)-(s.c4_real||0))*(s.pu||0);
+    t.abs+=Math.abs((s.c4||0)-(s.c4_real||0))*(s.pu||0);
+    if(s.delta_pct>UMB)t.nM++;
+    if(s.delta_pct<-UMB)t.nQ++;
+    if(Math.abs(s.delta_pct)>UMB)t.valR+=s.val||0;
+  });
+  var grupos=Object.keys(byG).map(function(g){var t=byG[g];return {g:g,n:t.n,
+    bias_dir:t.real>0?+(t.delta/t.real*100).toFixed(1):0,
+    wape:t.real>0?+(t.abs/t.real*100).toFixed(1):0,
+    n_merma:t.nM,n_quiebre:t.nQ,val_riesgo:Math.round(t.valR)};});
+  return {
+    wape:totReal>0?+(totAbs/totReal*100).toFixed(1):0,
+    bias_dir:totReal>0?+(totDeltaVal/totReal*100).toFixed(1):0,
+    n:valid.length,n_merma:nMer,n_quiebre:nQuie,val_riesgo:Math.round(valR),
+    umbral_pct:UMB,es_proxy:BIAS.es_proxy,ventana:BIAS.ventana,
+    grupos:grupos,
+    scatter:valid.filter(function(s){return (s.val||0)>=100000;}).map(function(s){
+      var dc=Math.max(-200,Math.min(300,s.delta_pct));
+      var flag=Math.abs(s.delta_pct)<=UMB?'ok':(s.delta_pct>0?'sobreestima':'subestima');
+      return {sku:s.sku,desc:s.desc,grupo:s.grupo,comp:s.comp,delta:dc,delta_raw:s.delta_pct,val:s.val||0,real:s.c4_real||0,fc:s.c4||0,stock:s.stock||0,flag:flag};
+    }),
+    scatter_umbral_val:100000
+  };
+}
+
+// Vista efectiva — si hay filtro recalcula, sino devuelve la del JSON
+function effG(){    return gCompFilter ? aggG(curSkus())    : G; }
+function effGR(){   return gCompFilter ? aggGroupedByTipo(curSkus())  : GR; }
+function effGD(){   return gCompFilter ? aggGroupedByGrupo(curSkus()) : GD; }
+function effCAP(){  return gCompFilter ? aggCAP(curSkus())  : CAP; }
+function effROT(){  return gCompFilter ? aggROT(curSkus())  : ROT; }
+function effBIAS(){ return gCompFilter ? aggBIAS(curSkus()) : BIAS; }
+function effBLOQ(){
+  if(!gCompFilter) return BLOQ;
+  var comp=(BLOQ.comp||[]).filter(function(c){return c.comprador===gCompFilter;});
+  var val=comp.reduce(function(a,c){return a+(c.valor||0);},0);
+  var n=comp.reduce(function(a,c){return a+(c.skus||0);},0);
+  var det={}; if(BLOQ.det&&BLOQ.det[gCompFilter]) det[gCompFilter]=BLOQ.det[gCompFilter];
+  return {n:n,val:val,comp:comp,det:det};
+}
+
+function onGComp(){
+  gCompFilter = document.getElementById('gComp').value || '';
+  // Re-render todo lo afectado.
+  // Bloqueados (t7) NO se filtra — su vista comparativa por comprador está en el gráfico clicable.
+  if(typeof buildResumen==='function') buildResumen();
+  if(typeof rndEstado==='function')    rndEstado();
+  if(typeof buildGer==='function')     buildGer();
+  if(typeof updPlan==='function')      updPlan();
+  if(typeof onMerma==='function')      onMerma();
+  if(typeof buildKpiAv==='function')   buildKpiAv();
+}
+
+// ── Export a Excel (SheetJS) ──
+function expXls(tbodyId, fname){
+  var tbody=document.getElementById(tbodyId); if(!tbody) return;
+  var table=tbody.closest('table'); if(!table) return;
+  try{
+    var ws=XLSX.utils.table_to_sheet(table,{raw:false});
+    var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Datos');
+    var stamp=new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb, fname+'_'+stamp+'.xlsx');
+  }catch(e){alert('Error exportando: '+e.message);}
+}
 
 var COMPS=['HECTOR','JAVIERA','JOSE','MATIAS','VICENTE'];
 var CC={HECTOR:'#534AB7',JAVIERA:'#D85A30',JOSE:'#1D9E75',MATIAS:'#E87B2A',VICENTE:'#378ADD'};
@@ -320,38 +525,120 @@ var el=function(id){return document.getElementById(id);};
 function ba(a){var m={quiebre:'baq',riesgo:'bar_',monitorear:'bam',normal:'ban',sobrestock:'bas'};var c=m[a]||'';return '<span class="ba '+c+'">'+a+'</span>';}
 function tbar(v,color){var w=Math.min(v*8,100);return '<div class="tbw"><div class="tbr"><div class="tbf" style="width:'+w+'%;background:'+color+'"></div></div><span>'+fP(v)+'</span></div>';}
 function distBar(segs,w,h){var tot=Math.max(segs.reduce(function(a,s){return a+s[0];},0),1);return '<div style="display:flex;height:'+(h||7)+'px;border-radius:3px;overflow:hidden;width:'+(w||100)+'px">'+segs.map(function(s){return s[0]>0?'<div style="width:'+(s[0]/tot*100).toFixed(1)+'%;height:100%;background:'+s[1]+'"></div>':'';}).join('')+'</div>';}
-function showTab(i){document.querySelectorAll('.tab').forEach(function(t,j){t.classList.toggle('active',i===j);});document.querySelectorAll('.pg').forEach(function(p,j){p.classList.toggle('active',i===j);});}
+function showTab(i){
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.classList.toggle('active', t.getAttribute('onclick')==='showTab('+i+')');
+  });
+  document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('active');});
+  var pg=document.getElementById('t'+i); if(pg) pg.classList.add('active');
+  // Lazy load del iframe de Quiebres SEM
+  if(i===8){var ifr=document.getElementById('qb-frame');if(ifr&&!ifr.src) ifr.src='quiebres.html?v='+Date.now();}
+}
 function kpill(c,l){return '<span class="kpill kp'+c+'">'+l+'</span>';}
 function pAlerta(a){var m={quiebre:'q Quiebre',riesgo:'r Riesgo',monitorear:'m Monitorear',normal:'n Normal',sobrestock:'s Sobrestock',sin_fc:'sf Sin FC'};var p=(m[a]||'sf ?').split(' ');return kpill(p[0],p.slice(1).join(' '));}
 
 // ── RESUMEN ──
 function buildResumen(){
   var g=el('rcards');
-  g.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:14px';
-  g.innerHTML=COMPS.map(function(c){
+  g.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:14px';
+  // Filtro global: si gCompFilter está set, mostrar solo ese
+  var compsShow = gCompFilter ? [gCompFilter] : COMPS;
+  // Mapa de "es bueno bajar" por KPI (todos los rk son indicadores de problema → bajar es bueno → invert=true)
+  var INVERT_DELTA = {quiebre:true,riesgo:true,monitorear:true,normal:false,sobrestock:true,coc5:true,sob_oc:true};
+  g.innerHTML=compsShow.map(function(c){
     var rv=R[c];var col=CC[c];
     var u=UMBRALES[c]||UMBRALES.DEFAULT;
+    var dlt=(DELTAS && DELTAS.R && DELTAS.R[c])||{};
     var kh=KD.map(function(d){
       var val=rv[d.rk]||0;
       var lbl=d.dynLbl?d.dynLbl(c):d.lbl;
-      return '<div style="display:flex;flex-direction:column;align-items:center;padding:7px 4px;border-radius:6px;cursor:pointer;text-align:center;background:rgba(0,0,0,.15);border:1px solid rgba(128,128,128,.2)" onclick="opKpi(\''+c+'\',\''+d.k+'\')" title="'+lbl+'">'+
+      var dv=dlt[d.rk];
+      var inv = (d.rk in INVERT_DELTA) ? INVERT_DELTA[d.rk] : true;
+      var arr = dArrow(dv, inv);
+      return '<div style="display:flex;flex-direction:column;align-items:center;padding:7px 4px;border-radius:6px;cursor:pointer;text-align:center;background:rgba(0,0,0,.15);border:1px solid rgba(128,128,128,.2)" onclick="opKpi(\''+c+'\',\''+d.k+'\')" title="'+lbl+(dv?(' (Δ vs W'+(DELTAS.sem_prev||'?')+': '+(dv>0?'+':'')+dv+')'):'')+'">'+
         '<span style="font-size:1.2rem;font-weight:900;line-height:1;color:var(--'+d.cls+',#888)">'+val+'</span>'+
-        '<span style="font-size:.55rem;margin-top:2px;color:var(--'+d.cls+',#888)">'+lbl+'</span></div>';
+        '<span style="font-size:.55rem;margin-top:2px;color:var(--'+d.cls+',#888)">'+lbl+'</span>'+
+        (arr?'<span style="font-size:.58rem;margin-top:1px">'+arr+'</span>':'')+
+        '</div>';
     }).join('');
     var tot=rv.skus||1;
     var segs=[[rv.quiebre,'#E24B4A'],[rv.riesgo,'#E8C52A'],[rv.monitorear,'#E87B2A'],[rv.normal,'#639922'],[rv.sobrestock,'#378ADD']];
     var bs2=segs.map(function(s){return s[0]>0?'<div style="width:'+(s[0]/tot*100).toFixed(1)+'%;height:100%;background:'+s[1]+'"></div>':'';}).join('');
     var ls=segs.filter(function(s){return s[0]>0;}).map(function(s,i){var lbl=['Q','R','M','N','S'][i];return '<span style="font-size:.58rem;color:'+s[1]+';display:flex;align-items:center;gap:2px"><span style="width:6px;height:6px;border-radius:50%;background:'+s[1]+';display:inline-block"></span>'+lbl+' '+(s[0]/tot*100).toFixed(0)+'%</span>';}).join('');
+    var vsArr=dArrow(dlt.valor_stock, true);
     return '<div style="background:#1a1f2e;border:1px solid #2d3452;border-radius:10px;padding:12px">'+
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="width:9px;height:9px;border-radius:50%;background:'+col+';flex-shrink:0"></div><span style="font-size:.82rem;font-weight:700;color:#fff">'+c+'</span><span style="font-size:.67rem;color:var(--muted);margin-left:auto">$'+fMM(rv.valor_stock)+'</span></div>'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div style="width:9px;height:9px;border-radius:50%;background:'+col+';flex-shrink:0"></div><span style="font-size:.82rem;font-weight:700;color:#fff">'+c+'</span><span style="font-size:.67rem;color:var(--muted);margin-left:auto">$'+fMM(rv.valor_stock)+vsArr+'</span></div>'+
       '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">'+kh+'</div>'+
       '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #2d3452"><div style="display:flex;height:8px;border-radius:4px;overflow:hidden;width:100%">'+bs2+'</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px">'+ls+'</div></div></div>';
   }).join('');
-  el('ctb').innerHTML=COMPS.map(function(c){var rv=R[c];return '<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+CC[c]+';margin-right:6px;vertical-align:middle"></span>'+c+'</td><td>'+rv.skus+'</td><td style="color:var(--q);font-weight:700">'+rv.quiebre+'</td><td style="color:var(--rT);font-weight:700">'+rv.riesgo+'</td><td style="color:var(--mT);font-weight:700">'+rv.monitorear+'</td><td style="color:var(--n)">'+rv.normal+'</td><td style="color:var(--s)">'+rv.sobrestock+'</td><td style="color:var(--v);font-weight:700">'+rv.coc5+'</td><td style="color:var(--so);font-weight:700">'+rv.sob_oc+'</td><td>$'+fMM(rv.valor_stock)+'</td></tr>';}).join('');
+  el('ctb').innerHTML=compsShow.map(function(c){var rv=R[c];return '<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+CC[c]+';margin-right:6px;vertical-align:middle"></span>'+c+'</td><td>'+f0(rv.skus)+'</td><td style="color:var(--q);font-weight:700">'+f0(rv.quiebre)+'</td><td style="color:var(--rT);font-weight:700">'+f0(rv.riesgo)+'</td><td style="color:var(--mT);font-weight:700">'+f0(rv.monitorear)+'</td><td style="color:var(--n)">'+f0(rv.normal)+'</td><td style="color:var(--s)">'+f0(rv.sobrestock)+'</td><td style="color:var(--v);font-weight:700">'+f0(rv.coc5)+'</td><td style="color:var(--so);font-weight:700">'+f0(rv.sob_oc)+'</td><td>$'+fMM(rv.valor_stock)+'</td></tr>';}).join('');
   el('mctb').innerHTML=COMPS.map(function(c){var tm=TM[c]||{};return '<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+CC[c]+';margin-right:5px;vertical-align:middle"></span>'+c+'</td><td style="text-align:right">'+f0(tm.ctd||0)+'</td><td style="text-align:right">$'+f0(tm.val||0)+'</td><td>'+tbar(tm.tv||0,'#E87B2A')+'</td><td>'+tbar(tm.tval||0,'#378ADD')+'</td></tr>';}).join('');
   var ctx=el('cMC').getContext('2d');if(window._cMC)window._cMC.destroy();
-  window._cMC=new Chart(ctx,{type:'bar',data:{labels:COMPS,datasets:[{data:COMPS.map(function(c){return (TM[c]||{val:0}).val;}),backgroundColor:COMPS.map(function(c){return CC[c]+'99';}),borderColor:COMPS.map(function(c){return CC[c];}),borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return '$'+f0(x.raw);}}}},scales:{x:{ticks:{color:'#8892b0',font:{size:11}}},y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+fMM(v);}},grid:{color:'#2d3452'}}},onClick:function(e,el2){if(el2.length)opMermaComp(COMPS[el2[0].index]);}}});
+  window._cMC=new Chart(ctx,{type:'bar',data:{labels:COMPS,datasets:[{data:COMPS.map(function(c){return (TM[c]||{val:0}).val;}),backgroundColor:COMPS.map(function(c){return CC[c]+'99';}),borderColor:COMPS.map(function(c){return CC[c];}),borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return '$'+f0(x.raw);}}}},scales:{x:{ticks:{color:'#8892b0',font:{size:11}}},y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+fMM(v);}},grid:{color:'#2d3452'}}}}});
 }
+
+// ── Tabla Estado por SKU ──
+var esPage=1, ES_PER=25, SKUS_=null;
+function rndEstado(){
+  if(!Array.isArray(SKUS_)) SKUS_ = (typeof SKUS!=='undefined' && Array.isArray(SKUS)) ? SKUS : [];
+  var q=(el('es-search')?el('es-search').value:'').toLowerCase().trim();
+  var est=el('es-est')?el('es-est').value:'';
+  var lst=SKUS_.slice();
+  // Filtro global de comprador
+  if(gCompFilter) lst=lst.filter(function(s){return s.comp===gCompFilter;});
+  // Texto: sku o descripción
+  if(q) lst=lst.filter(function(s){return (s.sku||'').toString().toLowerCase().indexOf(q)>=0 || (s.desc||'').toLowerCase().indexOf(q)>=0;});
+  // Estado
+  if(est) lst=lst.filter(function(s){return s.alerta===est;});
+  // Orden: prioridad por severidad estado, luego $valor desc
+  var ORD={quiebre:0,riesgo:1,monitorear:2,normal:3,sobrestock:4,sin_fc:5};
+  lst.sort(function(a,b){var oa=(ORD[a.alerta]!==undefined?ORD[a.alerta]:9),ob=(ORD[b.alerta]!==undefined?ORD[b.alerta]:9);if(oa!==ob)return oa-ob;return (b.val||0)-(a.val||0);});
+  var tot=lst.length;
+  var pages=Math.max(1,Math.ceil(tot/ES_PER));
+  if(esPage>pages) esPage=pages;
+  var sl=lst.slice((esPage-1)*ES_PER, esPage*ES_PER);
+  var info='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(q?' · búsqueda: "'+q+'"':'')+(est?' · estado: '+est:'');
+  el('es-info').innerHTML=info;
+  var html=sl.map(function(s){
+    var cc=CC[s.comp]||'#8892b0';
+    // Δ FC
+    var dp=s.delta_pct;
+    var dpC='<span style="color:var(--muted)">—</span>';
+    if(dp!==null && dp!==undefined){var ab=Math.abs(dp);var col=ab<=30?'var(--n)':(dp>0?'var(--mT)':'var(--q)');dpC='<span style="color:'+col+';font-weight:700">'+(dp>0?'+':'')+dp.toFixed(1)+'%</span>';}
+    var rot=s.rot;
+    var rotC=(rot!==null && rot!==undefined)?rot.toFixed(1)+'×':'<span style="color:var(--muted)">—</span>';
+    return '<tr><td style="font-family:monospace;font-size:.68rem">'+s.sku+'</td>'+
+           '<td>'+s.desc+'</td>'+
+           '<td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+cc+';margin-right:5px;vertical-align:middle"></span>'+s.comp+'</td>'+
+           '<td style="text-align:right;color:var(--muted)">'+f0(s.scd||0)+'</td>'+
+           '<td style="text-align:right;color:var(--muted)">'+f0(s.sq||0)+'</td>'+
+           '<td style="text-align:right;color:var(--muted)">'+f0(s.sh||0)+'</td>'+
+           '<td style="text-align:right;font-weight:700">'+f0(s.stock||0)+'</td>'+
+           '<td style="text-align:right">'+f0(s.oc||0)+'</td>'+
+           '<td style="text-align:right">'+f0(s.c4_real||0)+'</td>'+
+           '<td style="text-align:right">'+f0(s.c4||0)+'</td>'+
+           '<td style="text-align:right">'+dpC+'</td>'+
+           '<td style="text-align:right">'+rotC+'</td>'+
+           '<td>'+ba(s.alerta)+'</td>'+
+           '<td style="text-align:right">'+fC(s.cob)+'</td>'+
+           '<td style="text-align:right;color:var(--v)">'+fC(s.cob4)+'</td>'+
+           '</tr>';
+  }).join('');
+  el('es-tb').innerHTML=html||'<tr><td colspan="15" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
+  // Paginación
+  var ph='';
+  if(pages>1){
+    if(esPage>1)ph+='<button class="pb" onclick="esGo('+(esPage-1)+')">←</button>';
+    var s2=Math.max(1,esPage-2),e2=Math.min(pages,esPage+2);
+    if(s2>1)ph+='<button class="pb" onclick="esGo(1)">1</button>'+(s2>2?'<span style="color:var(--muted);font-size:.65rem;padding:0 2px">…</span>':'');
+    for(var i=s2;i<=e2;i++)ph+='<button class="pb'+(i===esPage?' active':'')+'" onclick="esGo('+i+')">'+i+'</button>';
+    if(e2<pages)ph+=(e2<pages-1?'<span style="color:var(--muted);font-size:.65rem;padding:0 2px">…</span>':'')+'<button class="pb" onclick="esGo('+pages+')">'+pages+'</button>';
+    if(esPage<pages)ph+='<button class="pb" onclick="esGo('+(esPage+1)+')">→</button>';
+  }
+  ph+='<span class="pi">'+((esPage-1)*ES_PER+1)+'–'+Math.min(esPage*ES_PER,tot)+' de '+f0(tot)+'</span>';
+  el('es-pag').innerHTML=ph;
+}
+function esGo(p){esPage=p;rndEstado();}
 
 function opMermaComp(comp){
   var dc=DC[comp]||{};var sems=Object.keys(dc).sort(function(a,b){return +a-+b;});
@@ -401,9 +688,21 @@ function opKpi(comp,key){
             '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:right;position:sticky;top:0;z-index:1;white-space:nowrap">Cob.actual</th>'+
             '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:right;position:sticky;top:0;z-index:1;white-space:nowrap">Cob.c/OC 4w</th>'+
             '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:right;position:sticky;top:0;z-index:1;white-space:nowrap">Cob.c/OC 12w</th>'+
+            '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:right;position:sticky;top:0;z-index:1;white-space:nowrap" title="Sesgo del FC vs consumo real últimas 4 sem">Δ FC %</th>'+
             '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:left;position:sticky;top:0;z-index:1;white-space:nowrap">Estado</th>'+
           '</tr></thead>'+
-          '<tbody>'+rows.map(function(r){return '<tr style="border-bottom:1px solid rgba(45,52,82,.4)"><td style="padding:6px 9px">'+r[0]+'</td><td style="padding:6px 9px">'+r[1]+'</td><td style="padding:6px 9px">'+r[2]+'</td><td style="padding:6px 9px">'+r[3]+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[8])+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[9])+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[10])+'</td><td style="padding:6px 9px;text-align:right;font-weight:700">'+fC(r[12])+'</td><td style="padding:6px 9px;text-align:right;color:var(--v)">'+fC(r[13])+'</td><td style="padding:6px 9px;text-align:right;color:var(--so)">'+fC(r[14])+'</td><td style="padding:6px 9px">'+ba(r[15])+'</td></tr>';}).join('')+
+          '<tbody>'+rows.map(function(r){
+            // r[16] = delta_pct (puede ser null si no hay consumo real)
+            var dp=r[16];
+            var dpCell;
+            if(dp===null||dp===undefined){dpCell='<span style="color:var(--muted)">—</span>';}
+            else{
+              var ab=Math.abs(dp);
+              var dpCol = ab<=30?'var(--n)':(dp>0?'var(--mT)':'var(--q)');
+              var dpTag = ab<=30?'':(dp>0?' ⚠️':' 🚨');
+              dpCell='<span style="color:'+dpCol+';font-weight:700">'+(dp>0?'+':'')+dp.toFixed(1)+'%'+dpTag+'</span>';
+            }
+            return '<tr style="border-bottom:1px solid rgba(45,52,82,.4)"><td style="padding:6px 9px">'+r[0]+'</td><td style="padding:6px 9px">'+r[1]+'</td><td style="padding:6px 9px">'+r[2]+'</td><td style="padding:6px 9px">'+r[3]+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[8])+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[9])+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[10])+'</td><td style="padding:6px 9px;text-align:right;font-weight:700">'+fC(r[12])+'</td><td style="padding:6px 9px;text-align:right;color:var(--v)">'+fC(r[13])+'</td><td style="padding:6px 9px;text-align:right;color:var(--so)">'+fC(r[14])+'</td><td style="padding:6px 9px;text-align:right">'+dpCell+'</td><td style="padding:6px 9px">'+ba(r[15])+'</td></tr>';}).join('')+
           '</tbody></table>'+
       '</div>'+
     '</div>'+
@@ -414,7 +713,7 @@ function opKpi(comp,key){
 // ── PLANIFICADORES ──
 var aPlan='';var PF={PA:{t:'',s:'',p:1},PC:{t:'',s:'',p:1},PS:{t:'',s:'',p:1}};var PER=15;
 function updPlan(){
-  aPlan=el('pcomp').value;
+  aPlan=gCompFilter||'';
   var ns=['PA','PC','PS'];ns.forEach(function(n){PF[n]={t:'',s:'',p:1};el(n.toLowerCase()+'s').value='';['ta','tz','te'].forEach(function(f){el(n.toLowerCase()+'-'+f).classList.toggle('active',f==='ta');});});
   var kv;var skuTotal=0;
   if(aPlan&&R[aPlan]){kv=R[aPlan];skuTotal=kv.skus||1;}
@@ -449,30 +748,36 @@ function sPSr(n,v){PF[n].s=v;PF[n].p=1;rPT(n);}
 
 // ── GERENCIAL ──
 function buildGer(){
-  el('gkpis').innerHTML='<div class="gkv"><div class="gkn">$'+(G.vt/1e9).toFixed(2)+' B</div><div class="gkl">Stock total valorizado</div></div><div class="gkv"><div class="gkn">$'+(G.vz/1e6).toFixed(0)+' MM</div><div class="gkl">Stock ZMPR</div></div><div class="gkv"><div class="gkn">$'+(G.ve/1e6).toFixed(0)+' MM</div><div class="gkl">Stock ZEMP</div></div><div class="gkv"><div class="gkn">'+G.ss+'/'+G.st+'</div><div class="gkl">SKUs con stock</div></div><div class="gkv" style="border-color:rgba(226,75,74,.4)"><div class="gkn" style="color:var(--q)">'+G.q+'</div><div class="gkl">Quiebre</div></div><div class="gkv" style="border-color:rgba(232,197,42,.4)"><div class="gkn" style="color:var(--rT)">'+G.r+'</div><div class="gkl">Riesgo</div></div><div class="gkv" style="border-color:rgba(232,123,42,.4)"><div class="gkn" style="color:var(--mT)">'+G.m+'</div><div class="gkl">Monitorear</div></div><div class="gkv" style="border-color:rgba(99,153,34,.4)"><div class="gkn" style="color:var(--n)">'+G.n+'</div><div class="gkl">Normal</div></div><div class="gkv" style="border-color:rgba(55,138,221,.4)"><div class="gkn" style="color:var(--s)">'+G.s+'</div><div class="gkl">Sobrestock</div></div>';
+  var Ge=effG(); var GRe=effGR(); var GDe=effGD();
+  el('gkpis').innerHTML='<div class="gkv"><div class="gkn">$'+(Ge.vt/1e9).toFixed(2)+' B</div><div class="gkl">Stock total valorizado</div></div><div class="gkv"><div class="gkn">$'+(Ge.vz/1e6).toFixed(0)+' MM</div><div class="gkl">Stock ZMPR</div></div><div class="gkv"><div class="gkn">$'+(Ge.ve/1e6).toFixed(0)+' MM</div><div class="gkl">Stock ZEMP</div></div><div class="gkv"><div class="gkn">'+f0(Ge.ss)+'/'+f0(Ge.st)+'</div><div class="gkl">SKUs con stock</div></div><div class="gkv" style="border-color:rgba(226,75,74,.4)"><div class="gkn" style="color:var(--q)">'+f0(Ge.q)+'</div><div class="gkl">Quiebre</div></div><div class="gkv" style="border-color:rgba(232,197,42,.4)"><div class="gkn" style="color:var(--rT)">'+f0(Ge.r)+'</div><div class="gkl">Riesgo</div></div><div class="gkv" style="border-color:rgba(232,123,42,.4)"><div class="gkn" style="color:var(--mT)">'+f0(Ge.m)+'</div><div class="gkl">Monitorear</div></div><div class="gkv" style="border-color:rgba(99,153,34,.4)"><div class="gkn" style="color:var(--n)">'+f0(Ge.n)+'</div><div class="gkl">Normal</div></div><div class="gkv" style="border-color:rgba(55,138,221,.4)"><div class="gkn" style="color:var(--s)">'+f0(Ge.s)+'</div><div class="gkl">Sobrestock</div></div>';
   var c1=el('cDon').getContext('2d');if(window._cD)window._cD.destroy();
-  window._cD=new Chart(c1,{type:'doughnut',data:{labels:['Quiebre','Riesgo','Monitorear','Normal','Sobrestock'],datasets:[{data:[G.q,G.r,G.m,G.n,G.s],backgroundColor:['#E24B4A','#E8C52A','#E87B2A','#639922','#378ADD'],borderWidth:2,borderColor:'#1a1f2e'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e2e8f0',font:{size:10},padding:8}}}}});
+  window._cD=new Chart(c1,{type:'doughnut',data:{labels:['Quiebre','Riesgo','Monitorear','Normal','Sobrestock'],datasets:[{data:[Ge.q,Ge.r,Ge.m,Ge.n,Ge.s],backgroundColor:['#E24B4A','#E8C52A','#E87B2A','#639922','#378ADD'],borderWidth:2,borderColor:'#1a1f2e'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e2e8f0',font:{size:10},padding:8}}}}});
   var c2=el('cEst').getContext('2d');if(window._cE)window._cE.destroy();
-  window._cE=new Chart(c2,{type:'bar',data:{labels:['Quiebre','Riesgo','Monitorear','Normal','Sobrestock'],datasets:[{data:[G.q,G.r,G.m,G.n,G.s],backgroundColor:['#E24B4A99','#E8C52A99','#E87B2A99','#63992299','#378ADD99'],borderColor:['#E24B4A','#E8C52A','#E87B2A','#639922','#378ADD'],borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return x.raw+' SKUs';}}}},scales:{x:{ticks:{color:'#8892b0',font:{size:10}}},y:{ticks:{color:'#8892b0'},grid:{color:'#2d3452'}}}}});
-  // Chart grupos por GD ordenado por valor
-  var gdS=GD.slice().sort(function(a,b){return b[4]-a[4];}).filter(function(g){return g[4]>=1000000;});
+  window._cE=new Chart(c2,{type:'bar',data:{labels:['Quiebre','Riesgo','Monitorear','Normal','Sobrestock'],datasets:[{data:[Ge.q,Ge.r,Ge.m,Ge.n,Ge.s],backgroundColor:['#E24B4A99','#E8C52A99','#E87B2A99','#63992299','#378ADD99'],borderColor:['#E24B4A','#E8C52A','#E87B2A','#639922','#378ADD'],borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return f0(x.raw)+' SKUs';}}}},scales:{x:{ticks:{color:'#8892b0',font:{size:10}}},y:{ticks:{color:'#8892b0'},grid:{color:'#2d3452'}}}}});
+  var gdS=GDe.slice().sort(function(a,b){return b[4]-a[4];}).filter(function(g){return g[4]>=1000000;});
   var c3=el('cGru').getContext('2d');if(window._cGr)window._cGr.destroy();
   var taC={'ZMPR':'#6366f1','ZEMP':'#E87B2A'};
   window._cGr=new Chart(c3,{type:'bar',data:{labels:gdS.map(function(g){return g[1];}),datasets:[{data:gdS.map(function(g){return +(g[4]/1e6).toFixed(1);}),backgroundColor:gdS.map(function(g){return (taC[g[0]]||'#888')+'99';}),borderColor:gdS.map(function(g){return taC[g[0]]||'#888';}),borderWidth:1.5,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return '$'+x.raw.toFixed(1)+' MM';},title:function(items){var g=gdS[items[0].dataIndex];return g[1]+' ('+g[0]+') — '+g[2]+' SKUs';}}}},scales:{x:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+v.toFixed(0)+'MM';}},grid:{color:'#2d3452'}},y:{ticks:{color:'#e2e8f0',font:{size:10.5}}}}}});
   var tb=el('gtb');var html='';
-  var gByT={};GD.forEach(function(g){if(!gByT[g[0]])gByT[g[0]]=[];gByT[g[0]].push(g);});
-  GR.forEach(function(gr,gi){var ta=gr[0];var col=taC[ta]||'#888';var tot=Math.max(gr[5]+gr[6]+gr[7]+gr[8]+gr[9],1);
+  var gByT={};GDe.forEach(function(g){if(!gByT[g[0]])gByT[g[0]]=[];gByT[g[0]].push(g);});
+  GRe.forEach(function(gr,gi){var ta=gr[0];var col=taC[ta]||'#888';
     var db=distBar([[gr[5],'#E24B4A'],[gr[6],'#E8C52A'],[gr[7],'#E87B2A'],[gr[9],'#639922'],[gr[8],'#378ADD']]);
-    html+='<tr style="background:#232840;cursor:pointer" onclick="togGrupos('+gi+')"><td><span style="color:'+col+';font-weight:800;font-size:.8rem">'+ta+'</span> <span style="font-size:.65rem;color:var(--muted)" id="arr-'+gi+'">▼</span></td><td style="font-weight:700">'+gr[1]+'</td><td style="text-align:right;font-weight:700">'+f0(gr[2])+'</td><td style="text-align:right;font-weight:700;color:'+col+'">$'+fMM(gr[3])+'</td><td style="text-align:right">'+gr[4]+'w</td><td>'+db+'</td><td style="color:var(--q)">'+gr[5]+'</td><td style="color:var(--rT)">'+gr[6]+'</td><td style="color:var(--mT)">'+gr[7]+'</td><td style="color:var(--s)">'+gr[8]+'</td><td style="color:var(--n)">'+gr[9]+'</td></tr>';
-    (gByT[ta]||[]).forEach(function(gd){var stot=Math.max(gd[6]+gd[7]+gd[8]+gd[9]+gd[10],1);var sdb=distBar([[gd[6],'#E24B4A'],[gd[7],'#E8C52A'],[gd[8],'#E87B2A'],[gd[10],'#639922'],[gd[9],'#378ADD']],80,5);
-      html+='<tr class="gdet-'+gi+'" style="display:none;background:#1a1f2e"><td style="padding-left:20px;color:#c0caf5;font-size:.7rem">↳ '+gd[1]+'</td><td style="font-size:.7rem">'+gd[2]+'</td><td style="text-align:right;font-size:.7rem">'+f0(gd[3])+'</td><td style="text-align:right;font-size:.7rem">$'+fMM(gd[4])+'</td><td style="text-align:right;font-size:.7rem">'+gd[5]+'w</td><td>'+sdb+'</td><td style="color:var(--q);font-size:.7rem">'+gd[6]+'</td><td style="color:var(--rT);font-size:.7rem">'+gd[7]+'</td><td style="color:var(--mT);font-size:.7rem">'+gd[8]+'</td><td style="color:var(--s);font-size:.7rem">'+gd[9]+'</td><td style="color:var(--n);font-size:.7rem">'+gd[10]+'</td></tr>';});
+    html+='<tr style="background:#232840;cursor:pointer" onclick="togGrupos('+gi+')"><td><span style="color:'+col+';font-weight:800;font-size:.8rem">'+ta+'</span> <span style="font-size:.65rem;color:var(--muted)" id="arr-'+gi+'">▼</span></td><td style="font-weight:700">'+f0(gr[1])+'</td><td style="text-align:right;font-weight:700">'+f0(gr[2])+'</td><td style="text-align:right;font-weight:700;color:'+col+'">$'+fMM(gr[3])+'</td><td style="text-align:right">'+gr[4]+'w</td><td>'+db+'</td><td style="color:var(--q)">'+gr[5]+'</td><td style="color:var(--rT)">'+gr[6]+'</td><td style="color:var(--mT)">'+gr[7]+'</td><td style="color:var(--s)">'+gr[8]+'</td><td style="color:var(--n)">'+gr[9]+'</td></tr>';
+    (gByT[ta]||[]).forEach(function(gd){var sdb=distBar([[gd[6],'#E24B4A'],[gd[7],'#E8C52A'],[gd[8],'#E87B2A'],[gd[10],'#639922'],[gd[9],'#378ADD']],80,5);
+      html+='<tr class="gdet-'+gi+'" style="display:none;background:#1a1f2e"><td style="padding-left:20px;color:#c0caf5;font-size:.7rem">↳ '+gd[1]+'</td><td style="font-size:.7rem">'+f0(gd[2])+'</td><td style="text-align:right;font-size:.7rem">'+f0(gd[3])+'</td><td style="text-align:right;font-size:.7rem">$'+fMM(gd[4])+'</td><td style="text-align:right;font-size:.7rem">'+gd[5]+'w</td><td>'+sdb+'</td><td style="color:var(--q);font-size:.7rem">'+gd[6]+'</td><td style="color:var(--rT);font-size:.7rem">'+gd[7]+'</td><td style="color:var(--mT);font-size:.7rem">'+gd[8]+'</td><td style="color:var(--s);font-size:.7rem">'+gd[9]+'</td><td style="color:var(--n);font-size:.7rem">'+gd[10]+'</td></tr>';});
   });tb.innerHTML=html;
 }
 function togGrupos(gi){var rows=document.querySelectorAll('.gdet-'+gi);var ar=el('arr-'+gi);var showing=rows.length>0&&rows[0].style.display!=='none';for(var i=0;i<rows.length;i++)rows[i].style.display=showing?'none':'table-row';if(ar)ar.textContent=showing?'▼':'▲';}
 
 // ── MERMAS ──
 var cMV=null,cTs=null,aMerma='';
-function onMerma(){aMerma=el('msel').value;el('sdp').classList.remove('show');var trend=aMerma?TC[aMerma]:TA;updMKpis();updMCharts(trend);bldSemTbl(trend);}
+// Mermas usa filtro global de comprador (no tiene dropdown local)
+function onMerma(){
+  aMerma = gCompFilter || '';
+  el('sdp').classList.remove('show');
+  var trend = aMerma ? (TC[aMerma]||TA) : TA;
+  updMKpis(); updMCharts(trend); bldSemTbl(trend);
+}
 function updMKpis(){var val=0,tv=0,tval=0,ctd=0;if(aMerma){var tm=TM[aMerma]||{};val=tm.val||0;tv=tm.tv||0;tval=tm.tval||0;ctd=tm.ctd||0;}else{COMPS.forEach(function(c){var tm=TM[c]||{};val+=tm.val||0;ctd+=tm.ctd||0;});var tCM=TA.reduce(function(a,r){return a+r[1];},0),tCC=TA.reduce(function(a,r){return a+r[3];},0),tVM=TA.reduce(function(a,r){return a+r[2];},0),tVC=TA.reduce(function(a,r){return a+r[4];},0);tv=(tCM+tCC)>0?tCM/(tCC+tCM)*100:0;tval=(tVM+tVC)>0?tVM/(tVC+tVM)*100:0;}
   el('mkpis').innerHTML='<div class="mkv"><div class="mkn">$'+fMM(val)+'</div><div class="mkl">Valor mermado neto</div></div><div class="mkv"><div class="mkn">'+fP(tv)+'</div><div class="mkl">Tasa vol. prom.</div></div><div class="mkv"><div class="mkn">'+fP(tval)+'</div><div class="mkl">Tasa val. prom.</div></div><div class="mkv"><div class="mkn">'+f0(ctd)+'</div><div class="mkl">Qty mermada neta</div></div>';}
 function updMCharts(trend){var labels=trend.map(function(r){return 'S'+r[0];});var valM=trend.map(function(r){return r[2];});var tvA=trend.map(function(r){return r[5];});var tvlA=trend.map(function(r){return r[6];});var n=Math.max(tvA.length,1);var avgTv=tvA.reduce(function(a,v){return a+v;},0)/n;var avgTvl=tvlA.reduce(function(a,v){return a+v;},0)/n;
@@ -486,20 +791,31 @@ function bldTop10(){el('tp10').innerHTML=TP.map(function(r){return '<tr><td>'+r[
 
 // ── KPIs AVANZADOS ──
 function buildKpiAv(){
-  // Capital inmovilizado
-  el('cap-kpis').innerHTML='<div class="kpia-card danger"><div class="kpia-n">$'+fMM(CAP.total)+'</div><div class="kpia-l">Capital exceso (&gt;10 sem)</div></div><div class="kpia-card warn"><div class="kpia-n">$'+fMM(CAP.val_sob)+'</div><div class="kpia-l">Valor total sobrestock</div></div><div class="kpia-card"><div class="kpia-n">'+CAP.n_sob+'</div><div class="kpia-l">SKUs en sobrestock</div></div><div class="kpia-card info"><div class="kpia-n">10 sem</div><div class="kpia-l">Umbral sobrestock</div></div>';
+  // Vistas efectivas (filtradas si gCompFilter está set, sino globales).
+  // BLOQ se mantiene SIN filtro (vista comparativa: clic en barra muestra detalle del comprador).
+  var CAP=effCAP(), ROT=effROT(), BIAS=effBIAS();
+  // ── Capital Inmovilizado consolidado (cobertura + rotación) ──
+  // KPIs unificados: exceso financiero · slow movers · stock muerto · stock total atrapado
+  var dCap=gCompFilter?{}:(DELTAS.CAP||{}); var dRot=gCompFilter?{}:(DELTAS.ROT||{});
+  var totalAtrap = (ROT.val_slow||0) + (ROT.val_muerto||0);
+  el('cap-kpis').innerHTML=
+    '<div class="kpia-card danger"><div class="kpia-n">$'+fMM(CAP.total)+dArrow(dCap.total,true)+'</div><div class="kpia-l">Capital exceso (&gt;10 sem cob.)</div></div>'+
+    '<div class="kpia-card warn"><div class="kpia-n">$'+fMM(ROT.val_slow)+dArrow(dRot.val_slow,true)+'</div><div class="kpia-l">Slow movers ('+ROT.n_slow+' SKUs · rot &lt;'+ROT.umb_slow+'×)</div></div>'+
+    '<div class="kpia-card danger"><div class="kpia-n">$'+fMM(ROT.val_muerto)+dArrow(dRot.val_muerto,true)+'</div><div class="kpia-l">Stock muerto ('+ROT.n_muerto+' SKUs · '+ROT.sem_dead+' sem sin mov.)</div></div>'+
+    '<div class="kpia-card"><div class="kpia-n">'+ROT.doh_pond+' días'+dArrow(dRot.doh_pond,true)+'</div><div class="kpia-l">Días inv. ponderados por $ (DOH)</div></div>';
   var capG=CAP.grupos.slice().sort(function(a,b){return b.capital-a.capital;});
   var cC=el('cCAP').getContext('2d');if(window._cCAP)window._cCAP.destroy();
   window._cCAP=new Chart(cC,{type:'bar',data:{labels:capG.map(function(g){return g.grupo_articulo;}),datasets:[{data:capG.map(function(g){return +(g.capital/1e6).toFixed(1);}),backgroundColor:capG.map(function(g){return (GC[g.grupo_articulo]||'#888')+'99';}),borderColor:capG.map(function(g){return GC[g.grupo_articulo]||'#888';}),borderWidth:1.5,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return '$'+x.raw.toFixed(1)+' MM';}}}},scales:{x:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+v+'MM';}},grid:{color:'#2d3452'}},y:{ticks:{color:'#e2e8f0',font:{size:10.5}}}},onClick:function(e,el2){if(el2.length)opKpiDw(capG[el2[0].index].grupo_articulo,'sob');}}});
-  el('cap-tbl').innerHTML=capG.map(function(g){var pct=g.valor>0?Math.round(g.capital/g.valor*100):0;return '<tr><td>'+g.grupo_articulo+'</td><td>'+g.n+'</td><td style="text-align:right">$'+fMM(g.valor)+'</td><td style="text-align:right;font-weight:700;color:var(--rT)">$'+fMM(g.capital)+'</td><td style="text-align:right">'+pct+'%</td></tr>';}).join('');
+  el('cap-tbl').innerHTML=capG.map(function(g){var pct=g.valor>0?Math.round(g.capital/g.valor*100):0;return '<tr><td style="padding:3px 5px">'+g.grupo_articulo+'</td><td style="padding:3px 5px;text-align:right">'+f0(g.n)+'</td><td style="padding:3px 5px;text-align:right">$'+fMM(g.valor)+'</td><td style="padding:3px 5px;text-align:right;font-weight:700;color:var(--rT)">$'+fMM(g.capital)+'</td><td style="padding:3px 5px;text-align:right">'+pct+'%</td></tr>';}).join('');
 
   // ── Desviación FC (proxy ponderado por $) ──
+  var dBias=gCompFilter?{}:(DELTAS.BIAS||{});
   var bDirCls=BIAS.bias_dir>0?'warn':(BIAS.bias_dir<0?'danger':'ok');
   el('bias-kpis').innerHTML=
-    '<div class="kpia-card '+bDirCls+'"><div class="kpia-n">'+(BIAS.bias_dir>0?'+':'')+BIAS.bias_dir+'%</div><div class="kpia-l">Bias direccional ($) — '+(BIAS.bias_dir>0?'FC sobreestima':BIAS.bias_dir<0?'FC subestima':'balanceado')+'</div></div>'+
-    '<div class="kpia-card warn"><div class="kpia-n">'+BIAS.wape+'%</div><div class="kpia-l">WAPE aprox. ponderado $</div></div>'+
+    '<div class="kpia-card '+bDirCls+'"><div class="kpia-n">'+(BIAS.bias_dir>0?'+':'')+BIAS.bias_dir+'%'+dArrowPct(dBias.bias_dir,false)+'</div><div class="kpia-l">Bias direccional ($) — '+(BIAS.bias_dir>0?'FC sobreestima':BIAS.bias_dir<0?'FC subestima':'balanceado')+'</div></div>'+
+    '<div class="kpia-card warn"><div class="kpia-n">'+BIAS.wape+'%'+dArrowPct(dBias.wape,true)+'</div><div class="kpia-l">WAPE aprox. ponderado $</div></div>'+
     '<div class="kpia-card danger"><div class="kpia-n">'+BIAS.n_merma+' / '+BIAS.n_quiebre+'</div><div class="kpia-l">SKUs sobreestima / subestima (&gt;'+BIAS.umbral_pct+'%)</div></div>'+
-    '<div class="kpia-card"><div class="kpia-n">$'+fMM(BIAS.val_riesgo)+'</div><div class="kpia-l">$ stock con sesgo &gt;'+BIAS.umbral_pct+'%</div></div>';
+    '<div class="kpia-card"><div class="kpia-n">$'+fMM(BIAS.val_riesgo)+dArrow(dBias.val_riesgo,true)+'</div><div class="kpia-l">$ stock con sesgo &gt;'+BIAS.umbral_pct+'%</div></div>';
 
   // Gráfico 1: bias direccional zero-centered diverging
   var bG=BIAS.grupos.slice().sort(function(a,b){return a.bias_dir-b.bias_dir;});
@@ -604,11 +920,10 @@ function buildKpiAv(){
   var BK_LBL={rapido:'Rápido ≥26×',normal:'Normal 12-26×',lento:'Lento 6-12×',slow:'Slow <6×',muerto:'Muerto (8 sem)'};
   var BK_COL={rapido:'#1D9E75',normal:'#639922',lento:'#E8C52A',slow:'#E87B2A',muerto:'#E24B4A'};
 
-  el('rot-kpis').innerHTML=
-    '<div class="kpia-card danger"><div class="kpia-n">$'+fMM(ROT.val_muerto)+'</div><div class="kpia-l">Stock muerto ('+ROT.n_muerto+' SKUs, '+ROT.sem_dead+' sem sin mov.)</div></div>'+
-    '<div class="kpia-card warn"><div class="kpia-n">$'+fMM(ROT.val_slow)+'</div><div class="kpia-l">Slow movers ('+ROT.n_slow+' SKUs, rot &lt;'+ROT.umb_slow+'×)</div></div>'+
-    '<div class="kpia-card"><div class="kpia-n">'+ROT.doh_pond+' días</div><div class="kpia-l">Días inv. ponderados por $</div></div>'+
-    '<div class="kpia-card info"><div class="kpia-n">$'+fMM(ROT.val_total)+'</div><div class="kpia-l">Stock total (universo rotación)</div></div>';
+  // rot-kpis consolidado en cap-kpis (Capital Inmovilizado). Mantenemos el render guardado por compatibilidad si el elemento existe.
+  if(el('rot-kpis')){
+    el('rot-kpis').innerHTML='';
+  }
 
   // Gráfico 1: distribución del stock por bucket de velocidad ($)
   var distData=ROT.bucket_dist;
@@ -721,9 +1036,9 @@ function buildKpiAv(){
   el('rot-dead').innerHTML=(ROT.top_muerto||[]).map(function(r){return _rotRow(r,false);}).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:14px">Sin stock muerto</td></tr>';
   el('rot-slow').innerHTML=(ROT.top_slow ||[]).map(function(r){return _rotRow(r,true);}).join('') ||'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:14px">Sin slow movers</td></tr>';
 
-  // Bloqueados
-  var bTot=BLOQ.val;
-  el('bloq-kpis').innerHTML='<div class="kpia-card danger"><div class="kpia-n">$'+fMM(BLOQ.val)+'</div><div class="kpia-l">Valor total bloqueado BL01</div></div><div class="kpia-card warn"><div class="kpia-n">'+BLOQ.n+'</div><div class="kpia-l">SKUs bloqueados</div></div><div class="kpia-card"><div class="kpia-n">Quilicura</div><div class="kpia-l">Centro (4010 — BL01)</div></div><div class="kpia-card info"><div class="kpia-n">'+(BLOQ.comp&&BLOQ.comp[0]?BLOQ.comp[0].comprador:'—')+'</div><div class="kpia-l">Mayor exposición</div></div>';
+  // Bloqueados (vista global, sin filtro de comprador)
+  var bTot=BLOQ.val; var dBl=DELTAS.BLOQ||{};
+  el('bloq-kpis').innerHTML='<div class="kpia-card danger"><div class="kpia-n">$'+fMM(BLOQ.val)+dArrow(dBl.val,true)+'</div><div class="kpia-l">Valor total bloqueado BL01</div></div><div class="kpia-card warn"><div class="kpia-n">'+BLOQ.n+dArrow(dBl.n,true)+'</div><div class="kpia-l">SKUs bloqueados</div></div><div class="kpia-card"><div class="kpia-n">Quilicura</div><div class="kpia-l">Centro (4010 — BL01)</div></div><div class="kpia-card info"><div class="kpia-n">'+(BLOQ.comp&&BLOQ.comp[0]?BLOQ.comp[0].comprador:'—')+'</div><div class="kpia-l">Mayor exposición</div></div>';
   var cBl=el('cBLOQ').getContext('2d');if(window._cBLOQ)window._cBLOQ.destroy();
   var bComps=(BLOQ.comp||[]).filter(function(c){return c.comprador!=='SIN ASIGNAR';});
   window._cBLOQ=new Chart(cBl,{type:'bar',data:{labels:bComps.map(function(c){return c.comprador;}),datasets:[{data:bComps.map(function(c){return +(c.valor/1e6).toFixed(1);}),backgroundColor:bComps.map(function(c){return (CC[c.comprador]||'#888')+'99';}),borderColor:bComps.map(function(c){return CC[c.comprador]||'#888';}),borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return '$'+x.raw.toFixed(1)+' MM';}}}},scales:{x:{ticks:{color:'#8892b0',font:{size:11}}},y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+v+'MM';}},grid:{color:'#2d3452'}}},onClick:function(e,el2){if(el2.length){var compClicked=bComps[el2[0].index].comprador;opBloqDw(compClicked);}}}});;
@@ -831,12 +1146,16 @@ fetch('data.json?v='+Date.now())
   .then(function(_D){
     R=_D.R;SD=_D.SD;PA=_D.PA;PC=_D.PC;PS=_D.PS;G=_D.G;GR=_D.GR;GD=_D.GD;
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
-    CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;BLOQ=_D.BLOQ;SEM=_D.SEM;
+    CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
+    DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
     var _h=document.getElementById('hsem-txt');
-    if(_h) _h.textContent='Semana '+SEM+(_D.FECHA?(' · '+_D.FECHA):'');
+    if(_h){
+      var vsT = (DELTAS && DELTAS.sem_prev) ? (' · vs SEM '+DELTAS.sem_prev) : '';
+      _h.textContent='Semana '+SEM+(_D.FECHA?(' · '+_D.FECHA):'')+vsT;
+    }
 
-    buildResumen();buildGer();updPlan();updMKpis();updMCharts(TA);bldSemTbl(TA);bldTop10();buildKpiAv();
+    buildResumen();rndEstado();buildGer();updPlan();updMKpis();updMCharts(TA);bldSemTbl(TA);bldTop10();buildKpiAv();
 
     var ov=document.getElementById('ld-overlay');
     if(ov) ov.remove();
