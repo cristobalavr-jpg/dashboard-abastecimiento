@@ -130,6 +130,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   <div class="tab" onclick="showTab(4)">💰 Capital Inmovilizado</div>
   <div class="tab" onclick="showTab(5)">📡 Desviación forecast</div>
   <div class="tab" onclick="showTab(7)">🔒 Stock bloqueado</div>
+  <div class="tab" onclick="showTab(9)">📦 Terceros e Insumos</div>
   <div class="tab" onclick="showTab(8)">⚠️ Quiebres SEM</div>
 </div>
 
@@ -276,6 +277,32 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 </div>
 <!-- lazy load del iframe ahora se maneja dentro de showTab() -->
 
+<!-- Terceros e Insumos -->
+<div id="t9" class="pg">
+  <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.25);border-radius:7px;padding:8px 12px;margin-bottom:10px;font-size:.7rem;color:#a4b4ce">
+    💡 Categorías: PT MERCADERIA + IN INSUMOS ASEO/SEGURIDAD/GENERALES + INSUMOS GENERAL. Stock desde MOBIDIC (centros 4010/4020/4120, excl. BL01/EX01/EX02). Consumo real: MB51 mov 601 (CD→tiendas); fallback MB51 mov 201/261/262/641 centros 4010/4020 cuando el SKU se consume en plantas (ver PARAMETRO.MD A.4.3).
+  </div>
+  <div class="gk" id="ti-kpis"></div>
+  <div class="cr">
+    <div class="cb"><div class="ct">Stock valorizado por Categoría ($CLP)</div><div class="cw"><canvas id="cTIdon"></canvas></div></div>
+    <div class="cb"><div class="ct">Top 10 SKUs por valor de stock — Pareto</div><div class="cw" style="height:300px"><canvas id="cTIpar"></canvas></div><div class="hint">Línea naranja: % acumulado del $ total.</div></div>
+  </div>
+  <div class="stt">Detalle SKU <button onclick="expXls('ti-tb','terceros_insumos')" style="float:right;background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
+  <div class="fr"><input type="text" class="si" id="ti-q" placeholder="Buscar por SKU o descripción..." oninput="rndTI()" style="width:280px"><select class="csel" id="ti-cat" onchange="rndTI()"><option value="">Todas las categorías</option></select><span style="font-size:.66rem;color:var(--muted)" id="ti-info"></span></div>
+  <div class="tw" style="margin-bottom:6px"><table><thead><tr>
+    <th>SKU</th><th>Descripción</th><th>UM</th><th>Categoría</th>
+    <th style="text-align:right">Stock total</th><th style="text-align:right">Valor ($)</th>
+    <th style="text-align:right" title="Rotación anual">Rot.</th><th style="text-align:right">Días inv.</th>
+    <th style="text-align:right" title="Cons. promedio últimas 4 sem">Cons. 4w</th>
+    <th style="text-align:right" title="OC en tránsito">OC trán.</th>
+  </tr></thead><tbody id="ti-tb"></tbody></table></div>
+  <div style="display:flex;gap:14px;font-size:.65rem;color:var(--muted);margin-top:6px;flex-wrap:wrap">
+    <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#378ADD;margin-right:4px"></span>Consumo desde CD (mov 601)</span>
+    <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#63992288;margin-right:4px"></span>Consumo desde plantas (fallback)</span>
+    <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#475670;margin-right:4px"></span>Sin consumo</span>
+  </div>
+</div>
+
 <!-- DRAWER -->
 <div class="dw-wrap" id="dww">
   <div class="dw-ov" onclick="closeDw()"></div>
@@ -299,7 +326,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 
 
 // ── GLOBAL DATA NAMESPACE ───────────────────────────────────────────────────
-var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS;
+var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI;
 var gCompFilter='';  // filtro global de comprador
 
 // ── Helper: indicador delta (flecha ↑↓) ──
@@ -537,6 +564,8 @@ function showTab(i){
   var pg=document.getElementById('t'+i); if(pg) pg.classList.add('active');
   // Lazy load del iframe de Quiebres SEM
   if(i===8){var ifr=document.getElementById('qb-frame');if(ifr&&!ifr.src) ifr.src='quiebres.html?v='+Date.now();}
+  // Lazy render de Terceros e Insumos
+  if(i===9 && !window._tiBuilt){ try{ buildTI(); window._tiBuilt=true; }catch(e){ console.error('TI build:',e); } }
 }
 function kpill(c,l){return '<span class="kpill kp'+c+'">'+l+'</span>';}
 function pAlerta(a){var m={quiebre:'q Quiebre',riesgo:'r Riesgo',monitorear:'m Monitorear',normal:'n Normal',sobrestock:'s Sobrestock',sin_fc:'sf Sin FC'};var p=(m[a]||'sf ?').split(' ');return kpill(p[0],p.slice(1).join(' '));}
@@ -1138,6 +1167,94 @@ function opBloqDw(comp){
   var tmp=document.createElement('div');tmp.innerHTML=popHtml;document.body.appendChild(tmp.firstChild);
 }
 
+// ── TERCEROS E INSUMOS ────────────────────────────────────────────────────
+var _tiCharts = {don:null, par:null};
+function buildTI(){
+  if(!TI || !TI.skus){ el('ti-tb').innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:18px">Sin datos de Terceros e Insumos</td></tr>'; return; }
+  // KPIs
+  var f0 = function(n){return Math.round(n).toLocaleString('es-CL');};
+  var k = el('ti-kpis');
+  k.innerHTML =
+    '<div class="gkv"><div class="gkn">'+TI.cats.length+'</div><div class="gkl">Categorías</div></div>'+
+    '<div class="gkv"><div class="gkn">'+f0(TI.total_sku)+'</div><div class="gkl">SKUs</div></div>'+
+    '<div class="gkv"><div class="gkn">$'+f0(TI.total_val/1e6)+' MM</div><div class="gkl">Valor total stock</div></div>'+
+    '<div class="gkv"><div class="gkn">'+TI.pareto_pct+'%</div><div class="gkl">Top 10 (% valor)</div></div>'+
+    '<div class="gkv"><div class="gkn">SEM '+(TI.win && TI.win.length?(TI.win[0]+'-'+TI.win[TI.win.length-1]):'—')+'</div><div class="gkl">Ventana consumo</div></div>';
+
+  // Select de categorías
+  var sel = el('ti-cat');
+  sel.innerHTML='<option value="">Todas las categorías</option>'+TI.cats.map(function(c){return '<option value="'+c.g+'">'+c.g+'</option>';}).join('');
+
+  // Donut por categoría
+  var COLORS=['#378ADD','#63992288','#E87B2A','#7c3aed','#E24B4A','#1D9E75'];
+  if(_tiCharts.don) _tiCharts.don.destroy();
+  _tiCharts.don = new Chart(el('cTIdon'),{
+    type:'doughnut',
+    data:{labels:TI.cats.map(function(c){return c.g;}),
+      datasets:[{data:TI.cats.map(function(c){return c.val;}),backgroundColor:COLORS.slice(0,TI.cats.length),borderColor:'#1a1f2e',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
+      plugins:{legend:{position:'bottom',labels:{color:'#dbe4f3',font:{size:10},boxWidth:10,padding:8}},
+        tooltip:{callbacks:{label:function(ctx){var c=TI.cats[ctx.dataIndex];var pct=TI.total_val>0?(c.val/TI.total_val*100).toFixed(1):'0';return c.g+': $'+f0(c.val)+' ('+pct+'% · '+c.n+' SKUs)';}}}}}
+  });
+
+  // Pareto horizontal Top 10
+  var acum=0; var acumArr = TI.pareto.map(function(p){acum+=p.pct;return Math.round(acum*10)/10;});
+  if(_tiCharts.par) _tiCharts.par.destroy();
+  _tiCharts.par = new Chart(el('cTIpar'),{
+    data:{labels:TI.pareto.map(function(p){return p.sku+' · '+p.desc.slice(0,26);}),
+      datasets:[
+        {type:'bar',label:'$ valor',data:TI.pareto.map(function(p){return p.val;}),backgroundColor:'#378ADD',borderRadius:4,yAxisID:'y'},
+        {type:'line',label:'% acumulado',data:acumArr,borderColor:'#E87B2A',backgroundColor:'#E87B2A',tension:.25,yAxisID:'y1',pointRadius:3}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{labels:{color:'#dbe4f3',font:{size:10}}},
+        tooltip:{callbacks:{label:function(ctx){if(ctx.dataset.type==='line')return '% acum: '+ctx.raw+'%';var p=TI.pareto[ctx.dataIndex];return '$'+f0(p.val)+' ('+p.pct+'% · '+p.cat+')';}}}},
+      scales:{x:{position:'top',ticks:{color:'#8892b0',callback:function(v){return '$'+f0(v);}},grid:{color:'#2d3452'}},
+              y:{ticks:{color:'#8892b0',font:{size:9}},grid:{display:false}},
+              y1:{position:'right',min:0,max:100,ticks:{color:'#E87B2A',callback:function(v){return v+'%';}},grid:{display:false}}}}
+  });
+
+  rndTI();
+}
+
+function rndTI(){
+  if(!TI || !TI.skus) return;
+  var f0 = function(n){return Math.round(n).toLocaleString('es-CL');};
+  var f2 = function(n){return Number(n).toLocaleString('es-CL',{maximumFractionDigits:2});};
+  var q = (el('ti-q').value||'').trim().toLowerCase();
+  var cat = el('ti-cat').value;
+  var rows = TI.skus.filter(function(s){
+    if(cat && s.cat!==cat) return false;
+    if(q && !(s.sku.toLowerCase().indexOf(q)>=0 || s.desc.toLowerCase().indexOf(q)>=0)) return false;
+    return true;
+  });
+  function rotPill(rot,c4r){
+    if((c4r||0)<=0) return '<span class="ba baq">Muerto</span>';
+    if(rot==null) return '<span style="color:var(--muted)">—</span>';
+    var cls='bas'; if(rot>=26) cls='ban'; else if(rot<6) cls='bam';
+    return '<span class="ba '+cls+'">'+f2(rot)+'×</span>';
+  }
+  function srcDot(fc){
+    var col = fc==='cd_601'?'#378ADD':(fc==='plantas'?'#63992288':'#475670');
+    return '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+col+';margin-right:5px;vertical-align:middle"></span>';
+  }
+  el('ti-tb').innerHTML = rows.map(function(s){
+    return '<tr>'+
+      '<td><b>'+s.sku+'</b></td>'+
+      '<td>'+s.desc+'</td>'+
+      '<td>'+s.um+'</td>'+
+      '<td><span style="font-size:.62rem;color:var(--muted)">'+s.cat+'</span></td>'+
+      '<td style="text-align:right">'+f2(s.stock)+'</td>'+
+      '<td style="text-align:right">$'+f0(s.valor)+'</td>'+
+      '<td style="text-align:right">'+rotPill(s.rot,s.c4r)+'</td>'+
+      '<td style="text-align:right">'+(s.dias!=null?f0(s.dias):'—')+'</td>'+
+      '<td style="text-align:right">'+srcDot(s.fc)+(s.c4r>0?f2(s.c4r):'—')+'</td>'+
+      '<td style="text-align:right">'+(s.oc>0?f2(s.oc):'—')+'</td>'+
+    '</tr>';
+  }).join('');
+  el('ti-info').textContent = rows.length+' SKUs'+((q||cat)?(' (filtrado de '+TI.skus.length+')'):'');
+}
+
 // ── INIT ──
 
 
@@ -1151,6 +1268,7 @@ fetch('data.json?v='+Date.now())
     R=_D.R;SD=_D.SD;PA=_D.PA;PC=_D.PC;PS=_D.PS;G=_D.G;GR=_D.GR;GD=_D.GD;
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
+    TI=_D.TI||null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
     var _h=document.getElementById('hsem-txt');
