@@ -163,7 +163,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   <div class="fr"><button class="sb active" id="ps-ta" onclick="sPF('PS','t','')">Todos</button><button class="sb" id="ps-tz" onclick="sPF('PS','t','ZMPR')">ZMPR</button><button class="sb" id="ps-te" onclick="sPF('PS','t','ZEMP')">ZEMP</button><input type="text" class="si" id="pss" placeholder="Buscar..." oninput="sPSr('PS',this.value)"></div>
   <div class="tw" style="margin-bottom:6px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>OC</th><th>Stock+OC</th><th style="color:var(--so)">Cob.c/OC 12w</th></tr></thead><tbody id="pstb"></tbody></table></div>
   <div class="pag" id="pspag"></div>
-  <div class="stt" style="margin-top:18px">Forecast por semana — todos los SKU <button onclick="expXls('fcwtb','forecast_por_semana')" style="float:right;background:#1D9E7530;color:#1D9E75;border:1px solid #1D9E75;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
+  <div class="stt" style="margin-top:18px">Forecast por semana — todos los SKU <button onclick="expFCW()" style="float:right;background:#1D9E7530;color:#1D9E75;border:1px solid #1D9E75;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="fr"><input type="text" class="si" id="fcws" placeholder="Buscar por SKU o descripción..." oninput="sFCW(this.value)" style="width:320px"></div>
   <div class="tw" style="margin-bottom:6px;max-height:520px;overflow:auto"><table><thead id="fcwth"></thead><tbody id="fcwtb"></tbody></table></div>
   <div class="pag" id="fcwpag"></div>
@@ -786,6 +786,20 @@ function sPSr(n,v){PF[n].s=v;PF[n].p=1;rPT(n);}
 // ── Forecast por semana (todos los SKU) ──
 var FCWF={s:'',p:1};var FCW_PER=50;
 function sFCW(v){FCWF.s=v;FCWF.p=1;rndFCW();}
+function expFCW(){
+  if(!FCW||!FCW.rows){return;}
+  var weeks=FCW.weeks||[];
+  var q=(FCWF.s||'').toLowerCase().trim();
+  var fd=q?FCW.rows.filter(function(r){return (r[0]||'').toLowerCase().indexOf(q)>=0||(r[1]||'').toLowerCase().indexOf(q)>=0;}):FCW.rows;
+  var header=['SKU','Descripción','UM'].concat(weeks.map(function(w){return 'S'+w;}));
+  var aoa=[header].concat(fd.map(function(r){return r.slice();}));
+  try{
+    var ws=XLSX.utils.aoa_to_sheet(aoa);
+    var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Forecast');
+    var stamp=new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb,'forecast_por_semana_'+stamp+'.xlsx');
+  }catch(e){alert('Error exportando: '+e.message);}
+}
 function gPFCW(p){FCWF.p=p;rndFCW();}
 function rndFCW(){
   if(!FCW||!FCW.rows){return;}
