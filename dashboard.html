@@ -163,6 +163,10 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   <div class="fr"><button class="sb active" id="ps-ta" onclick="sPF('PS','t','')">Todos</button><button class="sb" id="ps-tz" onclick="sPF('PS','t','ZMPR')">ZMPR</button><button class="sb" id="ps-te" onclick="sPF('PS','t','ZEMP')">ZEMP</button><input type="text" class="si" id="pss" placeholder="Buscar..." oninput="sPSr('PS',this.value)"></div>
   <div class="tw" style="margin-bottom:6px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>OC</th><th>Stock+OC</th><th style="color:var(--so)">Cob.c/OC 12w</th></tr></thead><tbody id="pstb"></tbody></table></div>
   <div class="pag" id="pspag"></div>
+  <div class="stt" style="margin-top:18px">Forecast por semana — todos los SKU <button onclick="expXls('fcwtb','forecast_por_semana')" style="float:right;background:#1D9E7530;color:#1D9E75;border:1px solid #1D9E75;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
+  <div class="fr"><input type="text" class="si" id="fcws" placeholder="Buscar por SKU o descripción..." oninput="sFCW(this.value)" style="width:320px"></div>
+  <div class="tw" style="margin-bottom:6px;max-height:520px;overflow:auto"><table><thead id="fcwth"></thead><tbody id="fcwtb"></tbody></table></div>
+  <div class="pag" id="fcwpag"></div>
 </div>
 
 <div id="t2" class="pg">
@@ -326,7 +330,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 
 
 // ── GLOBAL DATA NAMESPACE ───────────────────────────────────────────────────
-var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI;
+var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW;
 var gCompFilter='';  // filtro global de comprador
 
 // ── Helper: indicador delta (flecha ↑↓) ──
@@ -778,6 +782,35 @@ function rPag(n,p,pages,tot){var div=el(n.toLowerCase()+'pag');if(pages<=1){div.
 function gP(n,p){PF[n].p=p;rPT(n);}
 function sPF(n,f,v){if(f==='t'){PF[n].t=v;PF[n].p=1;var px=n.toLowerCase()+'-';['ta','tz','te'].forEach(function(x){el(px+x).classList.toggle('active',x===(v===''?'ta':v==='ZMPR'?'tz':'te'));});}rPT(n);}
 function sPSr(n,v){PF[n].s=v;PF[n].p=1;rPT(n);}
+
+// ── Forecast por semana (todos los SKU) ──
+var FCWF={s:'',p:1};var FCW_PER=50;
+function sFCW(v){FCWF.s=v;FCWF.p=1;rndFCW();}
+function gPFCW(p){FCWF.p=p;rndFCW();}
+function rndFCW(){
+  if(!FCW||!FCW.rows){return;}
+  var th=el('fcwth'),tb=el('fcwtb');
+  var weeks=FCW.weeks||[];
+  th.innerHTML='<tr><th>SKU</th><th>Descripción</th><th>UM</th>'+weeks.map(function(w){return '<th style="text-align:right">S'+w+'</th>';}).join('')+'</tr>';
+  var q=(FCWF.s||'').toLowerCase().trim();
+  var fd=q?FCW.rows.filter(function(r){return (r[0]||'').toLowerCase().indexOf(q)>=0||(r[1]||'').toLowerCase().indexOf(q)>=0;}):FCW.rows;
+  var tot=fd.length,pages=Math.max(1,Math.ceil(tot/FCW_PER));
+  FCWF.p=Math.min(FCWF.p,pages);
+  var sl=fd.slice((FCWF.p-1)*FCW_PER,FCWF.p*FCW_PER);
+  tb.innerHTML=sl.map(function(r){
+    var cells='<td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td>';
+    for(var i=0;i<weeks.length;i++){var v=r[3+i]||0;cells+='<td style="text-align:right">'+(v?f0(v):'—')+'</td>';}
+    return '<tr>'+cells+'</tr>';
+  }).join('');
+  // Paginación
+  var div=el('fcwpag');
+  if(pages<=1){div.innerHTML='<span class="pi">'+tot+' SKUs</span>';return;}
+  var h='';var sh=[1,pages];
+  for(var i=Math.max(1,FCWF.p-1);i<=Math.min(pages,FCWF.p+1);i++)if(sh.indexOf(i)<0)sh.push(i);
+  sh.sort(function(a,b){return a-b;});
+  var prev=0;sh.forEach(function(i){if(prev&&i-prev>1)h+='<span style="color:var(--muted);padding:0 2px">…</span>';h+='<button class="pb'+(i===FCWF.p?' active':'')+'" onclick="gPFCW('+i+')">'+i+'</button>';prev=i;});
+  h+='<span class="pi">'+tot+' SKUs</span>';div.innerHTML=h;
+}
 
 // ── GERENCIAL ──
 function buildGer(){
@@ -1268,7 +1301,7 @@ fetch('data.json?v='+Date.now())
     R=_D.R;SD=_D.SD;PA=_D.PA;PC=_D.PC;PS=_D.PS;G=_D.G;GR=_D.GR;GD=_D.GD;
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
-    TI=_D.TI||null;
+    TI=_D.TI||null;FCW=_D.FCW||null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
     var _h=document.getElementById('hsem-txt');
@@ -1280,7 +1313,7 @@ fetch('data.json?v='+Date.now())
     var _y = (_D.FECHA && _D.FECHA.length>=10) ? _D.FECHA.slice(-4) : new Date().getFullYear();
     document.title = 'Dashboard Abastecimiento — Semana ' + SEM + ' · ' + _y;
 
-    buildResumen();rndEstado();buildGer();updPlan();updMKpis();updMCharts(TA);bldSemTbl(TA);bldTop10();buildKpiAv();
+    buildResumen();rndEstado();buildGer();updPlan();rndFCW();updMKpis();updMCharts(TA);bldSemTbl(TA);bldTop10();buildKpiAv();
 
     var ov=document.getElementById('ld-overlay');
     if(ov) ov.remove();
