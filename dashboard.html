@@ -235,7 +235,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   </div>
   <div class="mk" id="mkpis"></div>
   <div class="cr">
-    <div class="cb"><div class="ct">Valor mermado por semana · clic en barra para detalle / clasificar</div><div class="cw"><canvas id="cMV" style="cursor:pointer"></canvas></div></div>
+    <div class="cb"><div class="ct">Valor mermado por semana · rojo = sin NC / pendientes · azul = con NC · clic para clasificar</div><div class="cw"><canvas id="cMV" style="cursor:pointer"></canvas></div></div>
     <div class="cb"><div class="ct">Tasa Volumen (naranja) y Tasa Valorizada (azul)</div><div class="cw"><canvas id="cTs"></canvas></div></div>
   </div>
   <div class="cr">
@@ -264,7 +264,6 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
       <option>Matiaz Z</option>
     </select>
     <div class="mc-err" id="mc-pinErr">PIN incorrecto o usuario no seleccionado.</div>
-    <div class="mc-hint">PIN actual del prototipo: <b>1234</b>. En producción lo valida el backend (Apps Script).</div>
     <div class="mc-mbtns">
       <button class="mc-mbtn" onclick="mcClosePin()">Cancelar</button>
       <button class="mc-mbtn primary" onclick="mcSubmitPin()">Entrar</button>
@@ -967,9 +966,25 @@ function updMKpis(){
     '<div class="mkv"><div class="mkn">'+fP(mc.pctClasif)+'</div><div class="mkl">% registros clasificados</div></div>'+
     '<div class="mkv"><div class="mkn">'+f0(ctd)+'</div><div class="mkl">Qty mermada neta</div></div>';
 }
-function updMCharts(trend){var labels=trend.map(function(r){return 'S'+r[0];});var valM=trend.map(function(r){return r[2];});var tvA=trend.map(function(r){return r[5];});var tvlA=trend.map(function(r){return r[6];});var n=Math.max(tvA.length,1);var avgTv=tvA.reduce(function(a,v){return a+v;},0)/n;var avgTvl=tvlA.reduce(function(a,v){return a+v;},0)/n;
+function updMCharts(trend){var labels=trend.map(function(r){return 'S'+r[0];});var tvA=trend.map(function(r){return r[5];});var tvlA=trend.map(function(r){return r[6];});var n=Math.max(tvA.length,1);var avgTv=tvA.reduce(function(a,v){return a+v;},0)/n;var avgTvl=tvlA.reduce(function(a,v){return a+v;},0)/n;
+  // Split por semana: sin NC (No/Pendiente/sin clasificar) vs con NC (Sí)
+  var semAgg = (typeof mcAggSem==='function') ? mcAggSem() : [];
+  var semMap = {}; semAgg.forEach(function(o){ semMap[o.sem] = o; });
+  var dSinNC = trend.map(function(r){ var o=semMap[r[0]]; return o ? Math.round(o.valSinNC) : Math.round(r[2]); });
+  var dConNC = trend.map(function(r){ var o=semMap[r[0]]; return o ? Math.round(o.valNC)   : 0; });
   var c1=el('cMV').getContext('2d');if(cMV)cMV.destroy();
-  cMV=new Chart(c1,{type:'bar',data:{labels:labels,datasets:[{data:valM,backgroundColor:'#E87B2A99',borderColor:'#E87B2A',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return '$'+f0(x.raw);}}}},scales:{x:{ticks:{color:'#8892b0',font:{size:10}}},y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+fMM(v);}},grid:{color:'#2d3452'}}},onClick:function(e,el2){if(el2.length)opSemDet(trend[el2[0].index][0]);}}});
+  cMV=new Chart(c1,{type:'bar',
+    data:{labels:labels,datasets:[
+      {label:'Sin NC + Pendientes (merma neta)', data:dSinNC, backgroundColor:'#E24B4Acc', borderColor:'#E24B4A', borderWidth:1.2, borderRadius:3, stack:'m'},
+      {label:'Con NC = Sí (recuperado)',          data:dConNC, backgroundColor:'#378ADDcc', borderColor:'#378ADD', borderWidth:1.2, borderRadius:3, stack:'m'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#e2e8f0',font:{size:10},padding:6,boxWidth:14}},
+        tooltip:{callbacks:{label:function(x){return x.dataset.label+': $'+f0(x.parsed.y);},
+          footer:function(items){var tot=items.reduce(function(a,i){return a+i.parsed.y;},0); return 'Total: $'+f0(tot);}}}},
+      scales:{x:{stacked:true,ticks:{color:'#8892b0',font:{size:10}}},
+              y:{stacked:true,ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+fMM(v);}},grid:{color:'#2d3452'}}},
+      onClick:function(e,els){if(els.length)opSemDet(trend[els[0].index][0]);}}});
   var c2=el('cTs').getContext('2d');if(cTs)cTs.destroy();
   cTs=new Chart(c2,{type:'line',data:{labels:labels,datasets:[{label:'Tasa Vol.%',data:tvA,borderColor:'#E87B2A',backgroundColor:'#E87B2A15',yAxisID:'y',tension:.35,pointRadius:4,fill:true},{label:'Tasa Val.%',data:tvlA,borderColor:'#378ADD',backgroundColor:'#378ADD15',yAxisID:'y2',tension:.35,pointRadius:4,fill:true},{label:'Prom.Vol '+fP(avgTv),data:trend.map(function(){return avgTv;}),borderColor:'#E87B2A',borderDash:[5,4],yAxisID:'y',pointRadius:0,borderWidth:1.5},{label:'Prom.Val '+fP(avgTvl),data:trend.map(function(){return avgTvl;}),borderColor:'#378ADD',borderDash:[5,4],yAxisID:'y2',pointRadius:0,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#e2e8f0',font:{size:10},padding:8}}},scales:{x:{ticks:{color:'#8892b0',font:{size:10}}},y:{ticks:{color:'#E87B2A',font:{size:10},callback:function(v){return v.toFixed(2)+'%';}},grid:{color:'#2d3452'},position:'left'},y2:{ticks:{color:'#378ADD',font:{size:10},callback:function(v){return v.toFixed(2)+'%';}},grid:{display:false},position:'right'}}}});}
 var MC_CUR_SEM = null;
@@ -1215,8 +1230,11 @@ function mcOnChg(k, field, value){
     var ncSel = row.querySelector('select[onchange*="\'nc\'"]');
     if(ncSel) ncSel.setAttribute('data-nc', ncSel.value||'');
   }
-  // refresca KPIs, causa chart, resumen, top10 (UI optimista)
-  updMKpis(); mcRenderCausa(); mcRenderResumen(); bldTop10();
+  // refresca KPIs, charts (incl. stacked cMV), causa chart, resumen, top10 (UI optimista)
+  updMKpis();
+  var _trend = aMerma ? (TC[aMerma]||TA) : TA;
+  updMCharts(_trend);
+  mcRenderCausa(); mcRenderResumen(); bldTop10();
   // Persistir en backend si está configurado
   var parts = k.split('|'); var sku=parts[0], sem=parts[1];
   mcBackendSave(k, sku, sem, cur.causa, cur.nc, MC_USUARIO).then(function(res){
