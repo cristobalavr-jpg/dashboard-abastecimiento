@@ -145,8 +145,8 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 .mc-dw-wrap.open{pointer-events:all}
 .mc-dw-ov{position:absolute;inset:0;background:rgba(0,0,0,.5);opacity:0;transition:opacity .2s}
 .mc-dw-wrap.open .mc-dw-ov{opacity:1}
-.mc-dw{position:absolute;top:0;left:-1020px;width:1000px;max-width:96vw;height:100%;background:#1a1f2e;border-right:1px solid var(--border);display:flex;flex-direction:column;transition:left .22s ease;box-shadow:4px 0 20px rgba(0,0,0,.4)}
-.mc-dw-wrap.open .mc-dw{left:0}
+.mc-dw{position:absolute;top:0;right:-1020px;width:1000px;max-width:96vw;height:100%;background:#1a1f2e;border-left:1px solid var(--border);display:flex;flex-direction:column;transition:right .22s ease;box-shadow:-4px 0 20px rgba(0,0,0,.4)}
+.mc-dw-wrap.open .mc-dw{right:0}
 .mc-dw-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
 .mc-dw-tit{font-size:.85rem;font-weight:700;flex:1;color:#fff}
 .mc-dw-cl{background:none;border:1px solid var(--border);border-radius:5px;padding:4px 11px;cursor:pointer;font-size:.72rem;color:var(--muted)}
@@ -995,6 +995,8 @@ function opSemDet(sem){
     '<th>Comprador</th>'+
     '<th style="text-align:right">Qty</th>'+
     '<th style="text-align:right">$Valor</th>'+
+    '<th style="text-align:right">Tasa Vol</th>'+
+    '<th style="text-align:right">Tasa Val</th>'+
     '<th>Causa de merma</th>'+
     '<th>Nota de crédito</th>'+
     '<th></th>'+
@@ -1005,12 +1007,21 @@ function opSemDet(sem){
     var optCausa = ['<option value="">— seleccionar —</option>'].concat(CAUSAS.map(function(x){return '<option '+(c.causa===x?'selected':'')+'>'+x+'</option>';})).join('');
     var optNC = ['<option value="">— seleccionar —</option>'].concat(NCS.map(function(x){return '<option '+(c.nc===x?'selected':'')+'>'+x+'</option>';})).join('');
     var meta = c.usuario ? '<div style="font-size:.6rem;color:var(--muted);margin-top:2px">'+c.usuario+' · '+(c.ts||'')+'</div>' : '';
+    // p[6]=qty_cons, p[7]=val_cons (puede no existir en data.json viejo → fallback '—')
+    var qC = (p.length>6 && p[6]!=null) ? +p[6] : null;
+    var vC = (p.length>7 && p[7]!=null) ? +p[7] : null;
+    var tV = (qC!=null && (p[3]+qC)>0) ? (p[3]/(p[3]+qC)*100) : null;
+    var tVl= (vC!=null && (p[4]+vC)>0) ? (p[4]/(p[4]+vC)*100) : null;
+    var tVStr = tV!=null ? '<span style="color:#E87B2A">'+tV.toFixed(2)+'%</span>' : '<span style="color:var(--muted)">—</span>';
+    var tVlStr= tVl!=null? '<span style="color:#378ADD">'+tVl.toFixed(2)+'%</span>' : '<span style="color:var(--muted)">—</span>';
     h += '<tr data-mck="'+k+'">'+
       '<td><code>'+p[0]+'</code></td>'+
       '<td>'+p[1]+meta+'</td>'+
       '<td>'+rw.comp+'</td>'+
       '<td style="text-align:right">'+f0(p[3])+'</td>'+
       '<td style="text-align:right;font-weight:700">$'+f0(p[4])+'</td>'+
+      '<td style="text-align:right">'+tVStr+'</td>'+
+      '<td style="text-align:right">'+tVlStr+'</td>'+
       '<td><select class="mc-dd '+roCls+'" '+ro+' onchange="mcOnChg(\''+k+'\',\'causa\',this.value)" data-saved="'+(c.causa?1:0)+'">'+optCausa+'</select></td>'+
       '<td><select class="mc-dd '+roCls+'" '+ro+' onchange="mcOnChg(\''+k+'\',\'nc\',this.value)" data-saved="'+(c.nc?1:0)+'" data-nc="'+(c.nc||'')+'">'+optNC+'</select></td>'+
       '<td><span class="mc-badge '+(c.causa||c.nc?'ok':'')+'" id="mcb_'+k+'">'+(c.causa||c.nc?'✓':'—')+'</span></td>'+
@@ -1063,13 +1074,53 @@ function bldTop10(){
 // Config negocio (también documentado en PARAMETRO.MD)
 var MC_CAUSAS = ['Merma por Bodega','Merma por Condición de Producto','Merma por Descontinuación','Merma por Sobrestock','Merma de ACI','Merma de I+D'];
 var MC_NC = ['No','Sí','Pendiente'];
-var MC_PIN = '1234'; // TODO: validar en backend (Apps Script) al migrar
+var MC_PIN = '1234'; // ⚠️ El backend revalida el PIN; sincronizar este valor con el del Apps Script.
+// === BACKEND (Google Apps Script Web App) ===
+// Pegar aquí la URL del Web App tras desplegarlo. Vacío = modo solo-localStorage (offline / monousuario).
+var MC_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbw8MN5vWRw6-97ifzOj6oWLfoitrAXUf3USuEZ3fhP2wPH-HQtpTEh6Xz_bNPxZaMlk/exec';
+var MC_BACKEND_OK = false; // se setea true tras GET exitoso
 var MC_LS_KEY = 'mc_clasif_v1', MC_LS_USR = 'mc_user_v1', MC_LS_EDIT = 'mc_edit_v1';
 var MC_CLASIF = (function(){ try{return JSON.parse(localStorage.getItem(MC_LS_KEY)||'{}');}catch(e){return {};}})();
 var MC_USUARIO = localStorage.getItem(MC_LS_USR) || '';
 var MC_EDIT = (localStorage.getItem(MC_LS_EDIT)==='1') && !!MC_USUARIO;
 var cMCausa = null;
 function mcSave(){ localStorage.setItem(MC_LS_KEY, JSON.stringify(MC_CLASIF)); }
+// Backend helpers
+function mcNormalizeTs(t){
+  if(!t) return '';
+  if(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(t)) return String(t).slice(0,16).replace('T',' ');
+  var d = new Date(t);
+  if(isNaN(d.getTime())) return String(t);
+  var p = function(n){return n<10?'0'+n:n;};
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+function mcBackendLoad(){
+  if(!MC_BACKEND_URL) return Promise.resolve(false);
+  return fetch(MC_BACKEND_URL, {method:'GET'})
+    .then(function(r){return r.json();})
+    .then(function(j){
+      if(j && j.ok && j.clasif){
+        MC_CLASIF = {};
+        Object.keys(j.clasif).forEach(function(k){
+          var c = j.clasif[k];
+          MC_CLASIF[k] = {causa:c.causa||undefined, nc:c.nc||undefined, usuario:c.usuario||undefined, ts:mcNormalizeTs(c.ts)};
+        });
+        mcSave(); MC_BACKEND_OK = true;
+        return true;
+      }
+      return false;
+    })
+    .catch(function(e){ console.warn('[mc] backend GET fail',e); return false; });
+}
+function mcBackendSave(clave, sku, semana, causa, nc, usuario){
+  if(!MC_BACKEND_URL) return Promise.resolve(false);
+  var body = JSON.stringify({pin:MC_PIN, clave:clave, sku:String(sku), semana:+semana,
+                              causa:causa||'', nc:nc||'', usuario:usuario||''});
+  // text/plain evita CORS preflight (Apps Script no maneja OPTIONS correctamente)
+  return fetch(MC_BACKEND_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:body})
+    .then(function(r){return r.json();})
+    .catch(function(e){ console.warn('[mc] backend POST fail',e); return {ok:false, error:String(e)}; });
+}
 function mcIsNet(rec){ if(!rec) return true; return rec.nc !== 'Sí'; }
 // Walk DC respetando filtro de comprador. cb(comp, sem, p)
 function mcWalk(cb){
@@ -1159,18 +1210,38 @@ function mcOnChg(k, field, value){
   mcSave();
   var row = document.querySelector('tr[data-mck="'+k+'"]');
   if(row){
-    var b = el('mcb_'+k); if(b){ b.textContent='✓'; b.className='mc-badge ok'; }
+    var b = el('mcb_'+k); if(b){ b.textContent='⏳'; b.className='mc-badge'; }
     row.querySelectorAll('.mc-dd').forEach(function(s){s.setAttribute('data-saved','1');});
     var ncSel = row.querySelector('select[onchange*="\'nc\'"]');
     if(ncSel) ncSel.setAttribute('data-nc', ncSel.value||'');
   }
-  mcNotif('Guardado ✓');
-  // refresca KPIs, causa chart, resumen, top10
+  // refresca KPIs, causa chart, resumen, top10 (UI optimista)
   updMKpis(); mcRenderCausa(); mcRenderResumen(); bldTop10();
+  // Persistir en backend si está configurado
+  var parts = k.split('|'); var sku=parts[0], sem=parts[1];
+  mcBackendSave(k, sku, sem, cur.causa, cur.nc, MC_USUARIO).then(function(res){
+    var b = el('mcb_'+k);
+    if(MC_BACKEND_URL){
+      if(res && res.ok){
+        if(b){ b.textContent='✓'; b.className='mc-badge ok'; }
+        if(res.ts && MC_CLASIF[k]){ MC_CLASIF[k].ts = res.ts; mcSave(); }
+        mcNotif('Guardado en servidor ✓');
+      } else {
+        if(b){ b.textContent='⚠'; b.className='mc-badge'; b.style.color='var(--q)'; }
+        mcNotif('Error guardando en servidor — guardado solo local', false);
+      }
+    } else {
+      if(b){ b.textContent='✓'; b.className='mc-badge ok'; }
+      mcNotif('Guardado ✓ (local)');
+    }
+  });
 }
 function mcUpdLockUI(){
   var lbl = el('mc-usr-lbl'); var btn = el('mc-lock-btn');
-  lbl.textContent = MC_USUARIO ? '👤 '+MC_USUARIO : 'No identificado';
+  var status = '';
+  if(MC_BACKEND_URL){ status = MC_BACKEND_OK ? ' <span style="color:var(--n)" title="Backend conectado">●</span>' : ' <span style="color:var(--q)" title="Backend no responde">●</span>'; }
+  else { status = ' <span style="color:var(--rT)" title="Modo solo local (sin backend)">●</span>'; }
+  lbl.innerHTML = (MC_USUARIO ? '👤 '+MC_USUARIO : 'No identificado') + status;
   if(MC_EDIT){ btn.classList.add('on'); btn.innerHTML='✏️ Modo edición'; }
   else { btn.classList.remove('on'); btn.innerHTML='🔒 Modo consulta'; }
 }
@@ -1675,6 +1746,11 @@ fetch('data.json?v='+Date.now())
 
     buildResumen();rndEstado();buildGer();updPlan();rndFCW();updMKpis();updMCharts(TA);bldTop10();buildKpiAv();
     mcUpdLockUI(); mcRenderCausa(); mcRenderResumen();
+    // Hidrata clasificaciones desde backend (si configurado) y re-renderiza
+    mcBackendLoad().then(function(loaded){
+      mcUpdLockUI();
+      if(loaded){ updMKpis(); mcRenderCausa(); mcRenderResumen(); bldTop10(); }
+    });
 
     var ov=document.getElementById('ld-overlay');
     if(ov) ov.remove();
