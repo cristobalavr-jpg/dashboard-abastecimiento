@@ -140,6 +140,22 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 .mc-hint{font-size:.65rem;color:var(--muted);margin-top:6px;line-height:1.4}
 .mc-notif{position:fixed;bottom:18px;right:18px;background:#1a1f2e;border:1px solid var(--n);border-radius:8px;padding:10px 16px;color:var(--n);font-size:.75rem;font-weight:600;box-shadow:0 4px 18px rgba(0,0,0,.5);opacity:0;transform:translateY(10px);transition:all .25s;z-index:1100;pointer-events:none}
 .mc-notif.show{opacity:1;transform:translateY(0)}
+/* Drawer izquierdo · detalle mermas */
+.mc-dw-wrap{position:fixed;inset:0;z-index:999;pointer-events:none}
+.mc-dw-wrap.open{pointer-events:all}
+.mc-dw-ov{position:absolute;inset:0;background:rgba(0,0,0,.5);opacity:0;transition:opacity .2s}
+.mc-dw-wrap.open .mc-dw-ov{opacity:1}
+.mc-dw{position:absolute;top:0;left:-1020px;width:1000px;max-width:96vw;height:100%;background:#1a1f2e;border-right:1px solid var(--border);display:flex;flex-direction:column;transition:left .22s ease;box-shadow:4px 0 20px rgba(0,0,0,.4)}
+.mc-dw-wrap.open .mc-dw{left:0}
+.mc-dw-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.mc-dw-tit{font-size:.85rem;font-weight:700;flex:1;color:#fff}
+.mc-dw-cl{background:none;border:1px solid var(--border);border-radius:5px;padding:4px 11px;cursor:pointer;font-size:.72rem;color:var(--muted)}
+.mc-dw-body{flex:1;overflow-y:auto;padding:10px 14px}
+.mc-dw-body table{width:100%;font-size:.72rem;border-collapse:collapse}
+.mc-dw-body thead th{background:#232840;color:var(--muted);padding:7px 9px;text-align:left;font-weight:600;white-space:nowrap;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2}
+.mc-dw-body tbody td{padding:6px 9px;color:#e2e8f0;border-bottom:1px solid rgba(45,52,82,.4);vertical-align:middle}
+.mc-dw-body tbody tr:hover{background:rgba(35,40,64,.5)}
+.mc-dw-foot{padding:9px 14px;border-top:1px solid var(--border);font-size:.67rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -226,9 +242,6 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
     <div class="cb"><div class="ct">Mermas por Causa (neto sin NC = Sí) — período completo</div><div class="cw"><canvas id="cMCausa"></canvas></div></div>
     <div class="cb"><div class="ct">Resumen por semana — % clasificado, monto sin NC</div><div class="tw" style="border:none;background:transparent;max-height:240px;overflow-y:auto"><table><thead><tr><th>Sem</th><th>SKUs</th><th>$Val total</th><th>$Val sin NC</th><th>$Val con NC</th><th>% clasif.</th><th></th></tr></thead><tbody id="mc-resTb"></tbody></table></div></div>
   </div>
-  <div class="dp" id="sdp"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px"><span id="sdt" style="font-size:.76rem;font-weight:700;color:#c0caf5"></span><button onclick="document.getElementById('sdp').classList.remove('show')" style="background:none;border:none;color:var(--muted);cursor:pointer">✕</button></div><div class="tw"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Comprador</th><th style="text-align:right">Qty mermada</th><th style="text-align:right">Valor ($)</th><th>Causa de merma</th><th>Nota de crédito</th><th></th></tr></thead><tbody id="sdtb"></tbody></table></div></div>
-  <div class="stt" style="margin-top:8px">Semanas 2026</div>
-  <div class="tw" style="margin-bottom:14px"><table><thead><tr><th>Semana</th><th>Qty mermada</th><th>Val.merma ($)</th><th>Qty consumida</th><th>Val.consumo (MM)</th><th>Tasa vol.</th><th>Tasa val.</th></tr></thead><tbody id="tsem"></tbody></table></div>
   <div class="stt">Total Top 10 Materiales por Valor Mermado <button onclick="expXls('tp10','top10_mermas')" style="float:right;background:#E87B2A30;color:#E87B2A;border:1px solid #E87B2A;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="tw"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th style="text-align:right">Qty</th><th style="text-align:right">Valor ($)</th><th>Tasa vol.</th><th>Tasa val.</th><th style="text-align:right">N° sem</th><th style="text-align:right">% clasif.</th></tr></thead><tbody id="tp10"></tbody></table></div>
   <div class="fbox">Merma neta = 551 − 552 | Tasa Vol. = qty_neta/(qty_consumo+qty_neta)×100 | Tasa Val. = val_neta/(qty_consumo×pu+val_neta)×100 | Merma neta sin NC = Σ val donde NC ∈ {"No","Pendiente"} o sin clasificar</div>
@@ -259,6 +272,22 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   </div>
 </div>
 <div class="mc-notif" id="mc-notif">Guardado ✓</div>
+
+<!-- Drawer izquierdo · detalle de mermas por semana -->
+<div class="mc-dw-wrap" id="mc-drwWrap">
+  <div class="mc-dw-ov" onclick="mcCloseDrw()"></div>
+  <div class="mc-dw">
+    <div class="mc-dw-head">
+      <div class="mc-dw-tit" id="mc-drwTit">Detalle semana</div>
+      <button class="mc-dw-cl" onclick="mcCloseDrw()">✕ Cerrar</button>
+    </div>
+    <div class="mc-dw-body" id="mc-drwBody"></div>
+    <div class="mc-dw-foot">
+      <span id="mc-drwFootL">—</span>
+      <span id="mc-drwFootR">—</span>
+    </div>
+  </div>
+</div>
 
 <div id="t4" class="pg">
   <div style="background:rgba(55,138,221,.06);border:1px solid rgba(55,138,221,.25);border-radius:7px;padding:8px 12px;margin-bottom:10px;font-size:.7rem;color:#a4cef0">
@@ -918,9 +947,9 @@ var cMV=null,cTs=null,aMerma='';
 // Mermas usa filtro global de comprador (no tiene dropdown local)
 function onMerma(){
   aMerma = gCompFilter || '';
-  el('sdp').classList.remove('show');
+  if(el('mc-drwWrap')) el('mc-drwWrap').classList.remove('open');
   var trend = aMerma ? (TC[aMerma]||TA) : TA;
-  updMKpis(); updMCharts(trend); bldSemTbl(trend);
+  updMKpis(); updMCharts(trend);
   if(typeof mcRenderCausa==='function'){ mcRenderCausa(); mcRenderResumen(); bldTop10(); }
 }
 function updMKpis(){
@@ -943,9 +972,11 @@ function updMCharts(trend){var labels=trend.map(function(r){return 'S'+r[0];});v
   cMV=new Chart(c1,{type:'bar',data:{labels:labels,datasets:[{data:valM,backgroundColor:'#E87B2A99',borderColor:'#E87B2A',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return '$'+f0(x.raw);}}}},scales:{x:{ticks:{color:'#8892b0',font:{size:10}}},y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+fMM(v);}},grid:{color:'#2d3452'}}},onClick:function(e,el2){if(el2.length)opSemDet(trend[el2[0].index][0]);}}});
   var c2=el('cTs').getContext('2d');if(cTs)cTs.destroy();
   cTs=new Chart(c2,{type:'line',data:{labels:labels,datasets:[{label:'Tasa Vol.%',data:tvA,borderColor:'#E87B2A',backgroundColor:'#E87B2A15',yAxisID:'y',tension:.35,pointRadius:4,fill:true},{label:'Tasa Val.%',data:tvlA,borderColor:'#378ADD',backgroundColor:'#378ADD15',yAxisID:'y2',tension:.35,pointRadius:4,fill:true},{label:'Prom.Vol '+fP(avgTv),data:trend.map(function(){return avgTv;}),borderColor:'#E87B2A',borderDash:[5,4],yAxisID:'y',pointRadius:0,borderWidth:1.5},{label:'Prom.Val '+fP(avgTvl),data:trend.map(function(){return avgTvl;}),borderColor:'#378ADD',borderDash:[5,4],yAxisID:'y2',pointRadius:0,borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#e2e8f0',font:{size:10},padding:8}}},scales:{x:{ticks:{color:'#8892b0',font:{size:10}}},y:{ticks:{color:'#E87B2A',font:{size:10},callback:function(v){return v.toFixed(2)+'%';}},grid:{color:'#2d3452'},position:'left'},y2:{ticks:{color:'#378ADD',font:{size:10},callback:function(v){return v.toFixed(2)+'%';}},grid:{display:false},position:'right'}}}});}
-function bldSemTbl(trend){el('tsem').innerHTML=trend.map(function(r){return '<tr><td>Sem '+r[0]+'</td><td style="text-align:right">'+f0(r[1])+'</td><td style="text-align:right">$'+f0(r[2])+'</td><td style="text-align:right">'+f0(r[3])+'</td><td style="text-align:right">$'+(r[4]/1e6).toFixed(2)+' MM</td><td>'+tbar(r[5],'#E87B2A')+'</td><td>'+tbar(r[6],'#378ADD')+'</td></tr>';}).join('');}
+var MC_CUR_SEM = null;
+function mcCloseDrw(){ el('mc-drwWrap').classList.remove('open'); MC_CUR_SEM = null; }
 function opSemDet(sem){
-  // Construye lista de filas con comprador (DC[comp][sem] = [[sku,desc,tipo,qty,val,pu]..])
+  MC_CUR_SEM = sem;
+  // DC[comp][sem] = [[sku,desc,tipo,qty,val,pu]..]
   var rows=[]; var sStr=String(sem);
   if(aMerma && DC[aMerma]){
     (DC[aMerma][sStr]||[]).forEach(function(p){ rows.push({comp:aMerma, p:p}); });
@@ -954,28 +985,43 @@ function opSemDet(sem){
     for(var i=0;i<keys.length;i++){ var dc=DC[keys[i]]; if(dc[sStr]) dc[sStr].forEach(function(p){ rows.push({comp:keys[i], p:p}); }); }
   }
   rows.sort(function(a,b){return b.p[4]-a.p[4];});
-  el('sdt').textContent='Semana '+sem+(aMerma?' — '+aMerma:' — Todos')+' ('+rows.length+' mat.) · '+(MC_EDIT?'modo edición':'modo consulta');
+  el('mc-drwTit').textContent = 'Semana '+sem+(aMerma?' — '+aMerma:' — Todos')+' · '+rows.length+' materiales · '+(MC_EDIT?'modo edición':'modo consulta');
   var CAUSAS = MC_CAUSAS, NCS = MC_NC;
   var ro = MC_EDIT ? '' : 'disabled';
   var roCls = MC_EDIT ? '' : 'readonly';
-  el('sdtb').innerHTML = rows.map(function(rw){
+  var h = '<table><thead><tr>'+
+    '<th>SKU</th>'+
+    '<th style="min-width:220px">Descripción</th>'+
+    '<th>Comprador</th>'+
+    '<th style="text-align:right">Qty</th>'+
+    '<th style="text-align:right">$Valor</th>'+
+    '<th>Causa de merma</th>'+
+    '<th>Nota de crédito</th>'+
+    '<th></th>'+
+  '</tr></thead><tbody>';
+  rows.forEach(function(rw){
     var p = rw.p; var k = p[0]+'|'+sem;
     var c = MC_CLASIF[k] || {};
     var optCausa = ['<option value="">— seleccionar —</option>'].concat(CAUSAS.map(function(x){return '<option '+(c.causa===x?'selected':'')+'>'+x+'</option>';})).join('');
     var optNC = ['<option value="">— seleccionar —</option>'].concat(NCS.map(function(x){return '<option '+(c.nc===x?'selected':'')+'>'+x+'</option>';})).join('');
     var meta = c.usuario ? '<div style="font-size:.6rem;color:var(--muted);margin-top:2px">'+c.usuario+' · '+(c.ts||'')+'</div>' : '';
-    return '<tr data-mck="'+k+'">'+
-      '<td style="padding:5px 8px"><code>'+p[0]+'</code></td>'+
-      '<td style="padding:5px 8px;min-width:220px">'+p[1]+meta+'</td>'+
-      '<td style="padding:5px 8px">'+rw.comp+'</td>'+
-      '<td style="padding:5px 8px;text-align:right">'+f0(p[3])+'</td>'+
-      '<td style="padding:5px 8px;text-align:right;font-weight:700">$'+f0(p[4])+'</td>'+
-      '<td style="padding:5px 8px"><select class="mc-dd '+roCls+'" '+ro+' onchange="mcOnChg(\''+k+'\',\'causa\',this.value)" data-saved="'+(c.causa?1:0)+'">'+optCausa+'</select></td>'+
-      '<td style="padding:5px 8px"><select class="mc-dd '+roCls+'" '+ro+' onchange="mcOnChg(\''+k+'\',\'nc\',this.value)" data-saved="'+(c.nc?1:0)+'" data-nc="'+(c.nc||'')+'">'+optNC+'</select></td>'+
-      '<td style="padding:5px 8px"><span class="mc-badge '+(c.causa||c.nc?'ok':'')+'" id="mcb_'+k+'">'+(c.causa||c.nc?'✓':'—')+'</span></td>'+
+    h += '<tr data-mck="'+k+'">'+
+      '<td><code>'+p[0]+'</code></td>'+
+      '<td>'+p[1]+meta+'</td>'+
+      '<td>'+rw.comp+'</td>'+
+      '<td style="text-align:right">'+f0(p[3])+'</td>'+
+      '<td style="text-align:right;font-weight:700">$'+f0(p[4])+'</td>'+
+      '<td><select class="mc-dd '+roCls+'" '+ro+' onchange="mcOnChg(\''+k+'\',\'causa\',this.value)" data-saved="'+(c.causa?1:0)+'">'+optCausa+'</select></td>'+
+      '<td><select class="mc-dd '+roCls+'" '+ro+' onchange="mcOnChg(\''+k+'\',\'nc\',this.value)" data-saved="'+(c.nc?1:0)+'" data-nc="'+(c.nc||'')+'">'+optNC+'</select></td>'+
+      '<td><span class="mc-badge '+(c.causa||c.nc?'ok':'')+'" id="mcb_'+k+'">'+(c.causa||c.nc?'✓':'—')+'</span></td>'+
     '</tr>';
-  }).join('');
-  el('sdp').classList.add('show');
+  });
+  h += '</tbody></table>';
+  el('mc-drwBody').innerHTML = h;
+  el('mc-drwFootL').textContent = MC_EDIT ? ('Editor: '+MC_USUARIO) : 'Modo consulta — entra a edición para clasificar';
+  var clasifN = rows.filter(function(rw){var cc=MC_CLASIF[rw.p[0]+'|'+sem];return cc&&(cc.causa||cc.nc);}).length;
+  el('mc-drwFootR').textContent = clasifN+' / '+rows.length+' clasificados';
+  el('mc-drwWrap').classList.add('open');
 }
 function bldTop10(){
   el('tp10').innerHTML=TP.map(function(r){
@@ -1131,10 +1177,7 @@ function mcUpdLockUI(){
 function mcToggleEdit(){
   if(MC_EDIT){
     MC_EDIT = false; localStorage.setItem(MC_LS_EDIT,'0'); mcUpdLockUI();
-    if(el('sdp').classList.contains('show')){
-      // re-render drawer si está abierto
-      var t = el('sdt').textContent.match(/Semana (\d+)/); if(t) opSemDet(+t[1]);
-    }
+    if(MC_CUR_SEM != null) opSemDet(MC_CUR_SEM);
     mcNotif('Modo consulta');
   } else {
     el('mc-pinInput').value=''; el('mc-userSel').value=MC_USUARIO||'';
@@ -1151,9 +1194,7 @@ function mcSubmitPin(){
   localStorage.setItem(MC_LS_USR, MC_USUARIO);
   localStorage.setItem(MC_LS_EDIT,'1');
   mcClosePin(); mcUpdLockUI();
-  if(el('sdp').classList.contains('show')){
-    var t = el('sdt').textContent.match(/Semana (\d+)/); if(t) opSemDet(+t[1]);
-  }
+  if(MC_CUR_SEM != null) opSemDet(MC_CUR_SEM);
   mcNotif('Modo edición activado — '+MC_USUARIO);
 }
 function mcExportCsv(){
@@ -1632,7 +1673,7 @@ fetch('data.json?v='+Date.now())
     var _y = (_D.FECHA && _D.FECHA.length>=10) ? _D.FECHA.slice(-4) : new Date().getFullYear();
     document.title = 'Dashboard Abastecimiento — Semana ' + SEM + ' · ' + _y;
 
-    buildResumen();rndEstado();buildGer();updPlan();rndFCW();updMKpis();updMCharts(TA);bldSemTbl(TA);bldTop10();buildKpiAv();
+    buildResumen();rndEstado();buildGer();updPlan();rndFCW();updMKpis();updMCharts(TA);bldTop10();buildKpiAv();
     mcUpdLockUI(); mcRenderCausa(); mcRenderResumen();
 
     var ov=document.getElementById('ld-overlay');
