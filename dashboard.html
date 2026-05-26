@@ -1876,15 +1876,20 @@ function rndTI(){
 
 // ── COBERTURAS (t10) ─────────────────────────────────────────────────────────
 // (PPA usa PPA_SET global + gExcludePPA — definidos arriba)
-var COV_ORDER = ['<2','2 a 5','5 a 10','10 a 20','20 a 50','50 a 100','Sobre 100','Sin Plan'];
-var COV_COLOR = {'<2':'#E24B4A','2 a 5':'#E87B2A','5 a 10':'#E8C52A','10 a 20':'#639922','20 a 50':'#378ADD','50 a 100':'#7c3aed','Sobre 100':'#a855f7','Sin Plan':'#8892b0'};
+var COV_ORDER = ['<2','2 a 5','5 a 10','10 a 20','20 a 50','50 a 100','Sobre 100','Sin Plan c/Consumo','Sin Plan'];
+var COV_COLOR = {'<2':'#E24B4A','2 a 5':'#E87B2A','5 a 10':'#E8C52A','10 a 20':'#639922','20 a 50':'#378ADD','50 a 100':'#7c3aed','Sobre 100':'#a855f7','Sin Plan c/Consumo':'#BA7517','Sin Plan':'#8892b0'};
 var COV_GROUPS = [
   {id:'zmpr', title:'ZMPR Nacional', sub:'Materias primas nacionales (excluye HECTOR y SKUs PPA)', filter:function(s){return s.tipo==='ZMPR' && s.comp!=='HECTOR';}},
   {id:'zemp', title:'ZEMP Nacional', sub:'Envases / materiales de empaque nacionales (excluye HECTOR y SKUs PPA)', filter:function(s){return s.tipo==='ZEMP' && s.comp!=='HECTOR';}},
   {id:'imp',  title:'Importados',    sub:'Cartera completa de HECTOR · lead times largos (excluye SKUs PPA)', filter:function(s){return s.comp==='HECTOR';}}
 ];
-var COV_METAS = {sub:80, normal:10, sinplan:10};
-var COV_LABEL = {'<2':'< 2 Sem','2 a 5':'2 a 5 Sem','5 a 10':'5 a 10 Sem','10 a 20':'10 a 20 Sem','20 a 50':'20 a 50 Sem','50 a 100':'50 a 100 Sem','Sobre 100':'Sobre 100 Sem','Sin Plan':'Sin Plan'};
+// Configuración macro por grupo (Importados usa umbral 20 sem por lead times largos)
+var COV_MACRO_CFG = {
+  zmpr: {sub:['<2','2 a 5','5 a 10'], normal:['10 a 20','20 a 50','50 a 100','Sobre 100'], sub_label:'< 10 sem (sub-cobertura)', normal_label:'10 — Sobre 100 sem', meta_sub:80, meta_normal:10, meta_sinplan:10},
+  zemp: {sub:['<2','2 a 5','5 a 10'], normal:['10 a 20','20 a 50','50 a 100','Sobre 100'], sub_label:'< 10 sem (sub-cobertura)', normal_label:'10 — Sobre 100 sem', meta_sub:80, meta_normal:10, meta_sinplan:10},
+  imp:  {sub:['<2','2 a 5','5 a 10','10 a 20'], normal:['20 a 50','50 a 100','Sobre 100'], sub_label:'< 20 sem (sub-cobertura)', normal_label:'20 — Sobre 100 sem', meta_sub:80, meta_normal:10, meta_sinplan:10}
+};
+var COV_LABEL = {'<2':'< 2 Sem','2 a 5':'2 a 5 Sem','5 a 10':'5 a 10 Sem','10 a 20':'10 a 20 Sem','20 a 50':'20 a 50 Sem','50 a 100':'50 a 100 Sem','Sobre 100':'Sobre 100 Sem','Sin Plan c/Consumo':'Sin Plan c/Consumo','Sin Plan':'Sin Plan'};
 
 function covCobertura12(s){
   // cobertura usando stock (sin OC) y c12 derivado: c12 = stock_oc / cob12
@@ -1910,25 +1915,30 @@ function covCalc(skus){
     var c = covCobertura12(s);
     var k = covBucket(c);
     var stock = s.stock||0;
-    // Regla: en "Sin Plan", excluir SKUs con stock=0 (no aportan capital ni interés)
-    if(k==='Sin Plan' && stock<=0) return;
+    var c4real = s.c4_real||0;
+    // Si es "Sin Plan" (sin FC), separar entre con/sin consumo reciente
+    if(k==='Sin Plan'){
+      if(stock<=0) return; // sin stock = no aporta capital, descartar
+      if(c4real>0) k = 'Sin Plan c/Consumo'; // consume sin FC = alerta de planificación
+    }
     var val = s.val||0;
     buckets[k].val += val;
     buckets[k].cnt += 1;
-    buckets[k].items.push({sku:s.sku, desc:s.desc, comp:s.comp, stock:stock, val:val, cob:c});
+    buckets[k].items.push({sku:s.sku, desc:s.desc, comp:s.comp, stock:stock, val:val, cob:c, c4_real:c4real});
   });
   var tot = COV_ORDER.reduce(function(a,k){return a+buckets[k].val;},0);
   return {buckets:buckets, tot:tot};
 }
-function covMacros(buckets, tot){
-  var sub = buckets['<2'].val + buckets['2 a 5'].val + buckets['5 a 10'].val;
-  var nor = buckets['10 a 20'].val + buckets['20 a 50'].val + buckets['50 a 100'].val + buckets['Sobre 100'].val;
-  var sin = buckets['Sin Plan'].val;
+function covMacros(buckets, tot, gid){
+  var cfg = COV_MACRO_CFG[gid] || COV_MACRO_CFG.zmpr;
+  var sub = cfg.sub.reduce(function(a,k){return a+(buckets[k]?buckets[k].val:0);},0);
+  var nor = cfg.normal.reduce(function(a,k){return a+(buckets[k]?buckets[k].val:0);},0);
+  var sin = (buckets['Sin Plan'].val||0) + (buckets['Sin Plan c/Consumo'].val||0);
   var pct = function(v){return tot>0 ? v/tot*100 : 0;};
   return [
-    {label:'< 10 sem (sub-cobertura)', val:sub, pct:pct(sub), meta:COV_METAS.sub, sense:'up'},
-    {label:'10 — Sobre 100 sem',       val:nor, pct:pct(nor), meta:COV_METAS.normal, sense:'down'},
-    {label:'Sin Plan',                 val:sin, pct:pct(sin), meta:COV_METAS.sinplan, sense:'down'}
+    {label:cfg.sub_label,    val:sub, pct:pct(sub), meta:cfg.meta_sub,     sense:'up'},
+    {label:cfg.normal_label, val:nor, pct:pct(nor), meta:cfg.meta_normal,  sense:'down'},
+    {label:'Sin Plan',       val:sin, pct:pct(sin), meta:cfg.meta_sinplan, sense:'down'}
   ];
 }
 function covSemaforo(actual, meta, sense){
@@ -1960,7 +1970,7 @@ function buildCoberturas(){
     var skus = base.filter(g.filter);
     var calc = covCalc(skus);
     var buckets = calc.buckets, tot = calc.tot;
-    var macros = covMacros(buckets, tot);
+    var macros = covMacros(buckets, tot, g.id);
 
     var sec = document.createElement('div');
     sec.className = 'cov-sec';
@@ -2075,12 +2085,14 @@ function covToggleDetail(gid, bucket, items, tbody){
   }
   var rows = sorted.map(function(s){
     var cc = (CC[s.comp]||'#8892b0');
+    var c4r = (s.c4_real==null) ? '<span style="color:var(--muted)">—</span>' : f0(s.c4_real);
     return '<tr>'
       + '<td style="font-family:monospace;font-size:.65rem">'+s.sku+'</td>'
       + '<td>'+(s.desc||'')+'</td>'
       + '<td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+cc+';margin-right:5px;vertical-align:middle"></span>'+(s.comp||'—')+'</td>'
       + '<td style="text-align:right">'+f0(s.stock)+'</td>'
       + '<td style="text-align:right">$ '+f0(s.val)+'</td>'
+      + '<td style="text-align:right">'+c4r+'</td>'
       + '<td style="text-align:right">'+covFmtCob(s.cob)+'</td>'
       + '</tr>';
   }).join('');
@@ -2089,7 +2101,9 @@ function covToggleDetail(gid, bucket, items, tbody){
     + '<button class="cov-cl" onclick="document.getElementById(\'cov-dt-'+gid+'\').classList.remove(\'open\')">✕ Cerrar</button></h4>'
     + '<div class="tw"><table><thead><tr>'
     + '<th>SKU</th><th>Descripción</th><th>Comprador</th>'
-    + '<th style="text-align:right">Stock</th><th style="text-align:right">Valor Stock</th><th style="text-align:right">Cobertura (sem)</th>'
+    + '<th style="text-align:right">Stock</th><th style="text-align:right">Valor Stock</th>'
+    + '<th style="text-align:right" title="Consumo real últimas 4 semanas">Cons. 4w real</th>'
+    + '<th style="text-align:right">Cobertura (sem)</th>'
     + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 // (loadPPA() global ya se encarga; mantenemos el alias por compatibilidad con showTab)
