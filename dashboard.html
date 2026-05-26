@@ -156,6 +156,35 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 .mc-dw-body tbody td{padding:6px 9px;color:#e2e8f0;border-bottom:1px solid rgba(45,52,82,.4);vertical-align:middle}
 .mc-dw-body tbody tr:hover{background:rgba(35,40,64,.5)}
 .mc-dw-foot{padding:9px 14px;border-top:1px solid var(--border);font-size:.67rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+/* === Coberturas (t10) === */
+.cov-sec{margin-bottom:16px}
+.cov-tit{font-size:.85rem;font-weight:700;color:#fff;margin-bottom:2px}
+.cov-sub{font-size:.65rem;color:var(--muted);margin-bottom:9px}
+.cov-row{display:grid;grid-template-columns:1.15fr 0.9fr 1.05fr;gap:10px;align-items:start}
+@media(max-width:1180px){.cov-row{grid-template-columns:1fr}}
+.cov-row .cb{padding:10px 12px}
+.cov-row table{font-size:.71rem;width:100%;border-collapse:collapse}
+.cov-row thead th{background:#232840;color:var(--muted);padding:6px 9px;text-align:right;font-weight:600;white-space:nowrap;font-size:.62rem;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border)}
+.cov-row thead th:first-child{text-align:left}
+.cov-row tbody td{padding:5px 9px;text-align:right;color:#e2e8f0;white-space:nowrap;border-bottom:1px solid rgba(45,52,82,.4)}
+.cov-row tbody td:first-child{text-align:left}
+.cov-row tbody tr{cursor:pointer;transition:background .12s}
+.cov-row tbody tr:hover{background:rgba(99,102,241,.10)}
+.cov-row tbody tr.cov-active{background:rgba(99,102,241,.18)}
+.cov-row tbody tr.cov-tot td{font-weight:700;background:rgba(35,40,64,.6);border-top:1px solid var(--border)}
+.cov-pill{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.cov-meta-ok{color:var(--n)}
+.cov-meta-warn{color:var(--rT)}
+.cov-meta-bad{color:var(--q)}
+.cov-badge{display:inline-block;padding:1px 6px;border-radius:99px;font-size:.6rem;font-weight:700;margin-left:6px;border:1px solid currentColor}
+.cov-detail{display:none;background:#13182a;border:1px dashed var(--border);border-radius:8px;padding:10px 12px;margin-top:8px;color:#e2e8f0}
+.cov-detail.open{display:block}
+.cov-detail h4{font-size:.78rem;font-weight:700;color:#c0caf5;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.cov-detail .tw{max-height:300px;overflow-y:auto;background:#0f1117}
+.cov-detail table{font-size:.68rem}
+.cov-detail thead th{position:sticky;top:0;z-index:2}
+.cov-cl{background:none;border:1px solid var(--border);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:.65rem;color:var(--muted)}
+.cov-cl:hover{color:#c0caf5;border-color:#6366f1}
 </style>
 </head>
 <body>
@@ -172,6 +201,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   <div class="tab active" onclick="showTab(0)">📊 Resumen</div>
   <div class="tab" onclick="showTab(1)">👷 Planificadores</div>
   <div class="tab" onclick="showTab(2)">📦 Inventarios</div>
+  <div class="tab" onclick="showTab(10)">📈 Coberturas</div>
   <div class="tab" onclick="showTab(3)">♻️ Mermas</div>
   <div class="tab" onclick="showTab(4)">💰 Capital Inmovilizado</div>
   <div class="tab" onclick="showTab(5)">📡 Desviación forecast</div>
@@ -224,6 +254,13 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   <div class="cb" style="margin-bottom:12px"><div class="ct">Stock valorizado por Grupo de Artículo (MM CLP)</div><div class="cw" style="height:260px"><canvas id="cGru"></canvas></div></div>
   <div class="stt">Detalle por Categoría / Grupo</div>
   <div class="tw"><table><thead><tr><th>Categoría / Grupo</th><th>SKUs</th><th>Stock total</th><th>$Valor (MM)</th><th>Cob.prom</th><th>Distribución</th><th style="color:var(--q)">Q</th><th style="color:var(--rT)">R</th><th style="color:var(--mT)">M</th><th style="color:var(--s)">Sob</th><th style="color:var(--n)">N</th></tr></thead><tbody id="gtb"></tbody></table></div>
+</div>
+
+<div id="t10" class="pg">
+  <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.25);border-radius:7px;padding:8px 12px;margin-bottom:12px;font-size:.7rem;color:#a4b4ce">
+    📈 <b>Cobertura de Stock Valorizado</b> — distribución del capital inmovilizado por rango de cobertura (semanas). Cobertura calculada como <b>stock / consumo promedio próximas 12 sem FC</b>. Se excluyen los SKUs de Pan de Pascua (PPA). Click en cualquier fila del bucket para desplegar el detalle de SKUs. Respeta el filtro global de comprador del header.
+  </div>
+  <div id="cov-host"></div>
 </div>
 
 <div id="t3" class="pg">
@@ -622,6 +659,10 @@ function onGComp(){
   if(typeof updPlan==='function')      updPlan();
   if(typeof onMerma==='function')      onMerma();
   if(typeof buildKpiAv==='function')   buildKpiAv();
+  // Coberturas: rebuild solo si ya fue renderizado
+  if(typeof buildCoberturas==='function' && document.getElementById('cov-host') && document.getElementById('cov-host').children.length>0){
+    try{ buildCoberturas(); }catch(e){ console.error('Cob rebuild:',e); }
+  }
 }
 
 // ── Export a Excel (SheetJS) ──
@@ -662,6 +703,8 @@ function showTab(i){
   if(i===8){var ifr=document.getElementById('qb-frame');if(ifr&&!ifr.src) ifr.src='quiebres.html?v='+Date.now();}
   // Lazy render de Terceros e Insumos
   if(i===9 && !window._tiBuilt){ try{ buildTI(); window._tiBuilt=true; }catch(e){ console.error('TI build:',e); } }
+  // Lazy render de Coberturas (t10)
+  if(i===10){ covLoadPPA().then(function(){ try{ buildCoberturas(); }catch(e){ console.error('Cob build:',e); } }); }
 }
 function kpill(c,l){return '<span class="kpill kp'+c+'">'+l+'</span>';}
 function pAlerta(a){var m={quiebre:'q Quiebre',riesgo:'r Riesgo',monitorear:'m Monitorear',normal:'n Normal',sobrestock:'s Sobrestock',sin_fc:'sf Sin FC'};var p=(m[a]||'sf ?').split(' ');return kpill(p[0],p.slice(1).join(' '));}
@@ -1739,6 +1782,232 @@ function rndTI(){
 
 // ── INIT ──
 
+
+// ── COBERTURAS (t10) ─────────────────────────────────────────────────────────
+var COV_PPA = new Set();   // SKUs PPA (Pan de Pascua) — excluidos del cálculo
+var COV_PPA_LOADED = false;
+var COV_ORDER = ['<2','2 a 5','5 a 10','10 a 20','20 a 50','50 a 100','Sobre 100','Sin Plan'];
+var COV_COLOR = {'<2':'#E24B4A','2 a 5':'#E87B2A','5 a 10':'#E8C52A','10 a 20':'#639922','20 a 50':'#378ADD','50 a 100':'#7c3aed','Sobre 100':'#a855f7','Sin Plan':'#8892b0'};
+var COV_GROUPS = [
+  {id:'zmpr', title:'ZMPR Nacional', sub:'Materias primas nacionales (excluye HECTOR y SKUs PPA)', filter:function(s){return s.tipo==='ZMPR' && s.comp!=='HECTOR';}},
+  {id:'zemp', title:'ZEMP Nacional', sub:'Envases / materiales de empaque nacionales (excluye HECTOR y SKUs PPA)', filter:function(s){return s.tipo==='ZEMP' && s.comp!=='HECTOR';}},
+  {id:'imp',  title:'Importados',    sub:'Cartera completa de HECTOR · lead times largos (excluye SKUs PPA)', filter:function(s){return s.comp==='HECTOR';}}
+];
+var COV_METAS = {sub:80, normal:10, sinplan:10};
+var COV_LABEL = {'<2':'< 2 Sem','2 a 5':'2 a 5 Sem','5 a 10':'5 a 10 Sem','10 a 20':'10 a 20 Sem','20 a 50':'20 a 50 Sem','50 a 100':'50 a 100 Sem','Sobre 100':'Sobre 100 Sem','Sin Plan':'Sin Plan'};
+
+function covCobertura12(s){
+  // cobertura usando stock (sin OC) y c12 derivado: c12 = stock_oc / cob12
+  var cob12 = s.cob12||0, stock_oc = s.stock_oc||0, stock = s.stock||0;
+  if(cob12>=999 || cob12<=0 || stock_oc<=0) return null; // Sin Plan
+  var c12 = stock_oc / cob12;
+  if(c12<=0) return null;
+  return stock / c12;
+}
+function covBucket(c){
+  if(c==null) return 'Sin Plan';
+  if(c<2) return '<2';
+  if(c<5) return '2 a 5';
+  if(c<10) return '5 a 10';
+  if(c<20) return '10 a 20';
+  if(c<50) return '20 a 50';
+  if(c<100) return '50 a 100';
+  return 'Sobre 100';
+}
+function covCalc(skus){
+  var buckets={}; COV_ORDER.forEach(function(k){buckets[k]={val:0,cnt:0,items:[]};});
+  skus.forEach(function(s){
+    var c = covCobertura12(s);
+    var k = covBucket(c);
+    var stock = s.stock||0;
+    // Regla: en "Sin Plan", excluir SKUs con stock=0 (no aportan capital ni interés)
+    if(k==='Sin Plan' && stock<=0) return;
+    var val = s.val||0;
+    buckets[k].val += val;
+    buckets[k].cnt += 1;
+    buckets[k].items.push({sku:s.sku, desc:s.desc, comp:s.comp, stock:stock, val:val, cob:c});
+  });
+  var tot = COV_ORDER.reduce(function(a,k){return a+buckets[k].val;},0);
+  return {buckets:buckets, tot:tot};
+}
+function covMacros(buckets, tot){
+  var sub = buckets['<2'].val + buckets['2 a 5'].val + buckets['5 a 10'].val;
+  var nor = buckets['10 a 20'].val + buckets['20 a 50'].val + buckets['50 a 100'].val + buckets['Sobre 100'].val;
+  var sin = buckets['Sin Plan'].val;
+  var pct = function(v){return tot>0 ? v/tot*100 : 0;};
+  return [
+    {label:'< 10 sem (sub-cobertura)', val:sub, pct:pct(sub), meta:COV_METAS.sub, sense:'up'},
+    {label:'10 — Sobre 100 sem',       val:nor, pct:pct(nor), meta:COV_METAS.normal, sense:'down'},
+    {label:'Sin Plan',                 val:sin, pct:pct(sin), meta:COV_METAS.sinplan, sense:'down'}
+  ];
+}
+function covSemaforo(actual, meta, sense){
+  if(sense==='up'){
+    if(actual >= meta) return ['cov-meta-ok','✓'];
+    if(actual >= meta-15) return ['cov-meta-warn','!'];
+    return ['cov-meta-bad','✗'];
+  } else {
+    if(actual <= meta) return ['cov-meta-ok','✓'];
+    if(actual <= meta+15) return ['cov-meta-warn','!'];
+    return ['cov-meta-bad','✗'];
+  }
+}
+function covFmtMM(v){return '$'+(v/1e6).toLocaleString('es-CL',{maximumFractionDigits:1})+' MM';}
+function covFmtPct(v){return (v||0).toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';}
+function covFmtCob(v){return (v===null||v===undefined) ? '—' : v.toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1});}
+
+function buildCoberturas(){
+  var host = document.getElementById('cov-host');
+  if(!host) return;
+  if(!Array.isArray(SKUS)){ host.innerHTML='<div style="color:var(--muted);padding:14px">Sin SKUs cargados.</div>'; return; }
+  // Filtro global + exclusión PPA
+  var base = SKUS.filter(function(s){return !COV_PPA.has(String(s.sku));});
+  if(gCompFilter) base = base.filter(function(s){return s.comp===gCompFilter;});
+
+  host.innerHTML = '';
+  COV_GROUPS.forEach(function(g){
+    var skus = base.filter(g.filter);
+    var calc = covCalc(skus);
+    var buckets = calc.buckets, tot = calc.tot;
+    var macros = covMacros(buckets, tot);
+
+    var sec = document.createElement('div');
+    sec.className = 'cov-sec';
+    sec.innerHTML = ''
+      + '<div class="cov-tit">'+g.title+'</div>'
+      + '<div class="cov-sub">'+g.sub+' · '+skus.length+' SKUs · Stock valorizado total: <b style="color:#fff">'+covFmtMM(tot)+'</b></div>'
+      + '<div class="cov-row">'
+      +   '<div class="cb">'
+      +     '<div class="ct">Distribución por cobertura</div>'
+      +     '<div style="overflow-x:auto"><table>'
+      +       '<thead><tr><th>Cobertura</th><th>Valor Stock</th><th>% Total</th><th>SKUs</th></tr></thead>'
+      +       '<tbody id="cov-tb-'+g.id+'"></tbody>'
+      +     '</table></div>'
+      +   '</div>'
+      +   '<div class="cb">'
+      +     '<div class="ct">Resumen vs metas</div>'
+      +     '<div style="overflow-x:auto"><table>'
+      +       '<thead><tr><th>Grupo</th><th>$ Stock</th><th>% Stock</th><th>Meta</th></tr></thead>'
+      +       '<tbody id="cov-mt-'+g.id+'"></tbody>'
+      +     '</table></div>'
+      +   '</div>'
+      +   '<div class="cb">'
+      +     '<div class="ct">Cobertura de Stock Valorizado</div>'
+      +     '<div class="cw" style="height:240px"><canvas id="cov-ch-'+g.id+'"></canvas></div>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="cov-detail" id="cov-dt-'+g.id+'"></div>';
+    host.appendChild(sec);
+
+    // detalle por bucket
+    var tb = document.getElementById('cov-tb-'+g.id);
+    var totCnt = 0;
+    COV_ORDER.forEach(function(k){
+      var b = buckets[k]; totCnt += b.cnt;
+      var pct = tot>0 ? b.val/tot*100 : 0;
+      var tr = document.createElement('tr');
+      tr.setAttribute('data-bucket', k);
+      tr.innerHTML = ''
+        + '<td><span class="cov-pill" style="background:'+COV_COLOR[k]+'"></span>'+COV_LABEL[k]+'</td>'
+        + '<td>$ '+f0(b.val)+'</td>'
+        + '<td>'+covFmtPct(pct)+'</td>'
+        + '<td>'+b.cnt+'</td>';
+      tr.onclick = (function(gid,bk,items){ return function(){ covToggleDetail(gid, bk, items, tb); }; })(g.id, k, b.items);
+      tb.appendChild(tr);
+    });
+    var trT = document.createElement('tr');
+    trT.className = 'cov-tot';
+    trT.innerHTML = '<td>Total general</td><td>$ '+f0(tot)+'</td><td>100,0%</td><td>'+totCnt+'</td>';
+    tb.appendChild(trT);
+
+    // meta
+    var mt = document.getElementById('cov-mt-'+g.id);
+    macros.forEach(function(m){
+      var s = covSemaforo(m.pct, m.meta, m.sense);
+      var tr = document.createElement('tr');
+      tr.innerHTML = ''
+        + '<td>'+m.label+'</td>'
+        + '<td>$ '+f0(m.val)+'</td>'
+        + '<td class="'+s[0]+'">'+covFmtPct(m.pct)+' <span class="cov-badge '+s[0]+'">'+s[1]+'</span></td>'
+        + '<td>'+m.meta+'%</td>';
+      mt.appendChild(tr);
+    });
+
+    // chart
+    var ctx = document.getElementById('cov-ch-'+g.id).getContext('2d');
+    var key = '_covCh_'+g.id;
+    if(window[key]) window[key].destroy();
+    window[key] = new Chart(ctx, {
+      type:'bar',
+      data:{
+        labels: COV_ORDER,
+        datasets:[{
+          label:'Valor Stock',
+          data: COV_ORDER.map(function(k){return buckets[k].val;}),
+          backgroundColor: COV_ORDER.map(function(k){return COV_COLOR[k]+'cc';}),
+          borderColor: COV_ORDER.map(function(k){return COV_COLOR[k];}),
+          borderWidth:1.2, borderRadius:4
+        }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:function(x){
+            var v=x.parsed.y; var p = tot>0 ? v/tot*100 : 0;
+            return ' '+covFmtMM(v)+' ('+covFmtPct(p)+')';
+          }}}
+        },
+        scales:{
+          x:{ticks:{color:'#8892b0',font:{size:10}}, grid:{display:false}},
+          y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+(v/1e6).toFixed(0)+'M';}}, grid:{color:'#2d3452'}}
+        }
+      }
+    });
+  });
+}
+function covToggleDetail(gid, bucket, items, tbody){
+  var det = document.getElementById('cov-dt-'+gid);
+  var trs = tbody.querySelectorAll('tr'); trs.forEach(function(t){t.classList.remove('cov-active');});
+  if(det.getAttribute('data-bucket')===bucket && det.classList.contains('open')){
+    det.classList.remove('open'); det.setAttribute('data-bucket',''); return;
+  }
+  var active = tbody.querySelector('tr[data-bucket="'+bucket.replace(/"/g,'\\"')+'"]');
+  if(active) active.classList.add('cov-active');
+  det.setAttribute('data-bucket', bucket); det.classList.add('open');
+
+  var sorted = items.slice().sort(function(a,b){return b.val-a.val;});
+  var totB = sorted.reduce(function(a,s){return a+s.val;},0);
+  if(!sorted.length){
+    det.innerHTML = '<h4><span>'+COV_LABEL[bucket]+' · sin SKUs</span><button class="cov-cl" onclick="document.getElementById(\'cov-dt-'+gid+'\').classList.remove(\'open\')">✕ Cerrar</button></h4><div style="color:var(--muted);padding:8px 0">Sin SKUs en este bucket.</div>';
+    return;
+  }
+  var rows = sorted.map(function(s){
+    var cc = (CC[s.comp]||'#8892b0');
+    return '<tr>'
+      + '<td style="font-family:monospace;font-size:.65rem">'+s.sku+'</td>'
+      + '<td>'+(s.desc||'')+'</td>'
+      + '<td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+cc+';margin-right:5px;vertical-align:middle"></span>'+(s.comp||'—')+'</td>'
+      + '<td style="text-align:right">'+f0(s.stock)+'</td>'
+      + '<td style="text-align:right">$ '+f0(s.val)+'</td>'
+      + '<td style="text-align:right">'+covFmtCob(s.cob)+'</td>'
+      + '</tr>';
+  }).join('');
+  det.innerHTML = ''
+    + '<h4><span>Detalle · '+COV_LABEL[bucket]+' · '+sorted.length+' SKUs · '+covFmtMM(totB)+'</span>'
+    + '<button class="cov-cl" onclick="document.getElementById(\'cov-dt-'+gid+'\').classList.remove(\'open\')">✕ Cerrar</button></h4>'
+    + '<div class="tw"><table><thead><tr>'
+    + '<th>SKU</th><th>Descripción</th><th>Comprador</th>'
+    + '<th style="text-align:right">Stock</th><th style="text-align:right">Valor Stock</th><th style="text-align:right">Cobertura (sem)</th>'
+    + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function covLoadPPA(){
+  if(COV_PPA_LOADED) return Promise.resolve();
+  return fetch('sku_ppa.json?v='+Date.now())
+    .then(function(r){ if(!r.ok) throw new Error('no ppa'); return r.json(); })
+    .then(function(p){ COV_PPA = new Set((p.skus||[]).map(String)); COV_PPA_LOADED=true; })
+    .catch(function(){ COV_PPA = new Set(); COV_PPA_LOADED=true; });
+}
 
 // ── LOAD DATA & INIT ────────────────────────────────────────────────────────
 fetch('data.json?v='+Date.now())
