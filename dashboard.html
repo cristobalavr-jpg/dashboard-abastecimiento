@@ -195,6 +195,11 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   <select id="gComp" onchange="onGComp()" style="background:#232840;color:#fff;border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:.75rem;cursor:pointer">
     <option value="">Todos</option><option>HECTOR</option><option>JAVIERA</option><option>JOSE</option><option>MATIAS</option><option>VICENTE</option>
   </select>
+  <label id="gPPA-wrap" title="Excluye los SKUs de Pan de Pascua de todos los KPIs y vistas del dashboard" style="margin-left:10px;display:inline-flex;align-items:center;gap:5px;background:#232840;border:1px solid var(--border);border-radius:5px;padding:3px 9px;font-size:.7rem;color:#e2e8f0;cursor:pointer;user-select:none">
+    <input type="checkbox" id="gPPA" onchange="onGPPA()" checked style="cursor:pointer;accent-color:#6366f1">
+    <span>Excluir PPA</span>
+    <span id="gPPA-cnt" style="font-size:.62rem;color:var(--muted)">(—)</span>
+  </label>
   <span class="hsem" id="hsem-txt">Cargando…</span>
 </div>
 <div class="tabs">
@@ -461,6 +466,23 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 // ── GLOBAL DATA NAMESPACE ───────────────────────────────────────────────────
 var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW;
 var gCompFilter='';  // filtro global de comprador
+// Filtro global PPA (Pan de Pascua). Por defecto ON — replica el contrato histórico de B.9 reporte diario.
+var PPA_SET = new Set();
+var PPA_LOADED = false;
+var gExcludePPA = (function(){ try{ var v=localStorage.getItem('gExcludePPA'); return v===null ? true : v==='1'; }catch(e){ return true; } })();
+function isPPA(sku){ return PPA_SET.has(String(sku)); }
+function ppaActive(){ return gExcludePPA && PPA_SET.size>0; }
+function loadPPA(){
+  if(PPA_LOADED) return Promise.resolve();
+  return fetch('sku_ppa.json?v='+Date.now())
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(p){
+      PPA_SET = new Set((p.skus||[]).map(String));
+      PPA_LOADED = true;
+      var cnt=document.getElementById('gPPA-cnt'); if(cnt) cnt.textContent='('+PPA_SET.size+')';
+    })
+    .catch(function(){ PPA_SET = new Set(); PPA_LOADED = true; var cnt=document.getElementById('gPPA-cnt'); if(cnt) cnt.textContent='(no disponible)'; });
+}
 
 // ── Helper: indicador delta (flecha ↑↓) ──
 // invert=true → caída es buena (ej. quiebres, mermas, capital). invert=false → subida es buena (ej. normal, $consumo).
@@ -479,12 +501,48 @@ function dArrowPct(v, invert){
   return '<span style="font-size:.62rem;font-weight:700;color:'+col+';margin-left:4px">'+ (up?'▲ +':'▼ ') + v.toFixed(1) + 'pp</span>';
 }
 
-// ── Filtro global de comprador ──
+// ── Filtro global de comprador + PPA ──
 // Helpers de agregación desde SKUS plano (para recalcular cuando hay filtro)
 function curSkus(){
-  if(!gCompFilter) return SKUS||[];
-  return (SKUS||[]).filter(function(s){return s.comp===gCompFilter;});
+  var arr = SKUS||[];
+  if(gCompFilter) arr = arr.filter(function(s){return s.comp===gCompFilter;});
+  if(ppaActive()) arr = arr.filter(function(s){return !isPPA(s.sku);});
+  return arr;
 }
+function anyFilter(){ return !!gCompFilter || ppaActive(); }
+
+// Recalcula R (per-comprador rollup) desde SKUS subset. Misma lógica que script Python.
+function aggR(skus){
+  var out={};
+  COMPS.forEach(function(c){
+    var u=UMBRALES[c]||UMBRALES.DEFAULT;
+    out[c]={skus:0,quiebre:0,riesgo:0,monitorear:0,normal:0,sobrestock:0,sob_oc:0,coc5:0,valor_stock:0,
+      sob_oc_threshold:u.sob_oc, sob_threshold:u.sobrestock, riesgo_threshold:u.riesgo};
+  });
+  skus.forEach(function(s){
+    var c=s.comp; if(!out[c]) return;
+    out[c].valor_stock += s.val||0;
+    if((s.c4||0)>0) out[c].skus += 1;
+    var a=s.alerta;
+    if(a && out[c][a]!==undefined) out[c][a] += 1;
+    if(s.a_coc5) out[c].coc5 += 1;
+    if(s.a_sob_oc) out[c].sob_oc += 1;
+  });
+  return out;
+}
+// Cache de aggR (se invalida al cambiar filtros)
+var _RCache=null, _RCacheKey='';
+function effR(c){
+  if(!anyFilter()) return R[c];
+  var key = (gCompFilter?'1':'0')+'|'+(ppaActive()?'1':'0');
+  if(_RCache===null || _RCacheKey!==key){
+    // aggR sobre SKUS con SOLO filtro PPA (sin comp) para que el rollup tenga todos los compradores
+    var base = ppaActive() ? (SKUS||[]).filter(function(s){return !isPPA(s.sku);}) : (SKUS||[]);
+    _RCache = aggR(base); _RCacheKey = key;
+  }
+  return _RCache[c] || R[c];
+}
+function invalidateRCache(){ _RCache=null; _RCacheKey=''; }
 
 // Recalcular G (KPIs Inventarios) desde subset SKUs
 function aggG(skus){
@@ -634,35 +692,61 @@ function aggBIAS(skus){
 }
 
 // Vista efectiva — si hay filtro recalcula, sino devuelve la del JSON
-function effG(){    return gCompFilter ? aggG(curSkus())    : G; }
-function effGR(){   return gCompFilter ? aggGroupedByTipo(curSkus())  : GR; }
-function effGD(){   return gCompFilter ? aggGroupedByGrupo(curSkus()) : GD; }
-function effCAP(){  return gCompFilter ? aggCAP(curSkus())  : CAP; }
-function effROT(){  return gCompFilter ? aggROT(curSkus())  : ROT; }
-function effBIAS(){ return gCompFilter ? aggBIAS(curSkus()) : BIAS; }
+function effG(){    return anyFilter() ? aggG(curSkus())    : G; }
+function effGR(){   return anyFilter() ? aggGroupedByTipo(curSkus())  : GR; }
+function effGD(){   return anyFilter() ? aggGroupedByGrupo(curSkus()) : GD; }
+function effCAP(){  return anyFilter() ? aggCAP(curSkus())  : CAP; }
+function effROT(){  return anyFilter() ? aggROT(curSkus())  : ROT; }
+function effBIAS(){ return anyFilter() ? aggBIAS(curSkus()) : BIAS; }
 function effBLOQ(){
-  if(!gCompFilter) return BLOQ;
-  var comp=(BLOQ.comp||[]).filter(function(c){return c.comprador===gCompFilter;});
-  var val=comp.reduce(function(a,c){return a+(c.valor||0);},0);
-  var n=comp.reduce(function(a,c){return a+(c.skus||0);},0);
-  var det={}; if(BLOQ.det&&BLOQ.det[gCompFilter]) det[gCompFilter]=BLOQ.det[gCompFilter];
-  return {n:n,val:val,comp:comp,det:det};
+  if(!anyFilter()) return BLOQ;
+  // Filtrar comp por comprador y det por (comprador + PPA)
+  var compList = (BLOQ.comp||[]).slice();
+  if(gCompFilter) compList = compList.filter(function(c){return c.comprador===gCompFilter;});
+  var det={};
+  Object.keys(BLOQ.det||{}).forEach(function(k){
+    if(gCompFilter && k!==gCompFilter) return;
+    var arr = (BLOQ.det[k]||[]).slice();
+    if(ppaActive()) arr = arr.filter(function(it){return !isPPA(it.sku);});
+    det[k] = arr;
+  });
+  // Si excluimos PPA, recalcular totales por comprador desde det filtrado
+  if(ppaActive()){
+    compList = compList.map(function(c){
+      var arr = det[c.comprador]||[];
+      var val = arr.reduce(function(a,x){return a+(x.valor||x.val||0);},0);
+      return Object.assign({}, c, {valor:val, skus:arr.length});
+    });
+  }
+  var val=compList.reduce(function(a,c){return a+(c.valor||0);},0);
+  var n=compList.reduce(function(a,c){return a+(c.skus||0);},0);
+  return {n:n,val:val,comp:compList,det:det};
 }
 
-function onGComp(){
-  gCompFilter = document.getElementById('gComp').value || '';
-  // Re-render todo lo afectado.
-  // Bloqueados (t7) NO se filtra — su vista comparativa por comprador está en el gráfico clicable.
+function _rebuildAll(){
+  invalidateRCache();
   if(typeof buildResumen==='function') buildResumen();
   if(typeof rndEstado==='function')    rndEstado();
   if(typeof buildGer==='function')     buildGer();
   if(typeof updPlan==='function')      updPlan();
   if(typeof onMerma==='function')      onMerma();
+  if(typeof bldTop10==='function')     bldTop10();
   if(typeof buildKpiAv==='function')   buildKpiAv();
   // Coberturas: rebuild solo si ya fue renderizado
   if(typeof buildCoberturas==='function' && document.getElementById('cov-host') && document.getElementById('cov-host').children.length>0){
     try{ buildCoberturas(); }catch(e){ console.error('Cob rebuild:',e); }
   }
+}
+function onGComp(){
+  gCompFilter = document.getElementById('gComp').value || '';
+  // Bloqueados (t7) ahora se filtra junto al resto (incluye PPA si toggle on).
+  _rebuildAll();
+}
+function onGPPA(){
+  var cb = document.getElementById('gPPA');
+  gExcludePPA = !!(cb && cb.checked);
+  try{ localStorage.setItem('gExcludePPA', gExcludePPA?'1':'0'); }catch(e){}
+  loadPPA().then(_rebuildAll);
 }
 
 // ── Export a Excel (SheetJS) ──
@@ -718,7 +802,7 @@ function buildResumen(){
   // Mapa de "es bueno bajar" por KPI (todos los rk son indicadores de problema → bajar es bueno → invert=true)
   var INVERT_DELTA = {quiebre:true,riesgo:true,monitorear:true,normal:false,sobrestock:true,coc5:true,sob_oc:true};
   g.innerHTML=compsShow.map(function(c){
-    var rv=R[c];var col=CC[c];
+    var rv=effR(c);var col=CC[c];
     var u=UMBRALES[c]||UMBRALES.DEFAULT;
     var dlt=(DELTAS && DELTAS.R && DELTAS.R[c])||{};
     var kh=KD.map(function(d){
@@ -743,7 +827,7 @@ function buildResumen(){
       '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">'+kh+'</div>'+
       '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #2d3452"><div style="display:flex;height:8px;border-radius:4px;overflow:hidden;width:100%">'+bs2+'</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px">'+ls+'</div></div></div>';
   }).join('');
-  el('ctb').innerHTML=compsShow.map(function(c){var rv=R[c];return '<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+CC[c]+';margin-right:6px;vertical-align:middle"></span>'+c+'</td><td>'+f0(rv.skus)+'</td><td style="color:var(--q);font-weight:700">'+f0(rv.quiebre)+'</td><td style="color:var(--rT);font-weight:700">'+f0(rv.riesgo)+'</td><td style="color:var(--mT);font-weight:700">'+f0(rv.monitorear)+'</td><td style="color:var(--n)">'+f0(rv.normal)+'</td><td style="color:var(--s)">'+f0(rv.sobrestock)+'</td><td style="color:var(--v);font-weight:700">'+f0(rv.coc5)+'</td><td style="color:var(--so);font-weight:700">'+f0(rv.sob_oc)+'</td><td>$'+fMM(rv.valor_stock)+'</td></tr>';}).join('');
+  el('ctb').innerHTML=compsShow.map(function(c){var rv=effR(c);return '<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+CC[c]+';margin-right:6px;vertical-align:middle"></span>'+c+'</td><td>'+f0(rv.skus)+'</td><td style="color:var(--q);font-weight:700">'+f0(rv.quiebre)+'</td><td style="color:var(--rT);font-weight:700">'+f0(rv.riesgo)+'</td><td style="color:var(--mT);font-weight:700">'+f0(rv.monitorear)+'</td><td style="color:var(--n)">'+f0(rv.normal)+'</td><td style="color:var(--s)">'+f0(rv.sobrestock)+'</td><td style="color:var(--v);font-weight:700">'+f0(rv.coc5)+'</td><td style="color:var(--so);font-weight:700">'+f0(rv.sob_oc)+'</td><td>$'+fMM(rv.valor_stock)+'</td></tr>';}).join('');
   el('mctb').innerHTML=COMPS.map(function(c){var tm=TM[c]||{};return '<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+CC[c]+';margin-right:5px;vertical-align:middle"></span>'+c+'</td><td style="text-align:right">'+f0(tm.ctd||0)+'</td><td style="text-align:right">$'+f0(tm.val||0)+'</td><td>'+tbar(tm.tv||0,'#E87B2A')+'</td><td>'+tbar(tm.tval||0,'#378ADD')+'</td></tr>';}).join('');
   var ctx=el('cMC').getContext('2d');if(window._cMC)window._cMC.destroy();
   window._cMC=new Chart(ctx,{type:'bar',data:{labels:COMPS,datasets:[{data:COMPS.map(function(c){return (TM[c]||{val:0}).val;}),backgroundColor:COMPS.map(function(c){return CC[c]+'99';}),borderColor:COMPS.map(function(c){return CC[c];}),borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return '$'+f0(x.raw);}}}},scales:{x:{ticks:{color:'#8892b0',font:{size:11}}},y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+fMM(v);}},grid:{color:'#2d3452'}}}}});
@@ -756,8 +840,9 @@ function rndEstado(){
   var q=(el('es-search')?el('es-search').value:'').toLowerCase().trim();
   var est=el('es-est')?el('es-est').value:'';
   var lst=SKUS_.slice();
-  // Filtro global de comprador
+  // Filtro global de comprador + PPA
   if(gCompFilter) lst=lst.filter(function(s){return s.comp===gCompFilter;});
+  if(ppaActive()) lst=lst.filter(function(s){return !isPPA(s.sku);});
   // Texto: sku o descripción
   if(q) lst=lst.filter(function(s){return (s.sku||'').toString().toLowerCase().indexOf(q)>=0 || (s.desc||'').toLowerCase().indexOf(q)>=0;});
   // Estado
@@ -888,8 +973,8 @@ function updPlan(){
   aPlan=gCompFilter||'';
   var ns=['PA','PC','PS'];ns.forEach(function(n){PF[n]={t:'',s:'',p:1};el(n.toLowerCase()+'s').value='';['ta','tz','te'].forEach(function(f){el(n.toLowerCase()+'-'+f).classList.toggle('active',f==='ta');});});
   var kv;var skuTotal=0;
-  if(aPlan&&R[aPlan]){kv=R[aPlan];skuTotal=kv.skus||1;}
-  else{kv={};KD.forEach(function(d){kv[d.rk]=COMPS.reduce(function(a,c){return a+(R[c][d.rk]||0);},0);});skuTotal=COMPS.reduce(function(a,c){return a+(R[c].skus||0);},0)||1;}
+  if(aPlan&&effR(aPlan)){kv=effR(aPlan);skuTotal=kv.skus||1;}
+  else{kv={};KD.forEach(function(d){kv[d.rk]=COMPS.reduce(function(a,c){return a+(effR(c)[d.rk]||0);},0);});skuTotal=COMPS.reduce(function(a,c){return a+(effR(c).skus||0);},0)||1;}
   // Colored chips with % of total SKUs with FC
   el('pkpis').innerHTML=KD.map(function(d){
     var val=kv[d.rk]||0;
@@ -906,7 +991,12 @@ function updPlan(){
   rPT('PA');rPT('PC');rPT('PS');
 }
 
-function fpA(arr){if(!aPlan)return arr;return arr.filter(function(r){return r[4]===aPlan;});}
+function fpA(arr){
+  var out=arr;
+  if(aPlan) out=out.filter(function(r){return r[4]===aPlan;});
+  if(ppaActive()) out=out.filter(function(r){return !isPPA(r[0]);});
+  return out;
+}
 function apF(arr,n){var d=fpA(arr);var f=PF[n];if(f.t)d=d.filter(function(r){return r[2]===f.t;});if(f.s){var q=f.s.toLowerCase();d=d.filter(function(r){return r[0].indexOf(f.s)>=0||r[1].toLowerCase().indexOf(q)>=0||r[3].toLowerCase().indexOf(q)>=0;});}return d;}
 function rPT(n){var raw=n==='PA'?PA:n==='PC'?PC:PS;var fd=apF(raw,n);var f=PF[n];var tot=fd.length;var pages=Math.max(1,Math.ceil(tot/PER));f.p=Math.min(f.p,pages);var sl=fd.slice((f.p-1)*PER,f.p*PER);var tb=el(n.toLowerCase()+'tb');
   if(n==='PA'){tb.innerHTML=sl.map(function(r){return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td><td style="text-align:right">'+f0(r[5])+'</td><td style="text-align:right">'+f0(r[6])+'</td><td style="text-align:right">'+f0(r[7])+'</td><td style="text-align:right;font-weight:700">'+f0(r[8])+'</td><td style="text-align:right">'+f0(r[9])+'</td><td style="text-align:right;font-weight:700">'+r[10]+'</td><td>'+ba(r[11])+'</td></tr>';}).join('');}
@@ -1093,7 +1183,8 @@ function opSemDet(sem){
   el('mc-drwWrap').classList.add('open');
 }
 function bldTop10(){
-  el('tp10').innerHTML=TP.map(function(r){
+  var src = ppaActive() ? TP.filter(function(r){return !isPPA(r[0]);}) : TP;
+  el('tp10').innerHTML=src.map(function(r){
     // r = [sku,desc,tipo,qty,val,tasa_vol,tasa_val]
     var sku = r[0];
     var nSem=0, totRec=0, clasifN=0;
@@ -1784,8 +1875,7 @@ function rndTI(){
 
 
 // ── COBERTURAS (t10) ─────────────────────────────────────────────────────────
-var COV_PPA = new Set();   // SKUs PPA (Pan de Pascua) — excluidos del cálculo
-var COV_PPA_LOADED = false;
+// (PPA usa PPA_SET global + gExcludePPA — definidos arriba)
 var COV_ORDER = ['<2','2 a 5','5 a 10','10 a 20','20 a 50','50 a 100','Sobre 100','Sin Plan'];
 var COV_COLOR = {'<2':'#E24B4A','2 a 5':'#E87B2A','5 a 10':'#E8C52A','10 a 20':'#639922','20 a 50':'#378ADD','50 a 100':'#7c3aed','Sobre 100':'#a855f7','Sin Plan':'#8892b0'};
 var COV_GROUPS = [
@@ -1860,8 +1950,9 @@ function buildCoberturas(){
   var host = document.getElementById('cov-host');
   if(!host) return;
   if(!Array.isArray(SKUS)){ host.innerHTML='<div style="color:var(--muted);padding:14px">Sin SKUs cargados.</div>'; return; }
-  // Filtro global + exclusión PPA
-  var base = SKUS.filter(function(s){return !COV_PPA.has(String(s.sku));});
+  // Filtro global de comprador + PPA (gExcludePPA controla la exclusión transversalmente)
+  var base = SKUS.slice();
+  if(ppaActive()) base = base.filter(function(s){return !isPPA(s.sku);});
   if(gCompFilter) base = base.filter(function(s){return s.comp===gCompFilter;});
 
   host.innerHTML = '';
@@ -2001,13 +2092,8 @@ function covToggleDetail(gid, bucket, items, tbody){
     + '<th style="text-align:right">Stock</th><th style="text-align:right">Valor Stock</th><th style="text-align:right">Cobertura (sem)</th>'
     + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
-function covLoadPPA(){
-  if(COV_PPA_LOADED) return Promise.resolve();
-  return fetch('sku_ppa.json?v='+Date.now())
-    .then(function(r){ if(!r.ok) throw new Error('no ppa'); return r.json(); })
-    .then(function(p){ COV_PPA = new Set((p.skus||[]).map(String)); COV_PPA_LOADED=true; })
-    .catch(function(){ COV_PPA = new Set(); COV_PPA_LOADED=true; });
-}
+// (loadPPA() global ya se encarga; mantenemos el alias por compatibilidad con showTab)
+function covLoadPPA(){ return loadPPA(); }
 
 // ── LOAD DATA & INIT ────────────────────────────────────────────────────────
 fetch('data.json?v='+Date.now())
@@ -2030,6 +2116,10 @@ fetch('data.json?v='+Date.now())
     // Actualizar title dinámico (para browser tab; el del HTML lo escribe el script Python al publicar)
     var _y = (_D.FECHA && _D.FECHA.length>=10) ? _D.FECHA.slice(-4) : new Date().getFullYear();
     document.title = 'Dashboard Abastecimiento — Semana ' + SEM + ' · ' + _y;
+
+    // Sincronizar checkbox PPA con preferencia persistida + pre-cargar set (no bloquea render)
+    var _ppaCb = document.getElementById('gPPA'); if(_ppaCb) _ppaCb.checked = gExcludePPA;
+    loadPPA().then(function(){ if(ppaActive()) _rebuildAll(); });
 
     buildResumen();rndEstado();buildGer();updPlan();rndFCW();updMKpis();updMCharts(TA);bldTop10();buildKpiAv();
     mcUpdLockUI(); mcRenderCausa(); mcRenderResumen();
