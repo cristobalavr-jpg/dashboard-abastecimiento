@@ -1688,13 +1688,13 @@ function buildKpiAv(){
   el('rot-dead').innerHTML=(ROT.top_muerto||[]).map(function(r){return _rotRow(r,false);}).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:14px">Sin stock muerto</td></tr>';
   el('rot-slow').innerHTML=(ROT.top_slow ||[]).map(function(r){return _rotRow(r,true);}).join('') ||'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:14px">Sin slow movers</td></tr>';
 
-  // Bloqueados (vista global, sin filtro de comprador)
-  var bTot=BLOQ.val; var dBl=DELTAS.BLOQ||{};
-  el('bloq-kpis').innerHTML='<div class="kpia-card danger"><div class="kpia-n">$'+fMM(BLOQ.val)+dArrow(dBl.val,true)+'</div><div class="kpia-l">Valor total bloqueado BL01</div></div><div class="kpia-card warn"><div class="kpia-n">'+BLOQ.n+dArrow(dBl.n,true)+'</div><div class="kpia-l">SKUs bloqueados</div></div><div class="kpia-card"><div class="kpia-n">Quilicura</div><div class="kpia-l">Centro (4010 — BL01)</div></div><div class="kpia-card info"><div class="kpia-n">'+(BLOQ.comp&&BLOQ.comp[0]?BLOQ.comp[0].comprador:'—')+'</div><div class="kpia-l">Mayor exposición</div></div>';
+  // Bloqueados — usa effBLOQ() para respetar toggle PPA y filtro de comprador
+  var EFB=effBLOQ(); var bTot=EFB.val; var dBl=DELTAS.BLOQ||{};
+  el('bloq-kpis').innerHTML='<div class="kpia-card danger"><div class="kpia-n">$'+fMM(EFB.val)+dArrow(dBl.val,true)+'</div><div class="kpia-l">Valor total bloqueado BL01</div></div><div class="kpia-card warn"><div class="kpia-n">'+EFB.n+dArrow(dBl.n,true)+'</div><div class="kpia-l">SKUs bloqueados</div></div><div class="kpia-card"><div class="kpia-n">Quilicura</div><div class="kpia-l">Centro (4010 — BL01)</div></div><div class="kpia-card info"><div class="kpia-n">'+(EFB.comp&&EFB.comp[0]?EFB.comp[0].comprador:'—')+'</div><div class="kpia-l">Mayor exposición</div></div>';
   var cBl=el('cBLOQ').getContext('2d');if(window._cBLOQ)window._cBLOQ.destroy();
-  var bComps=(BLOQ.comp||[]).filter(function(c){return c.comprador!=='SIN ASIGNAR';});
+  var bComps=(EFB.comp||[]).filter(function(c){return c.comprador!=='SIN ASIGNAR';});
   window._cBLOQ=new Chart(cBl,{type:'bar',data:{labels:bComps.map(function(c){return c.comprador;}),datasets:[{data:bComps.map(function(c){return +(c.valor/1e6).toFixed(1);}),backgroundColor:bComps.map(function(c){return (CC[c.comprador]||'#888')+'99';}),borderColor:bComps.map(function(c){return CC[c.comprador]||'#888';}),borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return '$'+x.raw.toFixed(1)+' MM';}}}},scales:{x:{ticks:{color:'#8892b0',font:{size:11}}},y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+v+'MM';}},grid:{color:'#2d3452'}}},onClick:function(e,el2){if(el2.length){var compClicked=bComps[el2[0].index].comprador;opBloqDw(compClicked);}}}});;
-  el('bloq-tbl').innerHTML=(BLOQ.comp||[]).map(function(c){var pct=bTot>0?Math.round(c.valor/bTot*100):0;var col=CC[c.comprador]||'#8892b0';return '<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+col+';margin-right:5px;vertical-align:middle"></span>'+c.comprador+'</td><td style="text-align:center">'+c.skus+'</td><td style="text-align:right;font-weight:700">$'+f0(c.valor)+'</td><td><div style="display:flex;align-items:center;gap:5px"><div style="width:60px;height:5px;background:#2d3452;border-radius:3px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+col+'"></div></div><span style="font-size:.68rem;color:var(--muted)">'+pct+'%</span></div></td></tr>';}).join('');
+  el('bloq-tbl').innerHTML=(EFB.comp||[]).map(function(c){var pct=bTot>0?Math.round(c.valor/bTot*100):0;var col=CC[c.comprador]||'#8892b0';return '<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+col+';margin-right:5px;vertical-align:middle"></span>'+c.comprador+'</td><td style="text-align:center">'+c.skus+'</td><td style="text-align:right;font-weight:700">$'+f0(c.valor)+'</td><td><div style="display:flex;align-items:center;gap:5px"><div style="width:60px;height:5px;background:#2d3452;border-radius:3px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+col+'"></div></div><span style="font-size:.68rem;color:var(--muted)">'+pct+'%</span></div></td></tr>';}).join('');
 }
 
 // ── DRAWER KPIs AVANZADOS ──
@@ -1760,6 +1760,8 @@ function gDw(p){dwPage=p;rndrDw();el('dw-body').scrollTop=0;}
 
 function opBloqDw(comp){
   var det=(BLOQ.det&&BLOQ.det[comp])||[];
+  // Respetar toggle PPA si está activo
+  if(ppaActive()) det=det.filter(function(it){return !isPPA(it[0]);});
   var col=CC[comp]||'#8892b0';
   var popHtml='<div id="bloq-pop-ov" onclick="if(event.target===this)document.getElementById(\'bloq-pop-ov\').remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:flex;align-items:center;justify-content:center">'+
     '<div style="background:#1a1f2e;border:1px solid #2d3452;border-radius:12px;width:90vw;max-width:900px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.5)">'+
