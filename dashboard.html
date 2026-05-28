@@ -700,6 +700,9 @@ function effROT(){  return anyFilter() ? aggROT(curSkus())  : ROT; }
 function effBIAS(){ return anyFilter() ? aggBIAS(curSkus()) : BIAS; }
 function effBLOQ(){
   if(!anyFilter()) return BLOQ;
+  // BLOQ.det[c] viene del script Python como array de arrays:
+  //   [sku, desc, tipo, ctd, val, pu_bl]    índices: 0, 1, 2, 3, 4, 5
+  // Antes este código usaba it.sku y x.valor/x.val asumiendo objetos → quedaba sin filtrar y sumaba $0.
   // Filtrar comp por comprador y det por (comprador + PPA)
   var compList = (BLOQ.comp||[]).slice();
   if(gCompFilter) compList = compList.filter(function(c){return c.comprador===gCompFilter;});
@@ -707,14 +710,14 @@ function effBLOQ(){
   Object.keys(BLOQ.det||{}).forEach(function(k){
     if(gCompFilter && k!==gCompFilter) return;
     var arr = (BLOQ.det[k]||[]).slice();
-    if(ppaActive()) arr = arr.filter(function(it){return !isPPA(it.sku);});
+    if(ppaActive()) arr = arr.filter(function(it){return !isPPA(it[0]);});
     det[k] = arr;
   });
   // Si excluimos PPA, recalcular totales por comprador desde det filtrado
   if(ppaActive()){
     compList = compList.map(function(c){
       var arr = det[c.comprador]||[];
-      var val = arr.reduce(function(a,x){return a+(x.valor||x.val||0);},0);
+      var val = arr.reduce(function(a,x){return a+(x[4]||0);},0);
       return Object.assign({}, c, {valor:val, skus:arr.length});
     });
   }
