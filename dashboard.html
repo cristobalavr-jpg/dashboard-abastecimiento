@@ -912,6 +912,10 @@ function opMermaComp(comp){
 }
 function opKpi(comp,key){
   var rows=(SD[comp]&&SD[comp][key])?SD[comp][key]:[];
+  // Respetar el toggle global PPA (Pan de Pascua). SD[comp][key] viene precalculado
+  // desde Python SIN excluir PPA; las tarjetas de conteo usan effR (sí excluye), por lo
+  // que el drill-down debe filtrar igual para no mostrar/contar SKUs PPA. (ver PARAMETRO.MD A.9)
+  if(ppaActive()) rows = rows.filter(function(r){return !isPPA(r[0]);});
   var d=KD.find(function(x){return x.k===key;});
   var lbl=d?(d.dynLbl?d.dynLbl(comp):d.lbl):key;
   var u=UMBRALES[comp]||UMBRALES.DEFAULT;
