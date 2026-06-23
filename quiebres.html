@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Quiebres y Desviaciones SEM25</title>
+<title>Quiebres y Desviaciones SEM26</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
@@ -53,13 +53,13 @@ table.desv th:nth-child(n+5){padding-left:8px}
 </head>
 <body>
 <div class="wrap">
-  <h1>Quiebres y Desviaciones — Semana 25</h1>
-  <div class="sub">Generado: 18/06/2026 · datos: Quiebres y Desviaciones Semana.xlsx</div>
+  <h1>Quiebres y Desviaciones — Semana 26</h1>
+  <div class="sub">Generado: 23/06/2026 · datos: Quiebres y Desviaciones Semana.xlsx <span id="liveTag" style="margin-left:8px;font-weight:600"></span></div>
 
   <div class="kpis">
-    <div class="kpi inf"><div class="kn">20</div><div class="kl">Informados SEM25</div></div>
-    <div class="kpi real"><div class="kn">14</div><div class="kl">Reales SEM25</div></div>
-    <div class="kpi pct"><div class="kn">70%</div><div class="kl">% Reales / Informados</div></div>
+    <div class="kpi inf"><div class="kn" id="kInf">10</div><div class="kl">Informados SEM26</div></div>
+    <div class="kpi real"><div class="kn" id="kReal">8</div><div class="kl">Reales SEM26</div></div>
+    <div class="kpi pct"><div class="kn" id="kPct">80%</div><div class="kl">% Reales / Informados</div></div>
   </div>
 
   <div class="row">
@@ -88,7 +88,9 @@ table.desv th:nth-child(n+5){padding-left:8px}
 </div></div>
 
 <script>
-const QB = {"SEM": 25, "QUIEBRES": {"sem": 25, "total_informados": 20, "total_reales": 14, "por_dia": {"labels": ["Lun 15/06", "Mar 16/06", "Mié 17/06", "Jue 18/06"], "fechas": ["2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18"], "informados": [6, 7, 3, 4], "reales": [5, 3, 3, 3]}, "motivos": {"labels": ["Reposición Diaria", "Rechazo Calidad", "Desviación Q Productivo"], "values": [8, 4, 2]}, "categorias": {"labels": ["VERDURAS FRESCAS", "FRUTAS FRESCAS"], "values": [9, 5]}, "tipos": {"labels": ["Quiebre Real", "Stock en Producción", "Cambio de Diseño"], "values": [14, 4, 2]}, "detalle": [{"dia": "2026-06-15", "sku": "300123", "desc": "PALTA", "cat": "VERDURAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Reposición Diaria"}, {"dia": "2026-06-15", "sku": "300141", "desc": "TOMATE COCTEL GRANEL", "cat": "VERDURAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Rechazo Calidad"}, {"dia": "2026-06-15", "sku": "300145", "desc": "LECHUGA HIDROPONICA GRANEL", "cat": "VERDURAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Reposición Diaria"}, {"dia": "2026-06-15", "sku": "300155", "desc": "ESPINACA PICADA", "cat": "VERDURAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Reposición Diaria"}, {"dia": "2026-06-15", "sku": "300245", "desc": "PIÑA TROZO KG", "cat": "FRUTAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Desviación Q Productivo"}, {"dia": "2026-06-15", "sku": "400262", "desc": "BOLSA CAS PAN MIGA BLANCO 440G CPP35 04.24  ", "cat": "BOLSAS", "tipo": "Cambio de Diseño", "motivo": ""}, {"dia": "2026-06-16", "sku": "300145", "desc": "LECHUGA HIDROPONICA GRANEL", "cat": "VERDURAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Reposición Diaria"}, {"dia": "2026-06-16", "sku": "300155", "desc": "ESPINACA PICADA", "cat": "VERDURAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Reposición Diaria"}, {"dia": "2026-06-16", "sku": "300245", "desc": "PIÑA TROZO KG", "cat": "FRUTAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Reposición Diaria"}, {"dia": "2026-06-16", "sku": "300497", "desc": "HARINA INTEGRAL WG MAXISACO", "cat": "HARINAS", "tipo": "Stock en Producción", "motivo": ""}, {"dia": "2026-06-16", "sku": "300036", "desc": "PP CLARA EN POLVO", "cat": "HUEVO DERIVADOS", "tipo": "Stock en Producción", "motivo": ""}, {"dia": "2026-06-16", "sku": "400670", "desc": "ETIQ CAS MEDIALUNA CREMA 05.26", "cat": "ETIQUETAS", "tipo": "Stock en Producción", "motivo": "Desviación Q Productivo"}, {"dia": "2026-06-16", "sku": "400261", "desc": "ETIQ CAST PLATO LASAÑA POLLO ESPINACA 03.24", "cat": "", "tipo": "Cambio de Diseño", "motivo": ""}, {"dia": "2026-06-17", "sku": "300145", "desc": "LECHUGA HIDROPONICA GRANEL", "cat": "VERDURAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Reposición Diaria"}, {"dia": "2026-06-17", "sku": "300529", "desc": "KIWI PELADO", "cat": "FRUTAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Rechazo Calidad"}, {"dia": "2026-06-17", "sku": "300245", "desc": "PIÑA TROZO KG", "cat": "FRUTAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Rechazo Calidad"}, {"dia": "2026-06-18", "sku": "300145", "desc": "LECHUGA HIDROPONICA GRANEL", "cat": "VERDURAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Reposición Diaria"}, {"dia": "2026-06-18", "sku": "300184", "desc": "CEBOLLINES", "cat": "VERDURAS FRESCAS", "tipo": "Stock en Producción", "motivo": ""}, {"dia": "2026-06-18", "sku": "300245", "desc": "PIÑA TROZO KG", "cat": "FRUTAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Rechazo Calidad"}, {"dia": "2026-06-18", "sku": "300291", "desc": "ALBAHACA FRESCA", "cat": "VERDURAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Desviación Q Productivo"}]}, "DESV": {"sem": 25, "sems": [24, 25], "dias": ["S24 Sáb", "S25 Lun", "S25 Mar", "S25 Mié", "S25 Jue"], "skus": [{"sku": "300185", "desc": "CLARA LIQUIDA", "dmax": 14, "lt": "48-72 HRS"}, {"sku": "300522", "desc": "CEBOLLA PLUMA", "dmax": 6, "lt": "48 HRS"}, {"sku": "300291", "desc": "ALBAHACA FRESCA", "dmax": 1, "lt": "24 HRS"}, {"sku": "300182", "desc": "PIMENTON ROJO ENTERO", "dmax": 5, "lt": "24 HRS"}, {"sku": "300187", "desc": "HUEVO LIQUIDO", "dmax": 7, "lt": "48-72 HRS"}, {"sku": "300179", "desc": "ZANAHORIA RALLADA", "dmax": 4, "lt": "48 HRS"}, {"sku": "300124", "desc": "TOMATE", "dmax": 3, "lt": "24 HRS"}, {"sku": "300155", "desc": "ESPINACA PICADA", "dmax": 1, "lt": "48 HRS"}, {"sku": "300166", "desc": "HUEVO DURO", "dmax": 14, "lt": "48-72 HRS"}, {"sku": "300169", "desc": "PEPINOS", "dmax": 5, "lt": "24 HRS"}, {"sku": "300416", "desc": "CLEMENTINA", "dmax": 2, "lt": "24 HRS"}, {"sku": "300245", "desc": "PIÑA TROZO", "dmax": 1, "lt": "48 HRS"}, {"sku": "300136", "desc": "PERA", "dmax": 2, "lt": "24 HRS"}, {"sku": "300529", "desc": "KIWI PELADO", "dmax": 1, "lt": "48 HRS"}, {"sku": "300317", "desc": "CEBOLLA MORADA", "dmax": 5, "lt": "24 HRS"}, {"sku": "300141", "desc": "TOMATE COCTEL GRANEL", "dmax": 3, "lt": "24 HRS"}, {"sku": "300318", "desc": "CILANTRO FRESCO", "dmax": 2, "lt": "24 HRS"}, {"sku": "300123", "desc": "PALTA", "dmax": 1, "lt": "24 HRS"}, {"sku": "300184", "desc": "CEBOLLINES", "dmax": 3, "lt": "24 HRS"}, {"sku": "300111", "desc": "CEBOLLA PICADA CUBO", "dmax": 6, "lt": "48 HRS"}, {"sku": "300145", "desc": "LECHUGA GRANEL", "dmax": 1, "lt": "24 HRS"}], "data": [[44.2, 79.9, 71.6, -100.0, -100.0], [6.2, 13.8, -15.9, 4.6, -59.3], [7.6, 8.5, -2.9, 9.1, -43.9], [6.6, 4.6, -10.9, 0.5, -39.0], [-15.3, -14.4, -8.3, -29.7, -38.2], [-2.8, -44.2, -36.2, -33.9, -37.4], [1.9, 7.3, -7.6, -10.4, -36.0], [-12.8, 1.5, -12.9, 0.7, -29.8], [4.0, -8.9, -2.2, 19.1, -18.8], [4.8, 6.8, -12.9, 18.3, -14.5], [-6.9, 2.0, -4.3, -2.9, -12.5], [-6.9, 2.0, -4.3, -2.9, -12.5], [-6.9, 2.0, -4.3, -2.9, -12.5], [-6.9, 2.0, -4.3, -2.9, -12.5], [6.5, 6.5, -3.7, 11.0, -11.3], [1.8, 2.4, -4.5, 6.5, -11.0], [3.3, 2.3, -2.1, 13.7, -10.5], [1.2, 0.4, -5.3, 3.3, -7.1], [10.5, 15.7, -19.9, 12.1, 8.5], [-28.3, 2.4, -92.4, 14.1, 14.1], [29.9, 30.3, 20.9, 36.4, 16.2]]}};
+const QB = {"SEM": 26, "QUIEBRES": {"sem": 26, "total_informados": 10, "total_reales": 8, "por_dia": {"labels": ["Lun 22/06", "Mar 23/06"], "fechas": ["2026-06-22", "2026-06-23"], "informados": [5, 5], "reales": [4, 4]}, "motivos": {"labels": ["Reposición Diaria", "Incumplimiento Proveedor", "Rechazo Calidad"], "values": [5, 2, 1]}, "categorias": {"labels": ["VERDURAS FRESCAS", "FRUTAS FRESCAS", "BOLSAS", "CONGELADOS"], "values": [2, 3, 2, 1]}, "tipos": {"labels": ["Quiebre Real", "Stock en Producción"], "values": [8, 2]}, "detalle": [{"dia": "2026-06-22", "sku": "300145", "desc": "LECHUGA HIDROPONICA GRANEL", "cat": "VERDURAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Reposición Diaria"}, {"dia": "2026-06-22", "sku": "300318", "desc": "CILANTRO FRESCO", "cat": "VERDURAS FRESCAS", "tipo": "Stock en Producción", "motivo": "Otros"}, {"dia": "2026-06-22", "sku": "300245", "desc": "PIÑA TROZO KG", "cat": "FRUTAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Reposición Diaria"}, {"dia": "2026-06-22", "sku": "300529", "desc": "KIWI PELADO", "cat": "FRUTAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Reposición Diaria"}, {"dia": "2026-06-22", "sku": "400606", "desc": "BOLSA CAS PITA LINAZA CHIA 09.25 CPP35", "cat": "BOLSAS", "tipo": "Quiebre Real", "motivo": "Incumplimiento Proveedor"}, {"dia": "2026-06-23", "sku": "300145", "desc": "LECHUGA HIDROPONICA GRANEL", "cat": "VERDURAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Reposición Diaria"}, {"dia": "2026-06-23", "sku": "300416", "desc": "CLEMENTINA", "cat": "FRUTAS FRESCAS", "tipo": "Stock en Producción", "motivo": "Rechazo Calidad"}, {"dia": "2026-06-23", "sku": "300245", "desc": "PIÑA TROZO KG", "cat": "FRUTAS FRESCAS", "tipo": "Quiebre Real", "motivo": "Reposición Diaria"}, {"dia": "2026-06-23", "sku": "300567", "desc": "POROTOS GRANADOS", "cat": "CONGELADOS", "tipo": "Quiebre Real", "motivo": "Rechazo Calidad"}, {"dia": "2026-06-23", "sku": "400606", "desc": "BOLSA CAS PITA LINAZA CHIA 09.25 CPP35", "cat": "BOLSAS", "tipo": "Quiebre Real", "motivo": "Incumplimiento Proveedor"}]}, "DESV": {"sem": 26, "sems": [24, 25], "dias": ["S24 Sáb", "S25 Lun", "S25 Mar", "S25 Mié", "S25 Jue"], "skus": [{"sku": "300185", "desc": "CLARA LIQUIDA", "dmax": 14, "lt": "48-72 HRS"}, {"sku": "300522", "desc": "CEBOLLA PLUMA", "dmax": 6, "lt": "48 HRS"}, {"sku": "300291", "desc": "ALBAHACA FRESCA", "dmax": 1, "lt": "24 HRS"}, {"sku": "300182", "desc": "PIMENTON ROJO ENTERO", "dmax": 5, "lt": "24 HRS"}, {"sku": "300187", "desc": "HUEVO LIQUIDO", "dmax": 7, "lt": "48-72 HRS"}, {"sku": "300179", "desc": "ZANAHORIA RALLADA", "dmax": 4, "lt": "48 HRS"}, {"sku": "300124", "desc": "TOMATE", "dmax": 3, "lt": "24 HRS"}, {"sku": "300155", "desc": "ESPINACA PICADA", "dmax": 1, "lt": "48 HRS"}, {"sku": "300166", "desc": "HUEVO DURO", "dmax": 14, "lt": "48-72 HRS"}, {"sku": "300169", "desc": "PEPINOS", "dmax": 5, "lt": "24 HRS"}, {"sku": "300416", "desc": "CLEMENTINA", "dmax": 2, "lt": "24 HRS"}, {"sku": "300245", "desc": "PIÑA TROZO", "dmax": 1, "lt": "48 HRS"}, {"sku": "300136", "desc": "PERA", "dmax": 2, "lt": "24 HRS"}, {"sku": "300529", "desc": "KIWI PELADO", "dmax": 1, "lt": "48 HRS"}, {"sku": "300317", "desc": "CEBOLLA MORADA", "dmax": 5, "lt": "24 HRS"}, {"sku": "300141", "desc": "TOMATE COCTEL GRANEL", "dmax": 3, "lt": "24 HRS"}, {"sku": "300318", "desc": "CILANTRO FRESCO", "dmax": 2, "lt": "24 HRS"}, {"sku": "300123", "desc": "PALTA", "dmax": 1, "lt": "24 HRS"}, {"sku": "300184", "desc": "CEBOLLINES", "dmax": 3, "lt": "24 HRS"}, {"sku": "300111", "desc": "CEBOLLA PICADA CUBO", "dmax": 6, "lt": "48 HRS"}, {"sku": "300145", "desc": "LECHUGA GRANEL", "dmax": 1, "lt": "24 HRS"}], "data": [[44.2, 79.9, 71.6, -100.0, -100.0], [6.2, 13.8, -15.9, 4.6, -59.3], [7.6, 8.5, -2.9, 9.1, -43.9], [6.6, 4.6, -10.9, 0.5, -39.0], [-15.3, -14.4, -8.3, -29.7, -38.2], [-2.8, -44.2, -36.2, -33.9, -37.4], [1.9, 7.3, -7.6, -10.4, -36.0], [-12.8, 1.5, -12.9, 0.7, -29.8], [4.0, -8.9, -2.2, 19.1, -18.8], [4.8, 6.8, -12.9, 18.3, -14.5], [-6.9, 2.0, -4.3, -2.9, -12.5], [-6.9, 2.0, -4.3, -2.9, -12.5], [-6.9, 2.0, -4.3, -2.9, -12.5], [-6.9, 2.0, -4.3, -2.9, -12.5], [6.5, 6.5, -3.7, 11.0, -11.3], [1.8, 2.4, -4.5, 6.5, -11.0], [3.3, 2.3, -2.1, 13.7, -10.5], [1.2, 0.4, -5.3, 3.3, -7.1], [10.5, 15.7, -19.9, 12.1, 8.5], [-28.3, 2.4, -92.4, 14.1, 14.1], [29.9, 30.3, 20.9, 36.4, 16.2]]}};                       // foto del Excel (fallback)
+const QB_BACKEND_URL = "";    // si está set → quiebres EN VIVO desde la nube
+const SEM = QB.SEM;
 
 if(window.ChartDataLabels) Chart.register(window.ChartDataLabels);
 Chart.defaults.plugins.datalabels = Chart.defaults.plugins.datalabels || {};
@@ -99,7 +101,8 @@ const PAL = {
   donut:['#0ea5e9','#f97316','#10b981','#8b5cf6','#facc15','#ec4899','#06b6d4','#84cc16','#f43f5e','#a855f7'],
   bar :['#6366f1','#10b981','#f97316','#8b5cf6','#06b6d4','#facc15','#ef4444']
 };
-const dlBar = {display:true, anchor:'end', align:'top', color:'#0f172a', font:{weight:'700', size:11}, formatter:v=>(v||v===0)?v:''};
+const dlBar  = {display:true, anchor:'end', align:'top', color:'#0f172a', font:{weight:'700', size:11}, formatter:v=>(v||v===0)?v:''};
+const dlBarH = {display:true, anchor:'end', align:'end', color:'#0f172a', font:{weight:'700', size:11}, formatter:v=>(v||v===0)?v:''};
 const dlDonut = {display:true, color:'#fff', font:{weight:'700', size:11}, formatter:(v,ctx)=>{
   const t = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+(b||0),0);
   if(!t||!v) return '';
@@ -107,70 +110,111 @@ const dlDonut = {display:true, color:'#fff', font:{weight:'700', size:11}, forma
   return p<5 ? '' : p.toFixed(0)+'%';
 }};
 
-// Quiebres por día
-const Q = QB.QUIEBRES, D = QB.DESV;
-new Chart(document.getElementById('cDia'), {
-  type:'bar',
-  data:{labels:Q.por_dia.labels, datasets:[
-    {label:'Informados', data:Q.por_dia.informados, backgroundColor:PAL.inf+'cc', borderColor:PAL.inf, borderWidth:1.5, borderRadius:4},
-    {label:'Reales',     data:Q.por_dia.reales,     backgroundColor:PAL.real+'cc', borderColor:PAL.real, borderWidth:1.5, borderRadius:4}
-  ]},
-  options:{responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{labels:{color:'#334155',font:{size:11}}}, datalabels:dlBar},
-    scales:{x:{ticks:{color:'#475569',font:{size:11}}, grid:{display:false}},
-            y:{beginAtZero:true, ticks:{color:'#475569',font:{size:10}}, grid:{color:'#e2e8f0'}}},
-    onClick:(e,el)=>{ if(el.length){ openDia(el[0].index); } }
-  }
-});
+let Q = QB.QUIEBRES;            // se reemplaza con datos de la nube si hay backend
+const D = QB.DESV;
+let chDia=null, chTipo=null, chMot=null, chCat=null;
 
-// Tipos (barras horizontales apiladas verticalmente)
-const tCols = Q.tipos.labels.map((_,i)=>PAL.bar[i%PAL.bar.length]);
-const dlBarH = {display:true, anchor:'end', align:'end', color:'#0f172a', font:{weight:'700', size:11}, formatter:v=>(v||v===0)?v:''};
-new Chart(document.getElementById('cTipo'), {
-  type:'bar',
-  data:{labels:Q.tipos.labels, datasets:[{
-    data:Q.tipos.values,
-    backgroundColor:tCols.map(c=>c+'cc'),
-    borderColor:tCols, borderWidth:1.5, borderRadius:6,
-    barPercentage:0.65, categoryPercentage:0.75
-  }]},
-  options:{responsive:true, maintainAspectRatio:false, indexAxis:'y',
-    layout:{padding:{right:30}},
-    plugins:{legend:{display:false}, datalabels:dlBarH, tooltip:{callbacks:{label:x=>x.raw+' quiebres'}}},
-    scales:{x:{beginAtZero:true, ticks:{color:'#475569',font:{size:10},precision:0}, grid:{color:'#e2e8f0'}},
-            y:{ticks:{color:'#334155',font:{size:11,weight:'600'}}, grid:{display:false}}}}
-});
+// Normalización idéntica al pipeline Python (procesar_quiebres)
+function capTipo(s){ s=(s==null?'':String(s)).trim(); if(!s) return 'Sin tipo'; return s.toLowerCase()==='quiebre real'?'Quiebre Real':s; }
+function isReal(t){ return (t==null?'':String(t)).trim().toLowerCase()==='quiebre real'; }
+const DIAS_ES=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
-// Motivos
-new Chart(document.getElementById('cMot'), {
-  type:'doughnut',
-  data:{labels:Q.motivos.labels, datasets:[{data:Q.motivos.values, backgroundColor:Q.motivos.labels.map((_,i)=>PAL.donut[i%PAL.donut.length]), borderWidth:2, borderColor:'#fff'}]},
-  options:{responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:10},padding:6}}, datalabels:dlDonut,
-      tooltip:{callbacks:{label:x=>{const t=x.dataset.data.reduce((a,b)=>a+b,0); const p=t?(x.raw/t*100).toFixed(1):0; return x.label+': '+x.raw+' ('+p+'%)';}}}}}
-});
+// Agrega los registros crudos del histórico (nube) → estructura QUIEBRES de la semana
+function aggregateQuiebres(rows, sem){
+  const wk = rows.filter(r=> Number(r.sem)===Number(sem) && r.fecha);
+  // dedup por fecha|sku|tipo|motivo (colapsa migrado + recargas)
+  const seen={}, dd=[];
+  wk.forEach(r=>{ const k=r.fecha+'|'+r.sku+'|'+capTipo(r.tipo)+'|'+(r.motivo||''); if(!seen[k]){ seen[k]=1; dd.push(r); } });
+  const diasInf={}, diasReal={};
+  dd.forEach(r=>{ diasInf[r.fecha]=(diasInf[r.fecha]||0)+1; if(isReal(r.tipo)) diasReal[r.fecha]=(diasReal[r.fecha]||0)+1; });
+  const fechas=Object.keys(diasInf).sort();
+  const por_dia={
+    labels: fechas.map(f=>{ const d=new Date(f+'T00:00:00'); return DIAS_ES[(d.getDay()+6)%7]+' '+f.slice(8,10)+'/'+f.slice(5,7); }),
+    fechas: fechas,
+    informados: fechas.map(f=>diasInf[f]),
+    reales: fechas.map(f=>diasReal[f]||0)
+  };
+  const reales = dd.filter(r=>isReal(r.tipo));
+  const cnt=(arr,key)=>{ const m={}; arr.forEach(r=>{ const k=key(r); m[k]=(m[k]||0)+1; }); return m; };
+  const mot=cnt(reales, r=> r.motivo||'Sin motivo');
+  const cat=cnt(reales, r=> r.cat||'Sin categoría');
+  const tip=cnt(dd, r=> capTipo(r.tipo));
+  const tipoE=Object.entries(tip).sort((a,b)=>b[1]-a[1]);
+  const detalle = dd.map(r=>({dia:r.fecha, sku:String(r.sku||''), desc:r.desc||'', cat:r.cat||'', tipo:r.tipo||'', motivo:r.motivo||''}));
+  return {
+    sem, total_informados: dd.length, total_reales: reales.length, por_dia,
+    motivos:    {labels:Object.keys(mot), values:Object.values(mot)},
+    categorias: {labels:Object.keys(cat), values:Object.values(cat)},
+    tipos:      {labels:tipoE.map(e=>e[0]), values:tipoE.map(e=>e[1])},
+    detalle
+  };
+}
 
-// Categorías
-new Chart(document.getElementById('cCat'), {
-  type:'doughnut',
-  data:{labels:Q.categorias.labels, datasets:[{data:Q.categorias.values, backgroundColor:Q.categorias.labels.map((_,i)=>PAL.donut[(i+2)%PAL.donut.length]), borderWidth:2, borderColor:'#fff'}]},
-  options:{responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:10},padding:6}}, datalabels:dlDonut,
-      tooltip:{callbacks:{label:x=>{const t=x.dataset.data.reduce((a,b)=>a+b,0); const p=t?(x.raw/t*100).toFixed(1):0; return x.label+': '+x.raw+' ('+p+'%)';}}}}}
-});
+function renderQuiebres(){
+  const ti=Q.total_informados||0, tr=Q.total_reales||0;
+  document.getElementById('kInf').textContent = ti;
+  document.getElementById('kReal').textContent = tr;
+  document.getElementById('kPct').textContent = (ti?Math.round(tr/ti*100):0)+'%';
 
-// Tabla desviaciones
-(function(){
+  if(chDia) chDia.destroy();
+  chDia = new Chart(document.getElementById('cDia'), {
+    type:'bar',
+    data:{labels:Q.por_dia.labels, datasets:[
+      {label:'Informados', data:Q.por_dia.informados, backgroundColor:PAL.inf+'cc', borderColor:PAL.inf, borderWidth:1.5, borderRadius:4},
+      {label:'Reales',     data:Q.por_dia.reales,     backgroundColor:PAL.real+'cc', borderColor:PAL.real, borderWidth:1.5, borderRadius:4}
+    ]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#334155',font:{size:11}}}, datalabels:dlBar},
+      scales:{x:{ticks:{color:'#475569',font:{size:11}}, grid:{display:false}},
+              y:{beginAtZero:true, ticks:{color:'#475569',font:{size:10}}, grid:{color:'#e2e8f0'}}},
+      onClick:(e,els)=>{ if(els.length){ openDia(els[0].index); } }
+    }
+  });
+
+  const tCols = Q.tipos.labels.map((_,i)=>PAL.bar[i%PAL.bar.length]);
+  if(chTipo) chTipo.destroy();
+  chTipo = new Chart(document.getElementById('cTipo'), {
+    type:'bar',
+    data:{labels:Q.tipos.labels, datasets:[{
+      data:Q.tipos.values, backgroundColor:tCols.map(c=>c+'cc'),
+      borderColor:tCols, borderWidth:1.5, borderRadius:6, barPercentage:0.65, categoryPercentage:0.75
+    }]},
+    options:{responsive:true, maintainAspectRatio:false, indexAxis:'y', layout:{padding:{right:30}},
+      plugins:{legend:{display:false}, datalabels:dlBarH, tooltip:{callbacks:{label:x=>x.raw+' quiebres'}}},
+      scales:{x:{beginAtZero:true, ticks:{color:'#475569',font:{size:10},precision:0}, grid:{color:'#e2e8f0'}},
+              y:{ticks:{color:'#334155',font:{size:11,weight:'600'}}, grid:{display:false}}}}
+  });
+
+  if(chMot) chMot.destroy();
+  chMot = new Chart(document.getElementById('cMot'), {
+    type:'doughnut',
+    data:{labels:Q.motivos.labels, datasets:[{data:Q.motivos.values, backgroundColor:Q.motivos.labels.map((_,i)=>PAL.donut[i%PAL.donut.length]), borderWidth:2, borderColor:'#fff'}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:10},padding:6}}, datalabels:dlDonut,
+        tooltip:{callbacks:{label:x=>{const t=x.dataset.data.reduce((a,b)=>a+b,0); const p=t?(x.raw/t*100).toFixed(1):0; return x.label+': '+x.raw+' ('+p+'%)';}}}}}
+  });
+
+  if(chCat) chCat.destroy();
+  chCat = new Chart(document.getElementById('cCat'), {
+    type:'doughnut',
+    data:{labels:Q.categorias.labels, datasets:[{data:Q.categorias.values, backgroundColor:Q.categorias.labels.map((_,i)=>PAL.donut[(i+2)%PAL.donut.length]), borderWidth:2, borderColor:'#fff'}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:10},padding:6}}, datalabels:dlDonut,
+        tooltip:{callbacks:{label:x=>{const t=x.dataset.data.reduce((a,b)=>a+b,0); const p=t?(x.raw/t*100).toFixed(1):0; return x.label+': '+x.raw+' ('+p+'%)';}}}}}
+  });
+}
+
+// Tabla desviaciones (siempre desde el Excel embebido)
+function renderDesv(){
   const t = document.getElementById('tDesv');
   let ths = '<tr><th>SKU</th><th>Descripción</th><th style="text-align:center">Días Max<br>Bodega</th><th>LT</th>';
   D.dias.forEach(d=>{ ths += '<th style="text-align:center">'+d+'</th>'; });
   t.querySelector('thead').innerHTML = ths + '</tr>';
-
   const colorFor = v => {
     if(v===null||v===undefined) return {bg:'#f8fafc',fg:'#94a3b8'};
-    if(v >= 50)              return {bg:'#fecaca', fg:'#991b1b'};   // rojo pastel
-    if(v >= 20)              return {bg:'#fef3c7', fg:'#92400e'};   // amarillo pastel
-    if(v <= -20 && v >= -100) return {bg:'#e0f2fe', fg:'#075985'};  // celeste pastel
+    if(v >= 50)              return {bg:'#fecaca', fg:'#991b1b'};
+    if(v >= 20)              return {bg:'#fef3c7', fg:'#92400e'};
+    if(v <= -20 && v >= -100) return {bg:'#e0f2fe', fg:'#075985'};
     return {bg:'#fff', fg:'#1e293b'};
   };
   let html='';
@@ -185,7 +229,24 @@ new Chart(document.getElementById('cCat'), {
     html += '</tr>';
   });
   t.querySelector('tbody').innerHTML = html;
-})();
+}
+
+renderDesv();
+renderQuiebres();   // primero con la foto del Excel (visible al instante / fallback)
+
+// Quiebres EN VIVO desde la nube
+if(QB_BACKEND_URL){
+  fetch(QB_BACKEND_URL, {method:'GET'})
+    .then(r=>r.json())
+    .then(j=>{
+      if(j && j.ok && Array.isArray(j.rows)){
+        Q = aggregateQuiebres(j.rows, SEM);
+        renderQuiebres();
+        const s=document.getElementById('liveTag'); if(s){ s.textContent='● en vivo'; s.style.color='#16a34a'; }
+      }
+    })
+    .catch(e=>console.warn('[qb] cloud GET fail', e));
+}
 
 // Modal detalle por día
 function openDia(idx){
