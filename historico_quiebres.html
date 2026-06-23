@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><title>Histórico de Quiebres</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
+body{background:#f8fafc;color:#0f172a;padding:22px}
+.wrap{max-width:1500px;margin:0 auto}
+h1{font-size:1.4rem;font-weight:700}
+.sub{font-size:.82rem;color:#64748b;margin-bottom:18px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.stat{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:13px 15px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.stat .n{font-size:1.5rem;font-weight:800;line-height:1.05}
+.stat .l{font-size:.68rem;color:#64748b;margin-top:3px}
+.stat.r{border-left:4px solid #ef4444}.stat.r .n{color:#dc2626}
+.stat.a{border-left:4px solid #f97316}.stat.a .n{color:#ea580c}
+.stat.b{border-left:4px solid #6366f1}.stat.b .n{color:#4f46e5}
+.stat.g{border-left:4px solid #64748b}.stat.g .n{color:#475569}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:16px;box-shadow:0 1px 2px rgba(15,23,42,.04);margin-bottom:16px}
+.ct{font-size:.86rem;font-weight:700;color:#1e293b;border-bottom:1px solid #e2e8f0;padding-bottom:9px;margin-bottom:12px}
+.ct small{font-weight:400;color:#94a3b8;font-size:.7rem}
+.cw{position:relative;height:300px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.row2 .card{margin-bottom:0}
+@media(max-width:900px){.row2{grid-template-columns:1fr};.stats{grid-template-columns:repeat(2,1fr)}}
+.hm-wrap{overflow-x:auto}
+table.hm{border-collapse:collapse;font-size:.66rem}
+table.hm th{color:#64748b;font-weight:600;padding:3px 4px;text-align:center;white-space:nowrap}
+table.hm th.sku{text-align:left;position:sticky;left:0;background:#fff;z-index:2;min-width:230px}
+table.hm td{width:22px;height:22px;text-align:center;border:1px solid #f1f5f9;color:#fff;font-weight:700;font-size:.6rem}
+table.hm td.sku{text-align:left;position:sticky;left:0;background:#fff;color:#1e293b;border:none;padding:2px 8px 2px 0}
+table.hm td.sku b{color:#0f172a}table.hm td.sku span{color:#94a3b8;font-weight:400}
+.hm-legend{font-size:.68rem;color:#475569;margin-top:10px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.hm-legend i{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:middle;margin-right:4px;border:1px solid #e2e8f0}
+table.t{border-collapse:collapse;width:100%;font-size:.74rem}
+table.t th{background:#f1f5f9;color:#334155;font-weight:600;padding:8px;text-align:left;border-bottom:1px solid #e2e8f0}
+table.t td{padding:6px 8px;border-bottom:1px solid #f1f5f9}
+table.t td.c{text-align:center;font-variant-numeric:tabular-nums}
+.chip{display:inline-block;border-radius:20px;padding:1px 9px;font-size:.66rem;font-weight:700}
+.chip.hi{background:#fee2e2;color:#b91c1c}.chip.md{background:#ffedd5;color:#c2410c}.chip.lo{background:#fef9c3;color:#a16207}
+.comp{font-size:.66rem;color:#475569;background:#f1f5f9;border-radius:5px;padding:1px 7px}
+.loading{color:#64748b;font-size:.9rem;padding:40px;text-align:center}
+</style></head>
+<body><div class="wrap">
+<h1>Histórico de Quiebres</h1>
+<div class="sub" id="sub">Cargando desde la nube…</div>
+<div id="content" style="display:none">
+  <div class="stats" id="stats"></div>
+  <div class="card"><div class="ct">1 · Tendencia semanal de quiebres reales <small>— todas las semanas del año</small></div><div class="cw"><canvas id="cTrend"></canvas></div></div>
+  <div class="row2">
+    <div class="card"><div class="ct">2 · Mayores motivos de quiebre <small>— % sobre quiebres reales con motivo · año</small></div><div class="cw" style="height:280px"><canvas id="cMot"></canvas></div></div>
+    <div class="card"><div class="ct">3 · Categorías con más quiebres <small>— top 10 · % del total de quiebres del año</small></div><div class="cw" style="height:280px"><canvas id="cCat"></canvas></div></div>
+  </div>
+  <div class="card"><div class="ct">4 · Histórico semanal de quiebres por motivo <small>— ¿hay tendencia? · barras apiladas, quiebres reales con motivo</small></div><div class="cw" style="height:320px"><canvas id="cMotTrend"></canvas></div></div>
+  <div class="card">
+    <div class="ct">5 · Reincidencia — mapa de calor SKU × semana <small>— color = nº de quiebres reales esa semana · top 14 reincidentes</small></div>
+    <div class="hm-wrap" id="heat"></div>
+    <div class="hm-legend">
+      <span><i style="background:#fff"></i>sin quiebre</span><span><i style="background:#fca5a5"></i>1</span>
+      <span><i style="background:#ef4444"></i>2</span><span><i style="background:#991b1b"></i>3+</span>
+      <span style="color:#94a3b8">reincidente = quiebre real en ≥2 semanas distintas</span>
+    </div>
+  </div>
+  <div class="card"><div class="ct">Ranking de SKUs reincidentes <small>— accionable: prioriza los crónicos</small></div>
+    <div style="overflow-x:auto"><table class="t" id="tbl"></table></div>
+  </div>
+</div>
+<div class="loading" id="err" style="display:none"></div>
+</div>
+<script>
+const QB_URL = 'https://script.google.com/macros/s/AKfycbwm2pqimyRXfc4ojTB7V00BFr3HqrYuyeY3HcpAmU08hqMKfO0MJS92xcWx_QMZTq5d/exec';
+if(window.ChartDataLabels) Chart.register(window.ChartDataLabels);
+Chart.defaults.plugins.datalabels = Chart.defaults.plugins.datalabels || {};
+Chart.defaults.plugins.datalabels.display = false;
+
+function isReal(t){ return (t==null?'':String(t)).trim().toLowerCase()==='quiebre real'; }
+function normFecha(f){ if(!f) return ''; const s=String(f); if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10); const d=new Date(s); if(!isNaN(d.getTime())){const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());} return s; }
+function top1(o){ let bk='',bv=-1; for(const k in o){ if(o[k]>bv){bv=o[k];bk=k;} } return bk; }
+
+function computeD(rows, master){
+  const recs = rows.filter(r=>r.sem!=null && !isNaN(+r.sem));
+  recs.forEach(r=>{ r.sem=+r.sem; r.fecha=normFecha(r.fecha); });
+  const wset=[...new Set(recs.map(r=>r.sem))].sort((a,b)=>a-b);
+  const wmin=wset[0]||1, wmax=wset[wset.length-1]||1;
+  const weeks=[]; for(let w=wmin;w<=wmax;w++) weeks.push(w);
+  const widx={}; weeks.forEach((w,i)=>widx[w]=i);
+  const serie_real=weeks.map(()=>0), serie_inf=weeks.map(()=>0);
+  recs.forEach(r=>{ const i=widx[r.sem]; if(i==null)return; serie_inf[i]++; if(isReal(r.tipo)) serie_real[i]++; });
+  // motivos & categorías (reales)
+  const motC={}, catC={};
+  recs.forEach(r=>{ if(!isReal(r.tipo))return; const m=(r.motivo||'Sin motivo'); motC[m]=(motC[m]||0)+1; const c=(r.cat||'Sin categoría'); catC[c]=(catC[c]||0)+1; });
+  const EXC=new Set(['sin motivo','sin asignar','']);
+  const motivos=Object.entries(motC).filter(([k])=>!EXC.has((k||'').trim().toLowerCase())).sort((a,b)=>b[1]-a[1]).map(([label,value])=>({label,value}));
+  const catAll=Object.entries(catC).sort((a,b)=>b[1]-a[1]);
+  const cat_total=catAll.reduce((a,b)=>a+b[1],0);
+  const categorias=catAll.slice(0,10).map(([label,value])=>({label,value}));
+  // motivo trend
+  const motLabels=motivos.map(m=>m.label);
+  const motWeek={}; motLabels.forEach(m=>motWeek[m]=weeks.map(()=>0));
+  recs.forEach(r=>{ if(!isReal(r.tipo))return; const m=(r.motivo||'').trim(); if(motWeek[m]) motWeek[m][widx[r.sem]]++; });
+  const motivo_trend={series:motLabels.map(m=>({label:m,data:motWeek[m]}))};
+  // reincidencia
+  const bySku={};
+  recs.forEach(r=>{ const sku=String(r.sku||'').trim(); if(!sku)return;
+    const d=bySku[sku]||(bySku[sku]={weeks:new Set(),n_real:0,motivos:{},cats:{},last:'',desc:''});
+    if(!d.desc) d.desc=r.desc||(master[sku]||{}).desc||'';
+    if(r.cat) d.cats[r.cat]=(d.cats[r.cat]||0)+1;
+    if(isReal(r.tipo)){ d.n_real++; d.weeks.add(r.sem); if(r.motivo) d.motivos[r.motivo]=(d.motivos[r.motivo]||0)+1; if((r.fecha||'')>d.last) d.last=r.fecha||''; }
+  });
+  let reinc=Object.entries(bySku).map(([sku,d])=>({sku,desc:d.desc,cat:top1(d.cats),n_weeks:d.weeks.size,n_real:d.n_real,last:d.last,motivo:top1(d.motivos)||'—',comp:(master[sku]||{}).comp||'SIN ASIGNAR'})).filter(x=>x.n_weeks>=2);
+  reinc.sort((a,b)=> b.n_weeks-a.n_weeks || b.n_real-a.n_real);
+  // heatmap
+  const rsw={};
+  recs.forEach(r=>{ if(!isReal(r.tipo))return; const s=String(r.sku); (rsw[s]||(rsw[s]={}))[r.sem]=(rsw[s][r.sem]||0)+1; });
+  const heat=reinc.slice(0,14).map(it=>({sku:it.sku,desc:it.desc,cells:weeks.map(w=>(rsw[it.sku]||{})[w]||0)}));
+  // stats
+  const total_real=serie_real.reduce((a,b)=>a+b,0);
+  const prom=weeks.length?Math.round(total_real/weeks.length*10)/10:0;
+  const peor_v=serie_real.length?Math.max.apply(null,serie_real):0;
+  const peor_w=serie_real.length?weeks[serie_real.indexOf(peor_v)]:'—';
+  return {weeks,serie_real,serie_inf,motivos,categorias,cat_total,motivo_trend,reinc:reinc.slice(0,18),heat,
+    stats:{total_real,prom,peor_w,peor_v,n_reinc:reinc.length,n_cron:reinc.filter(x=>x.n_weeks>=4).length},
+    n_regs:recs.length};
+}
+
+const PALm=['#ef4444','#f97316','#f59e0b','#facc15','#84cc16','#10b981','#06b6d4','#8b5cf6'];
+const PALc=['#0ea5e9','#10b981','#8b5cf6','#f97316','#ec4899','#84cc16','#facc15','#06b6d4'];
+
+function render(D){
+  document.getElementById('sub').textContent = '● en vivo desde la nube · '+D.n_regs+' registros · semanas '+D.weeks[0]+'–'+D.weeks[D.weeks.length-1];
+  document.getElementById('sub').style.color='#16a34a';
+  const S=D.stats;
+  document.getElementById('stats').innerHTML=[
+    ['r',S.total_real,'Quiebres reales en el año'],['a',S.prom,'Promedio reales / semana'],
+    ['r','S'+S.peor_w+' · '+S.peor_v,'Peor semana'],['b',S.n_reinc,'SKUs reincidentes (≥2 sem)'],
+    ['g',S.n_cron,'SKUs crónicos (≥4 sem)'],
+  ].map(s=>'<div class="stat '+s[0]+'"><div class="n">'+s[1]+'</div><div class="l">'+s[2]+'</div></div>').join('');
+
+  new Chart(document.getElementById('cTrend'),{type:'line',
+    data:{labels:D.weeks.map(w=>'S'+w),datasets:[
+      {label:'Quiebres reales',data:D.serie_real,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.12)',fill:true,tension:.3,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#ef4444'},
+      {label:'Informados',data:D.serie_inf,borderColor:'#94a3b8',borderDash:[5,4],fill:false,tension:.3,borderWidth:1.5,pointRadius:0}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#334155',font:{size:11}}},tooltip:{callbacks:{title:x=>'Semana '+x[0].label.slice(1)}}},
+      scales:{x:{ticks:{color:'#475569',font:{size:9}},grid:{display:false}},y:{beginAtZero:true,ticks:{color:'#475569',precision:0},grid:{color:'#eef2f6'}}}}});
+
+  function barRank(id,items,pal,total){
+    const tot=total||items.reduce((a,b)=>a+b.value,0)||1;
+    const cols=items.map((_,i)=>pal[i%pal.length]);
+    new Chart(document.getElementById(id),{type:'bar',
+      data:{labels:items.map(x=>x.label),datasets:[{data:items.map(x=>x.value),backgroundColor:cols.map(c=>c+'cc'),borderColor:cols,borderWidth:1.5,borderRadius:5,barPercentage:0.78,categoryPercentage:0.82}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:38}},
+        plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'end',color:'#0f172a',font:{weight:'700',size:11},formatter:v=>(v/tot*100).toFixed(1)+'%'},
+          tooltip:{callbacks:{label:x=>x.raw+' quiebres ('+(x.raw/tot*100).toFixed(1)+'%)'}}},
+        scales:{x:{beginAtZero:true,ticks:{color:'#475569',font:{size:10},precision:0},grid:{color:'#eef2f6'}},y:{ticks:{color:'#334155',font:{size:11,weight:'600'}},grid:{display:false}}}}});
+  }
+  barRank('cMot',D.motivos,PALm);
+  barRank('cCat',D.categorias,PALc,D.cat_total);
+
+  new Chart(document.getElementById('cMotTrend'),{type:'bar',
+    data:{labels:D.weeks.map(w=>'S'+w),datasets:D.motivo_trend.series.map((s,i)=>({label:s.label,data:s.data,stack:'m',backgroundColor:PALm[i%PALm.length]+'dd',borderColor:'#fff',borderWidth:.5}))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{color:'#334155',font:{size:9},boxWidth:11,padding:7}},datalabels:{display:false},
+        tooltip:{mode:'index',itemSort:(a,b)=>b.raw-a.raw,callbacks:{title:x=>'Semana '+x[0].label.slice(1),label:x=>x.raw?x.dataset.label+': '+x.raw:null,footer:x=>'Total: '+x.reduce((a,b)=>a+b.raw,0)}}},
+      scales:{x:{stacked:true,ticks:{color:'#475569',font:{size:9}},grid:{display:false}},y:{stacked:true,beginAtZero:true,ticks:{color:'#475569',precision:0},grid:{color:'#eef2f6'}}}}});
+
+  function hcol(v){ if(!v) return '#ffffff'; if(v===1) return '#fca5a5'; if(v===2) return '#ef4444'; return '#991b1b'; }
+  let hh='<table class="hm"><thead><tr><th class="sku">SKU · Descripción</th>';
+  D.weeks.forEach(w=>{ hh+='<th>'+w+'</th>'; });
+  hh+='</tr></thead><tbody>';
+  D.heat.forEach(r=>{ hh+='<tr><td class="sku"><b>'+r.sku+'</b> <span>'+(r.desc||'').slice(0,30)+'</span></td>';
+    r.cells.forEach(v=>{ hh+='<td style="background:'+hcol(v)+'" title="'+(v||'')+'">'+(v||'')+'</td>'; }); hh+='</tr>'; });
+  hh+='</tbody></table>';
+  document.getElementById('heat').innerHTML=hh;
+
+  function chip(n){ const c=n>=6?'hi':(n>=4?'md':'lo'); return '<span class="chip '+c+'">'+n+' sem</span>'; }
+  let tt='<thead><tr><th>#</th><th>SKU</th><th>Descripción</th><th>Categoría</th><th>Comprador</th><th class="c">Semanas c/quiebre</th><th class="c">Quiebres totales</th><th>Último</th><th>Motivo dominante</th></tr></thead><tbody>';
+  D.reinc.forEach((r,i)=>{ tt+='<tr><td class="c">'+(i+1)+'</td><td><b>'+r.sku+'</b></td><td>'+(r.desc||'—')+'</td><td>'+(r.cat||'—')+'</td><td><span class="comp">'+r.comp+'</span></td><td class="c">'+chip(r.n_weeks)+'</td><td class="c">'+r.n_real+'</td><td>'+(r.last||'—')+'</td><td>'+r.motivo+'</td></tr>'; });
+  tt+='</tbody>';
+  document.getElementById('tbl').innerHTML=tt;
+
+  document.getElementById('content').style.display='';
+}
+
+Promise.all([
+  fetch(QB_URL,{method:'GET'}).then(r=>r.json()).catch(e=>({ok:false,rows:[]})),
+  fetch('data.json?v='+Date.now()).then(r=>r.json()).catch(e=>({SKUS:[]}))
+]).then(([qb,dj])=>{
+  if(!qb || !Array.isArray(qb.rows)){ document.getElementById('sub').textContent='No se pudo leer la nube.'; return; }
+  const master={}; (dj.SKUS||[]).forEach(s=>{ master[String(s.sku)]={comp:s.comp||'SIN ASIGNAR',desc:s.desc||''}; });
+  const D=computeD(qb.rows, master);
+  render(D);
+}).catch(e=>{ console.error(e); document.getElementById('sub').textContent='Error cargando datos.'; });
+</script>
+</body></html>
