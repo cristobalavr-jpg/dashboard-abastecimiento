@@ -213,6 +213,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   <div class="tab" onclick="showTab(7)">🔒 Stock bloqueado</div>
   <div class="tab" onclick="showTab(9)">📦 Terceros e Insumos</div>
   <div class="tab" onclick="showTab(8)">⚠️ Quiebres SEM</div>
+  <div class="tab" onclick="showTab(11)">📅 Quiebres del día</div>
 </div>
 
 <div id="t0" class="pg active"><div class="cards-grid" id="rcards"></div>
@@ -412,6 +413,11 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 <!-- Quiebres SEM (vista aislada vía iframe — no comparte JS/CSS con otras pestañas) -->
 <div id="t8" class="pg">
   <iframe id="qb-frame" title="Quiebres SEM" style="width:100%;height:1500px;border:0;border-radius:10px;background:#f8fafc;display:block" loading="lazy"></iframe>
+</div>
+
+<!-- Quiebres del día (vista aislada vía iframe — fondo claro, editable, no comparte JS/CSS) -->
+<div id="t11" class="pg">
+  <iframe id="qd-frame" title="Quiebres del día" style="width:100%;height:1400px;border:0;border-radius:10px;background:#f8fafc;display:block" loading="lazy"></iframe>
 </div>
 <!-- lazy load del iframe ahora se maneja dentro de showTab() -->
 
@@ -804,6 +810,8 @@ function showTab(i){
   var pg=document.getElementById('t'+i); if(pg) pg.classList.add('active');
   // Lazy load del iframe de Quiebres SEM
   if(i===8){var ifr=document.getElementById('qb-frame');if(ifr&&!ifr.src) ifr.src='quiebres.html?v='+Date.now();}
+  // Lazy load del iframe de Quiebres del día
+  if(i===11){var ifd=document.getElementById('qd-frame');if(ifd&&!ifd.src) ifd.src='quiebres_dia.html?v='+Date.now();}
   // Lazy render de Terceros e Insumos
   if(i===9 && !window._tiBuilt){ try{ buildTI(); window._tiBuilt=true; }catch(e){ console.error('TI build:',e); } }
   // Lazy render de Coberturas (t10)
