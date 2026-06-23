@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Quiebres del día</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
+body{background:#f8fafc;color:#0f172a;padding:20px;min-height:100vh}
+.wrap{max-width:1500px;margin:0 auto}
+h1{font-size:1.4rem;font-weight:700;color:#0f172a;margin-bottom:4px}
+.sub{font-size:.85rem;color:#64748b;margin-bottom:14px}
+
+/* Barra de control (modo edición) */
+.ctrlbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.ctrlbar .date{font-size:.78rem;color:#334155;border:1px solid #cbd5e1;border-radius:7px;padding:6px 10px;background:#fff;cursor:pointer}
+.usr{font-size:.72rem;color:#475569;background:#eef2ff;border:1px solid #c7d2fe;border-radius:20px;padding:4px 12px}
+.lock{font-size:.74rem;font-weight:600;border:1px solid #cbd5e1;border-radius:8px;padding:6px 14px;background:#fff;color:#475569;cursor:pointer;transition:.15s}
+.lock:hover{background:#f1f5f9}
+.lock.on{background:#dcfce7;border-color:#86efac;color:#15803d}
+.spacer{flex:1}
+.csvbtn{font-size:.72rem;border:1px solid #cbd5e1;border-radius:8px;padding:6px 12px;background:#fff;color:#475569;cursor:pointer}
+.csvbtn:hover{background:#f1f5f9}
+
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.kpi.inf{border-left:4px solid #0ea5e9}.kpi.inf .kn{color:#0284c7}
+.kpi.real{border-left:4px solid #ef4444}.kpi.real .kn{color:#dc2626}
+.kpi.pct{border-left:4px solid #f97316}.kpi.pct .kn{color:#ea580c}
+.kn{font-size:1.6rem;font-weight:800;line-height:1.1}
+.kl{font-size:.72rem;color:#64748b;margin-top:4px}
+
+.row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.ct{font-size:.78rem;font-weight:700;color:#1e293b;border-bottom:1px solid #e2e8f0;padding-bottom:8px;margin-bottom:10px}
+.cw{position:relative;height:260px}
+
+/* Tabla editable */
+.tcard{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.thead-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.thead-row .ct{border:none;padding:0;margin:0}
+.addbtn{font-size:.95rem;font-weight:700;width:34px;height:34px;border-radius:8px;border:1px solid #86efac;background:#dcfce7;color:#15803d;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;transition:.15s}
+.addbtn:hover{background:#bbf7d0}
+.addbtn:disabled{opacity:.4;cursor:not-allowed}
+.qtbl-wrap{overflow-x:auto}
+table.qtbl{border-collapse:collapse;width:100%;font-size:.74rem}
+table.qtbl th{background:#f1f5f9;color:#334155;font-weight:600;padding:7px 8px;text-align:left;border-bottom:1px solid #e2e8f0;white-space:nowrap}
+table.qtbl td{padding:4px 6px;border-bottom:1px solid #f1f5f9;color:#1e293b;vertical-align:middle}
+table.qtbl tr.real-row td{background:#fef2f2}
+table.qtbl input,table.qtbl select{width:100%;font-size:.74rem;border:1px solid #cbd5e1;border-radius:5px;padding:4px 6px;background:#fff;color:#0f172a;font-family:inherit}
+table.qtbl input:focus,table.qtbl select:focus{outline:none;border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.15)}
+table.qtbl input[readonly]{background:#f8fafc;color:#475569;cursor:default}
+.col-sku{width:90px}.col-desc{min-width:190px}.col-cat{min-width:140px}
+.col-tipo{width:155px}.col-motivo{width:155px}.col-obs{min-width:150px}
+.col-stock{width:100px}.col-fc{width:100px}.col-act{width:34px}
+table.qtbl td.col-stock,table.qtbl td.col-fc,table.qtbl th.col-stock,table.qtbl th.col-fc{text-align:right}
+table.qtbl td.col-stock input,table.qtbl td.col-fc input{text-align:right}
+.delbtn{border:none;background:none;color:#cbd5e1;font-size:1rem;cursor:pointer;line-height:1;padding:2px 6px}
+.delbtn:hover{color:#dc2626}
+.cell-txt{display:block;padding:4px 2px;font-size:.74rem;color:#1e293b}
+.cell-txt.muted{color:#94a3b8}
+.cell-num{display:block;padding:4px 2px;font-size:.74rem;color:#1e293b;text-align:right;font-variant-numeric:tabular-nums}
+.empty{text-align:center;color:#94a3b8;padding:22px;font-size:.8rem}
+.hint{font-size:.68rem;color:#64748b;margin-top:8px}
+
+/* Panel de base compilada */
+.basebar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px}
+.basebar .bt{font-size:.78rem;font-weight:700;color:#334155}
+.basebar .bi{font-size:.7rem;color:#64748b}
+.basebar .bspacer{flex:1}
+.bbtn{font-size:.74rem;font-weight:600;border:1px solid #cbd5e1;border-radius:8px;padding:7px 13px;background:#fff;color:#475569;cursor:pointer}
+.bbtn:hover{background:#fff;filter:brightness(.97)}
+.bbtn.primary{background:#6366f1;border-color:#6366f1;color:#fff}
+.bbtn.danger{color:#dc2626;border-color:#fca5a5}
+.bbtn:disabled{opacity:.45;cursor:not-allowed}
+.lookup-ok{color:#16a34a;font-size:.64rem;margin-left:4px}
+.lookup-manual{color:#d97706;font-size:.64rem;margin-left:4px}
+
+/* Modal PIN — anclado arriba (el iframe es alto; fixed-center quedaría fuera de vista) */
+.mw{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:flex-start;justify-content:center;z-index:60;padding:70px 20px 20px}
+.mw.open{display:flex}
+.mbox{background:#fff;border-radius:12px;max-width:380px;width:100%;padding:22px 24px;box-shadow:0 20px 50px rgba(15,23,42,.3)}
+.mbox h3{font-size:1rem;color:#0f172a;margin-bottom:14px}
+.mbox label{display:block;font-size:.72rem;color:#475569;margin:10px 0 4px;font-weight:600}
+.mbox input,.mbox select{width:100%;font-size:.85rem;border:1px solid #cbd5e1;border-radius:7px;padding:8px 10px;background:#fff;color:#0f172a;font-family:inherit}
+.merr{display:none;color:#dc2626;font-size:.72rem;margin-top:8px}
+.merr.show{display:block}
+.mbtns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.mbtn{font-size:.78rem;font-weight:600;border:1px solid #cbd5e1;border-radius:8px;padding:8px 16px;background:#fff;color:#475569;cursor:pointer}
+.mbtn.primary{background:#6366f1;border-color:#6366f1;color:#fff}
+.mbtn:hover{filter:brightness(.97)}
+
+/* Notif */
+.notif{position:fixed;top:16px;right:20px;background:#fff;border:1px solid #86efac;color:#15803d;border-radius:9px;padding:10px 16px;font-size:.78rem;font-weight:600;box-shadow:0 8px 24px rgba(15,23,42,.15);opacity:0;transform:translateY(-8px);transition:.2s;z-index:70;pointer-events:none}
+.notif.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Quiebres del día</h1>
+  <div class="sub" id="subTit">Carga manual de quiebres diarios · los indicadores y gráficos se actualizan en vivo</div>
+
+  <div class="ctrlbar">
+    <input type="date" id="qdDate" class="date" onchange="qdChangeDate()">
+    <span class="usr" id="usrLbl">No identificado</span>
+    <button class="lock" id="lockBtn" onclick="qdToggleEdit()">🔒 Modo consulta</button>
+    <span class="spacer"></span>
+    <button class="csvbtn" onclick="qdExportCsv()">📥 CSV día</button>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi inf"><div class="kn" id="kInf">0</div><div class="kl">Quiebres Informados</div></div>
+    <div class="kpi real"><div class="kn" id="kReal">0</div><div class="kl">Quiebres Reales</div></div>
+    <div class="kpi pct"><div class="kn" id="kPct">—</div><div class="kl">% Reales / Informados</div></div>
+  </div>
+
+  <div class="row">
+    <div class="card"><div class="ct">Tipos de quiebres</div><div class="cw"><canvas id="cTipo"></canvas></div></div>
+    <div class="card"><div class="ct">Motivos de Quiebres Reales</div><div class="cw"><canvas id="cMot"></canvas></div></div>
+    <div class="card"><div class="ct">Categorías de Quiebres Reales</div><div class="cw"><canvas id="cCat"></canvas></div></div>
+  </div>
+
+  <div class="tcard">
+    <div class="thead-row">
+      <div class="ct">Detalle de quiebres del día</div>
+      <button class="addbtn" id="addBtn" onclick="qdAddRow()" title="Agregar quiebre">+</button>
+    </div>
+    <div class="qtbl-wrap">
+      <table class="qtbl">
+        <thead><tr>
+          <th class="col-sku">SKU</th>
+          <th class="col-desc">Descripción</th>
+          <th class="col-cat">Categoría</th>
+          <th class="col-tipo">Tipo de Quiebre</th>
+          <th class="col-motivo">Motivo</th>
+          <th class="col-obs">Observación</th>
+          <th class="col-stock">Stock Total</th>
+          <th class="col-fc" id="thFc">FC</th>
+          <th class="col-act"></th>
+        </tr></thead>
+        <tbody id="qtbody"></tbody>
+      </table>
+    </div>
+    <div class="hint" id="qdHint">🔒 Activa el <b>Modo edición</b> para cargar quiebres. Al ingresar un SKU se completan automáticamente la descripción, la categoría, el stock total y el FC de la semana en curso; si el SKU no existe, puedes escribirlos manualmente.</div>
+
+    <!-- Base compilada (acumula registros para alimentar Quiebres SEM) -->
+    <div class="basebar">
+      <span class="bt">📚 Base compilada <span id="cloudDot" style="color:#94a3b8" title="">●</span></span>
+      <span class="bi" id="baseInfo">0 registros</span>
+      <span class="bspacer"></span>
+      <button class="bbtn primary" id="saveBaseBtn" onclick="qdSaveToBase()">💾 Guardar día en base</button>
+      <button class="bbtn" id="expBaseBtn" onclick="qdExportBase()">📦 Exportar base (CSV)</button>
+      <button class="bbtn danger" id="clrBaseBtn" onclick="qdClearBase()">🗑️ Vaciar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal PIN -->
+<div class="mw" id="pinModal"><div class="mbox">
+  <h3>🔒 Entrar a modo edición · Quiebres del día</h3>
+  <label>PIN de edición</label>
+  <input type="password" id="pinInput" maxlength="6" placeholder="••••" autocomplete="off">
+  <label>¿Quién eres?</label>
+  <select id="userSel">
+    <option value="">-- selecciona tu nombre --</option>
+    <option>Cristobal V</option>
+    <option>Hector N</option>
+    <option>Vicente C</option>
+    <option>Javiera O</option>
+    <option>Jose Q</option>
+    <option>Matiaz Z</option>
+  </select>
+  <div class="merr" id="pinErr">PIN incorrecto o usuario no seleccionado.</div>
+  <div class="mbtns">
+    <button class="mbtn" onclick="qdClosePin()">Cancelar</button>
+    <button class="mbtn primary" onclick="qdSubmitPin()">Entrar</button>
+  </div>
+</div></div>
+<div class="notif" id="notif">Guardado ✓</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+//  LISTAS DESPLEGABLES  (editables — confirmar texto exacto con el usuario)
+// ════════════════════════════════════════════════════════════════════
+const TIPOS_QUIEBRE = [
+  'Quiebre Real',
+  'Stock en Bodega',
+  'Traslado CD',
+  'Cambio de Diseño',
+  'Stock en Producción',
+  'Cambio de SKU',
+  'Desviación Q Productivo',
+  'Descontinuado'
+];
+const MOTIVOS_QUIEBRE = [
+  'Diferencia de Inventario',
+  'Rechazo Calidad',
+  'Desviación Q Productivo',
+  'Reposición Diaria',
+  'GDI',
+  'Incumplimiento Proveedor',
+  'Planificación de Compra',
+  'Otros'
+];
+const TIPO_REAL = 'Quiebre Real';   // tipo considerado "Quiebre Real"
+
+// ── Config edición (mismo esquema que Mermas) ──
+const QD_PIN = '1234';
+// ⚠️ BACKEND (Google Apps Script · apps_script_quiebres.gs). Pega aquí la URL del Web App.
+//    Vacío = modo solo-local (localStorage); con URL = base compartida en la nube.
+const QD_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwm2pqimyRXfc4ojTB7V00BFr3HqrYuyeY3HcpAmU08hqMKfO0MJS92xcWx_QMZTq5d/exec';
+const LS_USR = 'qd_user_v1', LS_EDIT = 'qd_edit_v1', LS_ROWS = 'qd_rows_v1', LS_BASE = 'qd_base_v1';
+let QD_USUARIO = localStorage.getItem(LS_USR) || '';
+let QD_EDIT = (localStorage.getItem(LS_EDIT)==='1') && !!QD_USUARIO;
+let SKU_MAP = {};            // sku -> {desc, cat, stock}
+let FC_MAP = {};             // sku -> FC de la semana en curso
+let SEM_CUR = null;          // número de semana en curso (de data.json.SEM)
+let QD_DATE = todayStr();
+let ROWS = [];               // [{id,sku,desc,cat,tipo,motivo,obs,stock,fc}]
+let CLOUD_OK = false;        // true tras GET exitoso al backend
+let CLOUD_ROWS = [];         // cache de la base en la nube (todos los registros)
+
+const el = id => document.getElementById(id);
+function todayStr(){ const d=new Date(); const p=n=>n<10?'0'+n:n; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function rowsKey(date){ return LS_ROWS+'__'+date; }
+function loadRows(date){ try{ return JSON.parse(localStorage.getItem(rowsKey(date))||'[]'); }catch(e){ return []; } }
+function saveRows(){ localStorage.setItem(rowsKey(QD_DATE), JSON.stringify(ROWS)); }
+
+// ── Carga del maestro de SKUs (data.json · campos SKUS y FCW) ──
+function loadSkuMap(){
+  return fetch('data.json?v='+Date.now())
+    .then(r=>r.json())
+    .then(d=>{
+      // Stock total + descripción + categoría desde SKUS
+      (d.SKUS||[]).forEach(s=>{
+        if(s && s.sku!=null) SKU_MAP[String(s.sku).trim()] = {desc:s.desc||'', cat:s.grupo||'', stock:(s.stock!=null?s.stock:'')};
+      });
+      // FC de la semana en curso desde FCW (rows: [sku,desc,um, ...valores por semana])
+      SEM_CUR = d.SEM!=null ? +d.SEM : null;
+      const fcw = d.FCW;
+      if(fcw && Array.isArray(fcw.weeks) && Array.isArray(fcw.rows)){
+        let wi = fcw.weeks.indexOf(SEM_CUR);
+        if(wi<0) wi = 0;                    // fallback: primera semana del archivo
+        const col = 3 + wi;                 // offset por [sku,desc,um]
+        fcw.rows.forEach(r=>{ if(r && r[0]!=null) FC_MAP[String(r[0]).trim()] = (r[col]!=null?r[col]:''); });
+        const semShown = fcw.weeks[wi];
+        const thFc = el('thFc'); if(thFc && semShown!=null) thFc.textContent = 'FC (S'+semShown+')';
+      }
+    })
+    .catch(e=>{ console.warn('[qd] no se pudo cargar data.json', e); });
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  CHARTS
+// ════════════════════════════════════════════════════════════════════
+if(window.ChartDataLabels) Chart.register(window.ChartDataLabels);
+Chart.defaults.plugins.datalabels = Chart.defaults.plugins.datalabels || {};
+Chart.defaults.plugins.datalabels.display = false;
+const PAL = {
+  donut:['#0ea5e9','#f97316','#10b981','#8b5cf6','#facc15','#ec4899','#06b6d4','#84cc16','#f43f5e','#a855f7'],
+  bar :['#6366f1','#10b981','#f97316','#8b5cf6','#06b6d4','#facc15','#ef4444','#ec4899']
+};
+const dlBarH = {display:true, anchor:'end', align:'end', color:'#0f172a', font:{weight:'700', size:11}, formatter:v=>(v||v===0)?v:''};
+const dlDonut = {display:true, color:'#fff', font:{weight:'700', size:11}, formatter:(v,ctx)=>{
+  const t = ctx.chart.data.datasets[0].data.reduce((a,b)=>a+(b||0),0);
+  if(!t||!v) return ''; const p=v/t*100; return p<5?'':p.toFixed(0)+'%';
+}};
+let chTipo=null, chMot=null, chCat=null;
+
+function countBy(arr, keyFn){
+  const m={}; arr.forEach(r=>{ const k=keyFn(r); if(k==null||k==='') return; m[k]=(m[k]||0)+1; }); return m;
+}
+function buildTipoChart(){
+  const m = countBy(ROWS.filter(r=>r.tipo), r=>r.tipo);
+  const labels = Object.keys(m), data = labels.map(k=>m[k]);
+  const cols = labels.map((_,i)=>PAL.bar[i%PAL.bar.length]);
+  const cfg = {
+    type:'bar',
+    data:{labels, datasets:[{data, backgroundColor:cols.map(c=>c+'cc'), borderColor:cols, borderWidth:1.5, borderRadius:6, barPercentage:0.7, categoryPercentage:0.78}]},
+    options:{responsive:true, maintainAspectRatio:false, indexAxis:'y', layout:{padding:{right:30}},
+      plugins:{legend:{display:false}, datalabels:dlBarH, tooltip:{callbacks:{label:x=>x.raw+' quiebres'}}},
+      scales:{x:{beginAtZero:true, ticks:{color:'#475569',font:{size:10},precision:0}, grid:{color:'#e2e8f0'}},
+              y:{ticks:{color:'#334155',font:{size:11,weight:'600'}}, grid:{display:false}}}}
+  };
+  if(chTipo) chTipo.destroy(); chTipo = new Chart(el('cTipo'), cfg);
+}
+function buildDonut(canvasId, instSetter, inst, dataMap, palOffset){
+  const labels = Object.keys(dataMap), data = labels.map(k=>dataMap[k]);
+  const cfg = {
+    type:'doughnut',
+    data:{labels, datasets:[{data, backgroundColor:labels.map((_,i)=>PAL.donut[(i+palOffset)%PAL.donut.length]), borderWidth:2, borderColor:'#fff'}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:'#334155',font:{size:10},padding:6}}, datalabels:dlDonut,
+        tooltip:{callbacks:{label:x=>{const t=x.dataset.data.reduce((a,b)=>a+b,0); const p=t?(x.raw/t*100).toFixed(1):0; return x.label+': '+x.raw+' ('+p+'%)';}}}}}
+  };
+  if(inst) inst.destroy();
+  return new Chart(el(canvasId), cfg);
+}
+function buildMotChart(){
+  const reales = ROWS.filter(r=>r.tipo===TIPO_REAL);
+  const m = countBy(reales, r=> r.motivo ? r.motivo : 'Sin motivo');
+  chMot = buildDonut('cMot', null, chMot, m, 0);
+}
+function buildCatChart(){
+  const reales = ROWS.filter(r=>r.tipo===TIPO_REAL);
+  const m = countBy(reales, r=> r.cat ? r.cat : 'Sin categoría');
+  chCat = buildDonut('cCat', null, chCat, m, 2);
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  KPIs + render
+// ════════════════════════════════════════════════════════════════════
+function recompute(){
+  const informados = ROWS.filter(r=>r.tipo).length;
+  const reales = ROWS.filter(r=>r.tipo===TIPO_REAL).length;
+  el('kInf').textContent = informados;
+  el('kReal').textContent = reales;
+  el('kPct').textContent = informados ? Math.round(reales/informados*100)+'%' : '—';
+  buildTipoChart(); buildMotChart(); buildCatChart();
+}
+
+function optionsHtml(list, sel){
+  return '<option value="">—</option>' + list.map(o=>'<option'+(o===sel?' selected':'')+'>'+o+'</option>').join('');
+}
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtNum(v){ if(v===''||v==null||isNaN(+v)) return (v===''||v==null)?'':esc(v); return (+v).toLocaleString('es-CL',{maximumFractionDigits:1}); }
+
+function renderTable(){
+  const tb = el('qtbody');
+  el('addBtn').disabled = !QD_EDIT;
+  if(!ROWS.length){
+    tb.innerHTML = '<tr><td colspan="9" class="empty">'+(QD_EDIT?'Sin quiebres cargados. Usa el botón "+" para agregar.':'Sin quiebres cargados para esta fecha.')+'</td></tr>';
+    return;
+  }
+  if(QD_EDIT){
+    tb.innerHTML = ROWS.map((r,i)=>{
+      const real = r.tipo===TIPO_REAL;
+      return '<tr class="'+(real?'real-row':'')+'">'+
+        '<td class="col-sku"><input value="'+esc(r.sku)+'" oninput="qdSku('+i+',this.value)" placeholder="SKU"></td>'+
+        '<td class="col-desc"><input value="'+esc(r.desc)+'" oninput="qdField('+i+',\'desc\',this.value)" placeholder="Descripción"></td>'+
+        '<td class="col-cat"><input value="'+esc(r.cat)+'" oninput="qdField('+i+',\'cat\',this.value)" placeholder="Categoría"></td>'+
+        '<td class="col-tipo"><select onchange="qdField('+i+',\'tipo\',this.value)">'+optionsHtml(TIPOS_QUIEBRE, r.tipo)+'</select></td>'+
+        '<td class="col-motivo"><select onchange="qdField('+i+',\'motivo\',this.value)">'+optionsHtml(MOTIVOS_QUIEBRE, r.motivo)+'</select></td>'+
+        '<td class="col-obs"><input value="'+esc(r.obs)+'" oninput="qdField('+i+',\'obs\',this.value)" placeholder="Observación"></td>'+
+        '<td class="col-stock"><input value="'+esc(r.stock)+'" oninput="qdField('+i+',\'stock\',this.value)" placeholder="—"></td>'+
+        '<td class="col-fc"><input value="'+esc(r.fc)+'" oninput="qdField('+i+',\'fc\',this.value)" placeholder="—"></td>'+
+        '<td class="col-act"><button class="delbtn" onclick="qdDelRow('+i+')" title="Eliminar">✕</button></td>'+
+      '</tr>';
+    }).join('');
+  } else {
+    tb.innerHTML = ROWS.map(r=>{
+      const real = r.tipo===TIPO_REAL;
+      const c = (v)=>'<td><span class="cell-txt'+(v?'':' muted')+'">'+esc(v||'—')+'</span></td>';
+      const empty = v=>(v===''||v==null);
+      const n = (v)=>'<td class="col-stock"><span class="cell-num'+(empty(v)?' muted':'')+'">'+(empty(v)?'—':fmtNum(v))+'</span></td>';
+      return '<tr class="'+(real?'real-row':'')+'">'+
+        '<td><span class="cell-txt">'+esc(r.sku||'—')+'</span></td>'+
+        c(r.desc)+c(r.cat)+c(r.tipo)+c(r.motivo)+c(r.obs)+n(r.stock)+n(r.fc)+'<td></td>'+
+      '</tr>';
+    }).join('');
+  }
+}
+
+// ── Mutaciones (solo en modo edición) ──
+function uid(){ return 'qd|'+QD_DATE+'|'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function qdAddRow(){
+  if(!QD_EDIT){ notif('Activa modo edición primero', false); return; }
+  ROWS.push({id:uid(),sku:'',desc:'',cat:'',tipo:'',motivo:'',obs:'',stock:'',fc:''});
+  saveRows(); renderTable(); recompute();
+}
+function qdDelRow(i){
+  if(!QD_EDIT) return;
+  ROWS.splice(i,1); saveRows(); renderTable(); recompute();
+}
+function qdField(i, field, val){
+  if(!QD_EDIT) return;
+  ROWS[i][field] = val;
+  saveRows();
+  if(field==='tipo'){ renderTable(); }   // recolorea fila real / no real
+  recompute();
+}
+function qdSku(i, val){
+  if(!QD_EDIT) return;
+  const k = val.trim();
+  ROWS[i].sku = k;
+  const hit = SKU_MAP[k];
+  if(hit){
+    ROWS[i].desc  = hit.desc;
+    ROWS[i].cat   = hit.cat;
+    ROWS[i].stock = (hit.stock!=null?hit.stock:'');
+    ROWS[i].fc    = (FC_MAP[k]!=null?FC_MAP[k]:'');   // '' si el SKU no tiene FC en el archivo
+    // refresca los inputs autocompletados de esa fila sin re-render completo (no perder foco del SKU)
+    const tr = el('qtbody').children[i];
+    if(tr){
+      tr.querySelector('.col-desc input').value  = ROWS[i].desc;
+      tr.querySelector('.col-cat input').value   = ROWS[i].cat;
+      tr.querySelector('.col-stock input').value = ROWS[i].stock;
+      tr.querySelector('.col-fc input').value    = ROWS[i].fc;
+    }
+  }
+  saveRows(); recompute();
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  MODO EDICIÓN (PIN + usuario)
+// ════════════════════════════════════════════════════════════════════
+function updLockUI(){
+  el('usrLbl').textContent = QD_USUARIO ? '👤 '+QD_USUARIO : 'No identificado';
+  const b = el('lockBtn');
+  if(QD_EDIT){ b.classList.add('on'); b.textContent='✏️ Modo edición'; }
+  else { b.classList.remove('on'); b.textContent='🔒 Modo consulta'; }
+}
+function qdToggleEdit(){
+  if(QD_EDIT){
+    QD_EDIT=false; localStorage.setItem(LS_EDIT,'0'); updLockUI(); renderTable(); updateBaseUI(); notif('Modo consulta');
+  } else {
+    el('pinInput').value=''; el('userSel').value=QD_USUARIO||''; el('pinErr').classList.remove('show');
+    el('pinModal').classList.add('open'); setTimeout(()=>el('pinInput').focus(),50);
+  }
+}
+function qdClosePin(){ el('pinModal').classList.remove('open'); }
+function qdSubmitPin(){
+  const pin = el('pinInput').value.trim(), u = el('userSel').value;
+  if(pin!==QD_PIN || !u){ el('pinErr').classList.add('show'); return; }
+  QD_USUARIO=u; QD_EDIT=true;
+  localStorage.setItem(LS_USR, QD_USUARIO); localStorage.setItem(LS_EDIT,'1');
+  qdClosePin(); updLockUI(); renderTable(); updateBaseUI(); notif('Modo edición activado — '+QD_USUARIO);
+}
+el('pinModal').addEventListener('click', e=>{ if(e.target.id==='pinModal') qdClosePin(); });
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') qdClosePin();
+  if(e.key==='Enter' && el('pinModal').classList.contains('open')) qdSubmitPin();
+});
+
+// ── Fecha ──
+function qdChangeDate(){
+  QD_DATE = el('qdDate').value || todayStr();
+  ROWS = loadRows(QD_DATE);
+  el('subTit').textContent = 'Quiebres del '+QD_DATE.split('-').reverse().join('/')+' · los indicadores y gráficos se actualizan en vivo';
+  renderTable(); recompute();
+}
+
+// ── CSV del día ──
+function downloadCsv(rows, fname){
+  const csv = rows.map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; a.click();
+}
+function qdExportCsv(){
+  const head = ['fecha','sku','descripcion','categoria','tipo_quiebre','motivo','observacion','stock_total','fc_semana'];
+  const rows = [head].concat(ROWS.map(r=>[QD_DATE,r.sku,r.desc,r.cat,r.tipo,r.motivo,r.obs,r.stock,r.fc]));
+  downloadCsv(rows, 'quiebres_dia_'+QD_DATE+'.csv');
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  BASE COMPILADA  (acumula registros por fecha para alimentar Quiebres SEM)
+//  Estructura localStorage 'qd_base_v1' = [{fecha,anio,sem,sku,desc,cat,tipo,motivo,obs,stock,fc,usuario,ts}]
+// ════════════════════════════════════════════════════════════════════
+function isoWeek(dStr){
+  // semana ISO 8601 de una fecha 'YYYY-MM-DD'
+  const d = new Date(dStr+'T00:00:00'); if(isNaN(d)) return '';
+  const t = new Date(d.getTime()); t.setHours(0,0,0,0);
+  t.setDate(t.getDate()+3-((t.getDay()+6)%7));           // jueves de esa semana
+  const wk1 = new Date(t.getFullYear(),0,4);
+  return 1 + Math.round(((t-wk1)/86400000 - 3 + ((wk1.getDay()+6)%7))/7);
+}
+function baseLoad(){ try{ return JSON.parse(localStorage.getItem(LS_BASE)||'[]'); }catch(e){ return []; } }
+function baseStore(arr){ localStorage.setItem(LS_BASE, JSON.stringify(arr)); }
+function nowTs(){ const d=new Date(),p=n=>n<10?'0'+n:n; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes()); }
+
+// Construye los registros de la fecha activa a partir de ROWS (solo filas con contenido)
+function recordsFromRows(){
+  const anio = +QD_DATE.slice(0,4), sem = isoWeek(QD_DATE), ts = nowTs();
+  return ROWS.filter(r=>(r.sku && r.sku.trim()) || r.tipo).map(r=>({
+    id: r.id || uid(), anio, sem, fecha:QD_DATE,
+    sku:r.sku||'', desc:r.desc||'', cat:r.cat||'', tipo:r.tipo||'', motivo:r.motivo||'',
+    obs:r.obs||'', stock:r.stock===''?'':r.stock, fc:r.fc===''?'':r.fc, usuario:QD_USUARIO||'', ts
+  }));
+}
+
+// ── Backend (nube) ──
+// Normaliza fecha (Date-string de Sheets o ISO) a 'YYYY-MM-DD'
+function normFecha(f){
+  if(!f) return '';
+  const s=String(f);
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  const d=new Date(s); if(!isNaN(d.getTime())){ const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+  return s;
+}
+function qbCloudGet(){
+  if(!QD_BACKEND_URL) return Promise.resolve(false);
+  return fetch(QD_BACKEND_URL, {method:'GET'})
+    .then(r=>r.json())
+    .then(j=>{ if(j&&j.ok&&Array.isArray(j.rows)){ j.rows.forEach(r=>r.fecha=normFecha(r.fecha)); CLOUD_ROWS=j.rows; CLOUD_OK=true; return true; } return false; })
+    .catch(e=>{ console.warn('[qd] backend GET fail',e); CLOUD_OK=false; return false; });
+}
+function qbCloudSaveDay(records){
+  const body = JSON.stringify({pin:QD_PIN, action:'save_day', fecha:QD_DATE, usuario:QD_USUARIO||'', rows:records});
+  return fetch(QD_BACKEND_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:body})
+    .then(r=>r.json()).catch(e=>({ok:false, error:String(e)}));
+}
+
+// Fuente de la base según haya backend o no
+function baseSource(){ return CLOUD_OK ? CLOUD_ROWS : baseLoad(); }
+function updateBaseUI(){
+  const src = baseSource();
+  const dias = new Set(src.map(r=>r.fecha)).size;
+  el('baseInfo').textContent = src.length+' registro'+(src.length===1?'':'s')+(dias?(' · '+dias+' día'+(dias===1?'':'s')):'');
+  // indicador de conexión
+  const dot = el('cloudDot');
+  if(dot){
+    if(!QD_BACKEND_URL){ dot.style.color='#94a3b8'; dot.title='Modo solo local (sin backend configurado)'; }
+    else if(CLOUD_OK){ dot.style.color='#16a34a'; dot.title='Conectado a la nube'; }
+    else { dot.style.color='#dc2626'; dot.title='Backend configurado pero no responde — se usa copia local'; }
+  }
+  el('saveBaseBtn').disabled = !QD_EDIT;
+  el('expBaseBtn').disabled = !src.length;
+  // Vaciar: deshabilitado cuando hay backend (no se borra la base compartida desde la UI)
+  if(QD_BACKEND_URL){ el('clrBaseBtn').disabled = true; el('clrBaseBtn').title = 'La base en la nube no se vacía desde aquí'; }
+  else { el('clrBaseBtn').disabled = !QD_EDIT || !baseLoad().length; el('clrBaseBtn').title=''; }
+}
+function qdSaveToBase(){
+  if(!QD_EDIT){ notif('Activa modo edición primero', false); return; }
+  const records = recordsFromRows();
+  if(!records.length){ notif('No hay filas para guardar en la base', false); return; }
+  const fechaLbl = QD_DATE.split('-').reverse().join('/');
+  if(QD_BACKEND_URL){
+    el('saveBaseBtn').disabled = true;
+    qbCloudSaveDay(records).then(res=>{
+      if(res && res.ok){
+        // refleja el cambio en la cache local (reemplaza fecha+usuario)
+        CLOUD_OK = true;
+        CLOUD_ROWS = CLOUD_ROWS.filter(r=>!(r.fecha===QD_DATE && r.usuario===(QD_USUARIO||''))).concat(records);
+        updateBaseUI();
+        notif(records.length+' registro'+(records.length===1?'':'s')+' del '+fechaLbl+' guardados en la nube ✓');
+      } else {
+        // fallback local para no perder el trabajo
+        saveLocalBase(records);
+        updateBaseUI();
+        notif('No se pudo guardar en la nube — guardado solo local', false);
+      }
+    });
+  } else {
+    saveLocalBase(records); updateBaseUI();
+    notif(records.length+' registro'+(records.length===1?'':'s')+' del '+fechaLbl+' guardados en la base (local) ✓');
+  }
+}
+function saveLocalBase(records){
+  let base = baseLoad().filter(r=>!(r.fecha===QD_DATE && r.usuario===(QD_USUARIO||'')));
+  base = base.concat(records);
+  base.sort((a,b)=> a.fecha<b.fecha?-1 : a.fecha>b.fecha?1 : 0);
+  baseStore(base);
+}
+function qdExportBase(){
+  const base = baseSource();
+  if(!base.length){ notif('La base está vacía', false); return; }
+  // Encabezados alineados a la hoja "Historico de quiebres" de Quiebres SEM + extras
+  const head = ['Año','Sem','Fecha','SKU','Descripción','Categoría','Tipo Quiebre','Motivo','Observación','Stock Total','FC Semana','Usuario','Registrado'];
+  const rows = [head].concat(base.map(r=>[r.anio,r.sem,r.fecha,r.sku,r.desc,r.cat,r.tipo,r.motivo,r.obs,r.stock,r.fc,r.usuario,r.ts]));
+  downloadCsv(rows, 'base_quiebres_'+todayStr()+'.csv');
+}
+function qdClearBase(){
+  if(QD_BACKEND_URL){ notif('La base en la nube no se vacía desde aquí', false); return; }
+  if(!QD_EDIT){ notif('Activa modo edición primero', false); return; }
+  const base = baseLoad();
+  if(!base.length){ return; }
+  if(!confirm('¿Vaciar la base local? Se eliminarán '+base.length+' registros. Exporta antes si necesitas conservarlos.')) return;
+  baseStore([]); updateBaseUI(); notif('Base local vaciada');
+}
+
+// ── Notif ──
+function notif(msg, ok){
+  const n=el('notif'); n.textContent=msg;
+  n.style.borderColor = ok===false?'#fca5a5':'#86efac';
+  n.style.color = ok===false?'#dc2626':'#15803d';
+  n.classList.add('show'); clearTimeout(n._t);
+  n._t=setTimeout(()=>n.classList.remove('show'),1800);
+}
+
+// ── Init ──
+el('qdDate').value = QD_DATE;
+el('subTit').textContent = 'Quiebres del '+QD_DATE.split('-').reverse().join('/')+' · los indicadores y gráficos se actualizan en vivo';
+ROWS = loadRows(QD_DATE);
+updLockUI(); updateBaseUI();
+loadSkuMap().then(()=>{ renderTable(); recompute(); });
+qbCloudGet().then(()=>updateBaseUI());   // carga la base de la nube si hay backend
+renderTable(); recompute();
+</script>
+</body>
+</html>
