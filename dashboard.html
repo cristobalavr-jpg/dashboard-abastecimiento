@@ -428,11 +428,11 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   <!-- Cobertura por consumo real (ver PARAMETRO.MD B.11) -->
   <div class="stt" style="margin-top:18px">📈 Cobertura por consumo real</div>
   <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.25);border-radius:7px;padding:8px 12px;margin:0 0 10px;font-size:.7rem;color:#a4b4ce">
-    📈 Distribución del capital inmovilizado por rango de cobertura (semanas), calculada como <b>stock / consumo real semanal</b> (consumo últimas 4 sem · MB51 mov 601 con fallback a plantas, ver A.4.3). Mismo formato que la pestaña Coberturas. Selecciona una categoría para filtrar las tablas y el gráfico. Click en una fila para ver el detalle de SKUs.
+    📈 Distribución del capital inmovilizado por rango de cobertura (semanas), calculada como <b>stock / consumo real semanal</b> (consumo últimas 4 sem · MB51 mov 601 con fallback a plantas, ver A.4.3). Mismo formato que la pestaña Coberturas. Selecciona un grupo de artículo para filtrar las tablas y el gráfico. Click en una fila para ver el detalle de SKUs.
   </div>
   <div class="fr" style="margin-bottom:10px;align-items:center">
-    <label style="font-size:.7rem;color:var(--muted)">Tipo de material:</label>
-    <select class="csel" id="tic-tipo" onchange="buildTICob()"><option value="">Todos (ZIME + ZINS)</option></select>
+    <label style="font-size:.7rem;color:var(--muted)">Grupo de artículo:</label>
+    <select class="csel" id="tic-grupo" onchange="buildTICob()"><option value="">Todos los grupos</option></select>
     <label id="tic-imp-wrap" title="Excluye los productos importados (descripción con VENESSA, VASO o TAPA) de esta sección de cobertura" style="display:inline-flex;align-items:center;gap:5px;background:#232840;border:1px solid var(--border);border-radius:5px;padding:4px 9px;font-size:.7rem;color:#e2e8f0;cursor:pointer;user-select:none">
       <input type="checkbox" id="tic-imp" onchange="onTicImp()" style="cursor:pointer;accent-color:#6366f1">
       <span>Excluir importados</span>
@@ -1825,16 +1825,30 @@ function buildTI(){
   // Select de categorías
   var sel = el('ti-cat');
   sel.innerHTML='<option value="">Todas las categorías</option>'+TI.cats.map(function(c){return '<option value="'+c.g+'">'+c.g+'</option>';}).join('');
-  // Select de Tipo de material de la sección "Cobertura por consumo real" (B.11)
-  var selT = el('tic-tipo');
+  // Select de Grupo de artículo de la sección "Cobertura por consumo real" (B.11)
+  var selT = el('tic-grupo');
   if(selT){
-    var tipos = Array.from(new Set(TI.skus.map(function(s){return s.tipo;}))).filter(Boolean).sort();
-    selT.innerHTML='<option value="">Todos (ZIME + ZINS)</option>'+tipos.map(function(t){return '<option value="'+t+'">'+t+'</option>';}).join('');
+    var grupos = Array.from(new Set(TI.skus.map(function(s){return s.cat;}))).filter(Boolean).sort();
+    selT.innerHTML='<option value="">Todos los grupos</option>'+grupos.map(function(g){return '<option value="'+g+'">'+g+'</option>';}).join('');
   }
   var impCb = el('tic-imp'); if(impCb) impCb.checked = ticExclImp;   // restaurar toggle "Excluir importados"
 
   // Donut por categoría
   var COLORS=['#378ADD','#63992288','#E87B2A','#7c3aed','#E24B4A','#1D9E75'];
+  // Plugin inline acotado a este donut: dibuja el % que representa cada categoría en su porción
+  var ticDonPct={id:'ticDonPct',afterDatasetsDraw:function(chart){
+    var ctx=chart.ctx,meta=chart.getDatasetMeta(0),ds=chart.data.datasets[0];
+    var total=ds.data.reduce(function(a,b){return a+(b||0);},0); if(total<=0)return;
+    meta.data.forEach(function(arc,i){
+      var pct=(ds.data[i]||0)/total*100; if(pct<3)return;   // ocultar porciones <3% para no saturar
+      var p=arc.getCenterPoint();
+      ctx.save();
+      ctx.font='700 11px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillText(pct.toFixed(1)+'%',p.x+0.5,p.y+0.5);   // sombra para contraste
+      ctx.fillStyle='#fff';ctx.fillText(pct.toFixed(1)+'%',p.x,p.y);
+      ctx.restore();
+    });
+  }};
   if(_tiCharts.don) _tiCharts.don.destroy();
   _tiCharts.don = new Chart(el('cTIdon'),{
     type:'doughnut',
@@ -1842,7 +1856,8 @@ function buildTI(){
       datasets:[{data:TI.cats.map(function(c){return c.val;}),backgroundColor:COLORS.slice(0,TI.cats.length),borderColor:'#1a1f2e',borderWidth:2}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
       plugins:{legend:{position:'bottom',labels:{color:'#dbe4f3',font:{size:10},boxWidth:10,padding:8}},
-        tooltip:{callbacks:{label:function(ctx){var c=TI.cats[ctx.dataIndex];var pct=TI.total_val>0?(c.val/TI.total_val*100).toFixed(1):'0';return c.g+': $'+f0(c.val)+' ('+pct+'% · '+c.n+' SKUs)';}}}}}
+        tooltip:{callbacks:{label:function(ctx){var c=TI.cats[ctx.dataIndex];var pct=TI.total_val>0?(c.val/TI.total_val*100).toFixed(1):'0';return c.g+': $'+f0(c.val)+' ('+pct+'% · '+c.n+' SKUs)';}}}}},
+    plugins:[ticDonPct]
   });
 
   // Pareto horizontal Top 10
@@ -2212,8 +2227,8 @@ function buildTICob(){
   var host = document.getElementById('tic-host');
   if(!host) return;
   if(!TI || !TI.skus){ host.innerHTML='<div style="color:var(--muted);padding:14px">Sin datos de Terceros e Insumos.</div>'; return; }
-  var tipo = (document.getElementById('tic-tipo')||{}).value || '';
-  var skus = TI.skus.filter(function(s){ return !tipo || s.tipo===tipo; });
+  var grupo = (document.getElementById('tic-grupo')||{}).value || '';
+  var skus = TI.skus.filter(function(s){ return !grupo || s.cat===grupo; });
   // Toggle "Excluir importados" (B.11): filtra SKUs con VENESSA / VASO / TAPA en la descripción
   var nImp = skus.filter(ticIsImportado).length;
   var impCnt = document.getElementById('tic-imp-cnt'); if(impCnt) impCnt.textContent='('+nImp+')';
@@ -2221,7 +2236,7 @@ function buildTICob(){
   var calc = ticCalc(skus); var buckets = calc.buckets, tot = calc.tot;
   var macros = ticMacros(buckets, tot);
   var totCnt = TIC_ORDER.reduce(function(a,k){return a+buckets[k].cnt;},0);
-  var titulo = tipo ? ('Tipo '+tipo) : 'Todos los tipos (ZIME + ZINS)';
+  var titulo = grupo ? ('Grupo '+grupo) : 'Todos los grupos';
 
   var info = document.getElementById('tic-info');
   if(info) info.textContent = totCnt+' SKUs · '+covFmtMM(tot);
