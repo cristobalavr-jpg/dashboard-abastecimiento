@@ -23,6 +23,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f1117;color:#e2e8f
 .tab:hover{color:#c0caf5}
 .pg{display:none;padding:16px 24px;max-width:1600px;margin:0 auto}
 .pg.active{display:block}
+.qsub-nav{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.qsub{background:#232840;color:#a4b4ce;border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:.8rem;font-weight:600;cursor:pointer;transition:.15s}
+.qsub:hover{color:#fff;border-color:#475670}
+.qsub.active{background:#6366f1;border-color:#6366f1;color:#fff}
+.qsub-pane{display:none}
+.qsub-pane.active{display:block}
 tbody tr{border-bottom:1px solid rgba(45,52,82,.4)}
 tbody tr:hover{background:rgba(35,40,64,.5)}
 img{display:block;border-radius:6px;width:100%}
@@ -212,8 +218,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   <div class="tab" onclick="showTab(5)">📡 Desviación forecast</div>
   <div class="tab" onclick="showTab(7)">🔒 Stock bloqueado</div>
   <div class="tab" onclick="showTab(9)">📦 Terceros e Insumos</div>
-  <div class="tab" onclick="showTab(8)">⚠️ Quiebres SEM</div>
-  <div class="tab" onclick="showTab(11)">📅 Quiebres del día</div>
+  <div class="tab" onclick="showTab(12)">⚠️ Quiebres</div>
 </div>
 
 <div id="t0" class="pg active"><div class="cards-grid" id="rcards"></div>
@@ -410,16 +415,23 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   </div>
 </div>
 
-<!-- Quiebres SEM (vista aislada vía iframe — no comparte JS/CSS con otras pestañas) -->
-<div id="t8" class="pg">
-  <iframe id="qb-frame" title="Quiebres SEM" style="width:100%;height:1500px;border:0;border-radius:10px;background:#f8fafc;display:block" loading="lazy"></iframe>
+<!-- Quiebres (sección unificada · 3 subsecciones vía iframes aislados) -->
+<div id="t12" class="pg">
+  <div class="qsub-nav">
+    <button class="qsub active" data-q="dia" onclick="showQSub('dia')">📅 Quiebres del día</button>
+    <button class="qsub" data-q="sem" onclick="showQSub('sem')">⚠️ Quiebres SEM</button>
+    <button class="qsub" data-q="hist" onclick="showQSub('hist')">📊 Histórico de Quiebres</button>
+  </div>
+  <div id="qsub-dia" class="qsub-pane active">
+    <iframe id="qd-frame" title="Quiebres del día" style="width:100%;height:1400px;border:0;border-radius:10px;background:#f8fafc;display:block" loading="lazy"></iframe>
+  </div>
+  <div id="qsub-sem" class="qsub-pane">
+    <iframe id="qb-frame" title="Quiebres SEM" style="width:100%;height:1500px;border:0;border-radius:10px;background:#f8fafc;display:block" loading="lazy"></iframe>
+  </div>
+  <div id="qsub-hist" class="qsub-pane">
+    <iframe id="qh-frame" title="Histórico de Quiebres" style="width:100%;height:1700px;border:0;border-radius:10px;background:#f8fafc;display:block" loading="lazy"></iframe>
+  </div>
 </div>
-
-<!-- Quiebres del día (vista aislada vía iframe — fondo claro, editable, no comparte JS/CSS) -->
-<div id="t11" class="pg">
-  <iframe id="qd-frame" title="Quiebres del día" style="width:100%;height:1400px;border:0;border-radius:10px;background:#f8fafc;display:block" loading="lazy"></iframe>
-</div>
-<!-- lazy load del iframe ahora se maneja dentro de showTab() -->
 
 <!-- Terceros e Insumos -->
 <div id="t9" class="pg">
@@ -808,14 +820,22 @@ function showTab(i){
   });
   document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('active');});
   var pg=document.getElementById('t'+i); if(pg) pg.classList.add('active');
-  // Lazy load del iframe de Quiebres SEM
-  if(i===8){var ifr=document.getElementById('qb-frame');if(ifr&&!ifr.src) ifr.src='quiebres.html?v='+Date.now();}
-  // Lazy load del iframe de Quiebres del día
-  if(i===11){var ifd=document.getElementById('qd-frame');if(ifd&&!ifd.src) ifd.src='quiebres_dia.html?v='+Date.now();}
+  // Sección Quiebres: cargar la subsección activa (por defecto Quiebres del día)
+  if(i===12){ showQSub(window._qcur || 'dia'); }
   // Lazy render de Terceros e Insumos
   if(i===9 && !window._tiBuilt){ try{ buildTI(); window._tiBuilt=true; }catch(e){ console.error('TI build:',e); } }
   // Lazy render de Coberturas (t10)
   if(i===10){ covLoadPPA().then(function(){ try{ buildCoberturas(); }catch(e){ console.error('Cob build:',e); } }); }
+}
+// Subsecciones de "Quiebres" (Día / SEM / Histórico) — iframes aislados, lazy load
+function showQSub(name){
+  window._qcur = name;
+  var map={dia:['qd-frame','quiebres_dia.html'], sem:['qb-frame','quiebres.html'], hist:['qh-frame','historico_quiebres.html']};
+  ['dia','sem','hist'].forEach(function(n){
+    var pane=document.getElementById('qsub-'+n); if(pane) pane.classList.toggle('active', n===name);
+  });
+  document.querySelectorAll('.qsub').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-q')===name); });
+  var m=map[name]; if(m){ var ifr=document.getElementById(m[0]); if(ifr && !ifr.src) ifr.src=m[1]+'?v='+Date.now(); }
 }
 function kpill(c,l){return '<span class="kpill kp'+c+'">'+l+'</span>';}
 function pAlerta(a){var m={quiebre:'q Quiebre',riesgo:'r Riesgo',monitorear:'m Monitorear',normal:'n Normal',sobrestock:'s Sobrestock',sin_fc:'sf Sin FC'};var p=(m[a]||'sf ?').split(' ');return kpill(p[0],p.slice(1).join(' '));}
