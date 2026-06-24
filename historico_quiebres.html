@@ -76,10 +76,13 @@ Chart.defaults.plugins.datalabels.display = false;
 function isReal(t){ return (t==null?'':String(t)).trim().toLowerCase()==='quiebre real'; }
 function normFecha(f){ if(!f) return ''; const s=String(f); if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10); const d=new Date(s); if(!isNaN(d.getTime())){const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());} return s; }
 function top1(o){ let bk='',bv=-1; for(const k in o){ if(o[k]>bv){bv=o[k];bk=k;} } return bk; }
+// Regla de categoría: agrupa MP de frescos en una sola etiqueta (ver PARAMETRO.MD A.8.4)
+const CAT_MERGE_MP=new Set(['VERDURAS FRESCAS','FRUTAS FRESCAS','MP VERDURAS Y FRUTAS']);
+function normCat(c){ const s=(c==null?'':String(c)).trim(); if(CAT_MERGE_MP.has(s.toUpperCase())) return 'MP VERDURAS Y FRUTAS'; return s; }
 
 function computeD(rows, master){
   const recs = rows.filter(r=>r.sem!=null && !isNaN(+r.sem));
-  recs.forEach(r=>{ r.sem=+r.sem; r.fecha=normFecha(r.fecha); });
+  recs.forEach(r=>{ r.sem=+r.sem; r.fecha=normFecha(r.fecha); r.cat=normCat(r.cat); });
   const wset=[...new Set(recs.map(r=>r.sem))].sort((a,b)=>a-b);
   const wmin=wset[0]||1, wmax=wset[wset.length-1]||1;
   const weeks=[]; for(let w=wmin;w<=wmax;w++) weeks.push(w);
