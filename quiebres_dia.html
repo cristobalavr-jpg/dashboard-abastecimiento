@@ -24,7 +24,8 @@ h1{font-size:1.4rem;font-weight:700;color:#0f172a;margin-bottom:4px}
 .csvbtn:hover{background:#f1f5f9}
 
 /* Franja de agenda de recepción (hoy) */
-.agenda-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:#fff;border:1px solid #e2e8f0;border-left:4px solid #0d9488;border-radius:10px;padding:9px 15px;margin-bottom:12px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.agenda-bar{display:flex;flex-direction:column;align-items:stretch;background:#fff;border:1px solid #e2e8f0;border-left:4px solid #0d9488;border-radius:10px;padding:9px 15px;margin-bottom:12px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.agenda-bar .ab-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .agenda-bar .ab-ico{font-size:1.1rem}
 .agenda-bar .ab-lbl{font-size:.74rem;font-weight:700;color:#0f766e}
 .agenda-bar .ab-metric{font-size:.78rem;color:#334155}
@@ -33,6 +34,11 @@ h1{font-size:1.4rem;font-weight:700;color:#0f172a;margin-bottom:4px}
 .agenda-bar.warn{border-left-color:#d97706;background:#fffbeb}
 .agenda-bar.warn .ab-lbl,.agenda-bar.warn .ab-metric b{color:#b45309}
 .agenda-bar .ab-warn{font-size:.72rem;color:#b45309;font-weight:600}
+.agenda-bar .ab-horarios{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.agenda-bar .ab-horarios:empty{display:none}
+.agenda-bar .ab-hlbl{font-size:.68rem;color:#64748b;font-weight:600;margin-right:2px}
+.agenda-bar .ah-pill{font-size:.68rem;background:#f0fdfa;border:1px solid #99f6e4;border-radius:20px;padding:2px 10px;color:#0f766e;white-space:nowrap}
+.agenda-bar .ah-pill b{font-weight:800}
 .kpi-row{display:grid;grid-template-columns:1fr 1.5fr;gap:12px;align-items:stretch;margin-bottom:18px}
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 @media(max-width:820px){.kpi-row{grid-template-columns:1fr}}
@@ -127,13 +133,16 @@ table.qtbl td.col-stock input,table.qtbl td.col-fc input{text-align:right}
   </div>
 
   <div class="agenda-bar" id="agendaBar" style="display:none">
-    <span class="ab-ico">🚚</span>
-    <span class="ab-lbl">Agenda recepción Quilicura · hoy</span>
-    <span class="ab-sep"></span>
-    <span class="ab-metric" id="agProvWrap"><b id="agProv">—</b> proveedores agendados</span>
-    <span class="ab-sep"></span>
-    <span class="ab-metric" id="agSkuWrap"><b id="agSku">—</b> SKUs agendados</span>
-    <span class="ab-warn" id="agWarn"></span>
+    <div class="ab-top">
+      <span class="ab-ico">🚚</span>
+      <span class="ab-lbl">Agenda recepción Quilicura · hoy</span>
+      <span class="ab-sep"></span>
+      <span class="ab-metric"><b id="agProv">—</b> proveedores agendados</span>
+      <span class="ab-sep"></span>
+      <span class="ab-metric"><b id="agSku">—</b> SKUs agendados</span>
+      <span class="ab-warn" id="agWarn"></span>
+    </div>
+    <div class="ab-horarios" id="agHorarios"></div>
   </div>
 
   <div class="kpi-row">
@@ -565,6 +574,10 @@ function qbAgenda(){
     if(j && j.agenda){
       el('agProv').textContent = j.agenda.proveedores;
       el('agSku').textContent  = j.agenda.skus;
+      const hor = j.agenda.por_horario || [];
+      el('agHorarios').innerHTML = hor.length
+        ? '<span class="ab-hlbl">Proveedores por horario:</span>' + hor.map(h=>'<span class="ah-pill">'+esc(h.horario)+' · <b>'+h.proveedores+'</b></span>').join('')
+        : '';
       bar.style.display='';
       if(j.warning){ bar.classList.add('warn'); warn.textContent='⚠️ '+j.warning; console.warn('[qd] agenda:', j.warning); }
       else { bar.classList.remove('warn'); warn.textContent=''; }
