@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -288,7 +288,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   </div>
   <div class="cr">
     <div class="cb"><div class="ct">Mermas por Causa (neto sin NC = Sí) — período completo</div><div class="cw"><canvas id="cMCausa"></canvas></div></div>
-    <div class="cb"><div class="ct">Resumen por semana — % clasificado, monto sin NC</div><div class="tw" style="border:none;background:transparent;max-height:240px;overflow-y:auto"><table><thead><tr><th>Sem</th><th>SKUs</th><th>$Val total</th><th>$Val sin NC</th><th>$Val con NC</th><th>% clasif.</th><th></th></tr></thead><tbody id="mc-resTb"></tbody></table></div></div>
+    <div class="cb"><div class="ct">Resumen por semana — % clasificado, monto sin NC</div><div class="tw" style="border:none;background:transparent;max-height:240px;overflow-y:auto"><table><thead><tr><th>Sem</th><th>SKUs</th><th>$Val total</th><th>$Val sin NC</th><th>$Val con NC</th><th>$ZMPR</th><th>$ZEMP</th><th>% clasif.</th><th></th></tr></thead><tbody id="mc-resTb"></tbody></table></div></div>
   </div>
   <div class="stt">Total Top 10 Materiales por Valor Mermado <button onclick="expXls('tp10','top10_mermas')" style="float:right;background:#E87B2A30;color:#E87B2A;border:1px solid #E87B2A;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="tw"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th style="text-align:right">Qty</th><th style="text-align:right">Valor ($)</th><th>Tasa vol.</th><th>Tasa val.</th><th style="text-align:right">N° sem</th><th style="text-align:right">% clasif.</th></tr></thead><tbody id="tp10"></tbody></table></div>
@@ -1355,9 +1355,10 @@ function mcAggCausa(){
 function mcAggSem(){
   var out = {};
   mcWalk(function(comp,sem,p){
-    var o = out[sem] || (out[sem]={sem:+sem,skus:0,val:0,valSinNC:0,valNC:0,clasif:0});
+    var o = out[sem] || (out[sem]={sem:+sem,skus:0,val:0,valSinNC:0,valNC:0,clasif:0,valZMPR:0,valZEMP:0});
     var k = p[0]+'|'+sem; var c = MC_CLASIF[k];
     o.skus++; o.val += (p[4]||0);
+    if(p[2]==='ZMPR') o.valZMPR += (p[4]||0); else if(p[2]==='ZEMP') o.valZEMP += (p[4]||0);
     if(c && (c.causa||c.nc)) o.clasif++;
     if(mcIsNet(c)) o.valSinNC += (p[4]||0); else o.valNC += (p[4]||0);
   });
@@ -1380,6 +1381,7 @@ function mcRenderCausa(){
 }
 function mcRenderResumen(){
   var rows = mcAggSem();
+  var fMMv = function(v){return '$'+(v/1e6).toFixed(2).replace('.',',');};
   el('mc-resTb').innerHTML = rows.map(function(o){
     var pct = o.skus?o.clasif/o.skus*100:0;
     return '<tr>'+
@@ -1388,10 +1390,12 @@ function mcRenderResumen(){
       '<td>$'+f0(o.val)+'</td>'+
       '<td style="color:var(--q)"><b>$'+f0(o.valSinNC)+'</b></td>'+
       '<td style="color:var(--s)">$'+f0(o.valNC)+'</td>'+
+      '<td style="color:#6366f1">'+fMMv(o.valZMPR)+'</td>'+
+      '<td style="color:#E87B2A">'+fMMv(o.valZEMP)+'</td>'+
       '<td>'+fP(pct)+'</td>'+
       '<td><button class="mc-mbtn" style="font-size:.62rem;padding:2px 8px" onclick="opSemDet('+o.sem+')">Clasif. →</button></td>'+
     '</tr>';
-  }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:14px">Sin datos</td></tr>';
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:14px">Sin datos</td></tr>';
 }
 function mcNotif(msg, ok){
   var n = el('mc-notif'); n.textContent = msg;
