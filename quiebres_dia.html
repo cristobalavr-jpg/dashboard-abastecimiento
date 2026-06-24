@@ -25,7 +25,7 @@ h1{font-size:1.4rem;font-weight:700;color:#0f172a;margin-bottom:4px}
 
 /* Fila superior: 3 boxes (Agenda · Por horario · Resumen quiebres) + tendencia */
 .kpi-row{display:grid;grid-template-columns:2fr 1fr;gap:12px;align-items:stretch;margin-bottom:18px}
-.kpis3{display:grid;grid-template-columns:0.95fr 1.3fr 1.05fr;gap:10px}
+.kpis3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 @media(max-width:980px){.kpi-row{grid-template-columns:1fr}.kpis3{grid-template-columns:1fr}}
 .kbox{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:11px 13px;box-shadow:0 1px 2px rgba(15,23,42,.04);display:flex;flex-direction:column}
 .kbox-t{font-size:.72rem;font-weight:700;color:#1e293b;margin-bottom:9px}
@@ -34,23 +34,23 @@ h1{font-size:1.4rem;font-weight:700;color:#0f172a;margin-bottom:4px}
 #agendaBox .kbox-t{color:#0f766e}
 #agendaBox.warn{border-left-color:#d97706;background:#fffbeb}
 #agendaBox.warn .kbox-t{color:#b45309}
-.agenda-nums{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end}
-.agenda-nums .an{font-size:.7rem;color:#64748b;display:flex;flex-direction:column}
-.agenda-nums .an b{font-size:1.7rem;font-weight:800;color:#0f766e;line-height:1}
-.ab-warn{font-size:.66rem;color:#b45309;font-weight:600;display:block;margin-top:4px}
-/* Box por horario (pills) */
-.ab-horarios{display:flex;gap:6px;flex-wrap:wrap;align-content:flex-start}
-.ab-horarios .ah-pill{font-size:.68rem;background:#f0fdfa;border:1px solid #99f6e4;border-radius:20px;padding:3px 10px;color:#0f766e;white-space:nowrap}
-.ab-horarios .ah-pill b{font-weight:800;font-size:.74rem}
+.agenda-nums{display:flex;flex-direction:column;gap:7px;align-items:flex-start}
+.agenda-nums .an{font-size:.72rem;color:#64748b;display:flex;align-items:baseline;gap:6px}
+.agenda-nums .an b{font-size:1.5rem;font-weight:800;color:#0f766e;line-height:1}
+.ab-warn{font-size:.66rem;color:#b45309;font-weight:600;display:block;margin-top:6px}
+/* Box por horario (pills en columna) */
+.ab-horarios{display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+.ab-horarios .ah-pill{font-size:.7rem;background:#f0fdfa;border:1px solid #99f6e4;border-radius:20px;padding:3px 11px;color:#0f766e;white-space:nowrap}
+.ab-horarios .ah-pill b{font-weight:800;font-size:.76rem}
 .ab-horarios .ah-empty{font-size:.7rem;color:#94a3b8}
-/* Box resumen quiebres (3 mini) */
-.mini3{display:flex;gap:8px}
-.mini{flex:1;text-align:center;background:#f8fafc;border:1px solid #eef2f6;border-radius:8px;padding:8px 3px}
-.mini b{display:block;font-size:1.35rem;font-weight:800;line-height:1}
-.mini span{font-size:.58rem;color:#64748b;display:block;margin-top:2px}
-.mini.inf{border-top:3px solid #0ea5e9}.mini.inf b{color:#0284c7}
-.mini.real{border-top:3px solid #ef4444}.mini.real b{color:#dc2626}
-.mini.pct{border-top:3px solid #f97316}.mini.pct b{color:#ea580c}
+/* Box resumen quiebres (3 mini en columna) */
+.mini3{display:flex;flex-direction:column;gap:6px}
+.mini{display:flex;align-items:baseline;gap:9px;background:#f8fafc;border:1px solid #eef2f6;border-left-width:3px;border-radius:8px;padding:7px 11px}
+.mini b{font-size:1.3rem;font-weight:800;line-height:1}
+.mini span{font-size:.64rem;color:#64748b}
+.mini.inf{border-left-color:#0ea5e9}.mini.inf b{color:#0284c7}
+.mini.real{border-left-color:#ef4444}.mini.real b{color:#dc2626}
+.mini.pct{border-left-color:#f97316}.mini.pct b{color:#ea580c}
 /* Tendencia */
 .trend-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px 6px;box-shadow:0 1px 2px rgba(15,23,42,.04);display:flex;flex-direction:column}
 .trend-card .tct{font-size:.74rem;font-weight:700;color:#1e293b;margin-bottom:4px}
