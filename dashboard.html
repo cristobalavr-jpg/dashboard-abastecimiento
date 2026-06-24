@@ -254,6 +254,11 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
   <div class="fr"><input type="text" class="si" id="fcws" placeholder="Buscar por SKU o descripción..." oninput="sFCW(this.value)" style="width:320px"></div>
   <div class="tw" style="margin-bottom:6px;max-height:520px;overflow:auto"><table><thead id="fcwth"></thead><tbody id="fcwtb"></tbody></table></div>
   <div class="pag" id="fcwpag"></div>
+
+  <div class="stt" style="margin-top:18px">Órdenes de Compra (ME2M) <button onclick="expOCM()" style="float:right;background:#247AC930;color:#2478c9;border:1px solid #2478c9;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
+  <div class="fr"><input type="text" class="si" id="ocms" placeholder="Buscar por SKU, Proveedor, Descripción o Documento compras..." oninput="sOCM(this.value)" style="width:420px"></div>
+  <div class="tw" style="margin-bottom:6px;max-height:560px;overflow:auto"><table><thead id="ocmth"></thead><tbody id="ocmtb"></tbody></table></div>
+  <div class="pag" id="ocmpag"></div>
 </div>
 
 <div id="t2" class="pg">
@@ -498,7 +503,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 
 
 // ── GLOBAL DATA NAMESPACE ───────────────────────────────────────────────────
-var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW;
+var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM;
 var gCompFilter='';  // filtro global de comprador
 // Filtro global PPA (Pan de Pascua). Por defecto ON — replica el contrato histórico de B.9 reporte diario.
 var PPA_SET = new Set();
@@ -1100,6 +1105,64 @@ function rndFCW(){
   sh.sort(function(a,b){return a-b;});
   var prev=0;sh.forEach(function(i){if(prev&&i-prev>1)h+='<span style="color:var(--muted);padding:0 2px">…</span>';h+='<button class="pb'+(i===FCWF.p?' active':'')+'" onclick="gPFCW('+i+')">'+i+'</button>';prev=i;});
   h+='<span class="pi">'+tot+' SKUs</span>';div.innerHTML=h;
+}
+
+// ── Órdenes de Compra (ME2M) ──
+var OCMF={s:'',p:1};var OCM_PER=50;
+// Índices numéricos (alineación derecha + formato miles) y campos buscables
+var OCM_NUMCOLS=[1,9,10,12,14,15,16,17,18];
+var OCM_SEARCH=[3,7,4,0]; // Material(SKU), Proveedor, Descripción, Documento compras
+function ocmNum(v){return (typeof v==='number')?v.toLocaleString('es-CL',{maximumFractionDigits:2}):(v||'');}
+function ocmFilter(){
+  var q=(OCMF.s||'').toLowerCase().trim();
+  if(!q||!OCM||!OCM.rows) return (OCM&&OCM.rows)?OCM.rows:[];
+  return OCM.rows.filter(function(r){
+    for(var i=0;i<OCM_SEARCH.length;i++){
+      var c=OCM_SEARCH[i];
+      if(String(r[c]||'').toLowerCase().indexOf(q)>=0) return true;
+    }
+    return false;
+  });
+}
+function sOCM(v){OCMF.s=v;OCMF.p=1;rndOCM();}
+function gPOCM(p){OCMF.p=p;rndOCM();}
+function expOCM(){
+  if(!OCM||!OCM.rows){return;}
+  var fd=ocmFilter();
+  var aoa=[OCM.cols.slice()].concat(fd.map(function(r){return r.slice();}));
+  try{
+    var ws=XLSX.utils.aoa_to_sheet(aoa);
+    var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Ordenes Compra');
+    var stamp=new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb,'ordenes_compra_ME2M_'+stamp+'.xlsx');
+  }catch(e){alert('Error exportando: '+e.message);}
+}
+function rndOCM(){
+  if(!OCM||!OCM.rows){return;}
+  var th=el('ocmth'),tb=el('ocmtb');
+  var numSet={};OCM_NUMCOLS.forEach(function(i){numSet[i]=1;});
+  th.innerHTML='<tr>'+OCM.cols.map(function(c,i){return '<th style="white-space:nowrap'+(numSet[i]?';text-align:right':'')+'">'+c+'</th>';}).join('')+'</tr>';
+  var fd=ocmFilter();
+  var tot=fd.length,pages=Math.max(1,Math.ceil(tot/OCM_PER));
+  OCMF.p=Math.min(OCMF.p,pages);
+  var sl=fd.slice((OCMF.p-1)*OCM_PER,OCMF.p*OCM_PER);
+  tb.innerHTML=sl.map(function(r){
+    var cells='';
+    for(var i=0;i<r.length;i++){
+      var v=r[i];
+      if(numSet[i]) cells+='<td style="text-align:right;white-space:nowrap">'+ocmNum(v)+'</td>';
+      else cells+='<td style="white-space:nowrap">'+(v===''||v==null?'—':v)+'</td>';
+    }
+    return '<tr>'+cells+'</tr>';
+  }).join('') || '<tr><td colspan="'+OCM.cols.length+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
+  // Paginación
+  var div=el('ocmpag');
+  if(pages<=1){div.innerHTML='<span class="pi">'+tot+' órdenes</span>';return;}
+  var h='';var sh=[1,pages];
+  for(var i=Math.max(1,OCMF.p-1);i<=Math.min(pages,OCMF.p+1);i++)if(sh.indexOf(i)<0)sh.push(i);
+  sh.sort(function(a,b){return a-b;});
+  var prev=0;sh.forEach(function(i){if(prev&&i-prev>1)h+='<span style="color:var(--muted);padding:0 2px">…</span>';h+='<button class="pb'+(i===OCMF.p?' active':'')+'" onclick="gPOCM('+i+')">'+i+'</button>';prev=i;});
+  h+='<span class="pi">'+tot+' órdenes</span>';div.innerHTML=h;
 }
 
 // ── GERENCIAL ──
@@ -2389,7 +2452,7 @@ fetch('data.json?v='+Date.now())
     R=_D.R;SD=_D.SD;PA=_D.PA;PC=_D.PC;PS=_D.PS;G=_D.G;GR=_D.GR;GD=_D.GD;
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
-    TI=_D.TI||null;FCW=_D.FCW||null;
+    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
     var _h=document.getElementById('hsem-txt');
@@ -2405,7 +2468,7 @@ fetch('data.json?v='+Date.now())
     var _ppaCb = document.getElementById('gPPA'); if(_ppaCb) _ppaCb.checked = gExcludePPA;
     loadPPA().then(function(){ if(ppaActive()) _rebuildAll(); });
 
-    buildResumen();rndEstado();buildGer();updPlan();rndFCW();updMKpis();updMCharts(TA);bldTop10();buildKpiAv();
+    buildResumen();rndEstado();buildGer();updPlan();rndFCW();rndOCM();updMKpis();updMCharts(TA);bldTop10();buildKpiAv();
     mcUpdLockUI(); mcRenderCausa(); mcRenderResumen();
     // Hidrata clasificaciones desde backend (si configurado) y re-renderiza
     mcBackendLoad().then(function(loaded){
