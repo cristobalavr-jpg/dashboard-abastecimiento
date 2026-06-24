@@ -36,6 +36,8 @@ h1{font-size:1.4rem;font-weight:700;color:#0f172a;margin-bottom:4px}
 .trend-card .tct .live{color:#16a34a;font-weight:600;font-size:.66rem;margin-left:6px}
 .trend-wrap{position:relative;flex:1;min-height:150px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:1100px){.row3{grid-template-columns:1fr}}
 .card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
 .ct{font-size:.78rem;font-weight:700;color:#1e293b;border-bottom:1px solid #e2e8f0;padding-bottom:8px;margin-bottom:10px}
 .cw{position:relative;height:280px}
@@ -98,8 +100,8 @@ table.hm td.sku b{color:#0f172a}table.hm td.sku span{color:#94a3b8;font-weight:4
     </div>
   </div>
 
-  <div class="card"><div class="ct">Quiebres por día — Informados vs Reales · clic en barra para detalle</div><div class="cw"><canvas id="cDia" style="cursor:pointer"></canvas></div></div>
-  <div class="row">
+  <div class="row3">
+    <div class="card"><div class="ct">Quiebres por día — Informados vs Reales · clic en barra para detalle</div><div class="cw"><canvas id="cDia" style="cursor:pointer"></canvas></div></div>
     <div class="card"><div class="ct">Tipos de quiebres SEM</div><div class="cw"><canvas id="cTipo"></canvas></div></div>
     <div class="card">
       <div class="ct">Reincidencia — mapa de calor SKU × semana <small style="font-weight:400;color:#94a3b8;font-size:.7rem">— últimas 10 semanas · color = nº de quiebres reales</small></div>
