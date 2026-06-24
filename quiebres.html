@@ -53,6 +53,16 @@ table.desv td:nth-child(n+5){min-width:50px;text-align:center;font-weight:600;fo
 table.desv th:nth-child(n+5){padding-left:8px}
 .legend{font-size:.7rem;color:#475569;margin-top:8px;padding:0 4px;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
 .legend .sw{display:inline-block;width:14px;height:14px;vertical-align:middle;margin-right:5px;border-radius:3px}
+/* Heatmap reincidencia (últimas 10 semanas) */
+.hm-wrap{overflow-x:auto;max-height:300px}
+table.hm{border-collapse:collapse;font-size:.66rem}
+table.hm th{color:#64748b;font-weight:600;padding:3px 4px;text-align:center;white-space:nowrap}
+table.hm th.sku{text-align:left;position:sticky;left:0;background:#fff;z-index:2;min-width:220px}
+table.hm td{width:24px;height:22px;text-align:center;border:1px solid #f1f5f9;color:#fff;font-weight:700;font-size:.6rem}
+table.hm td.sku{text-align:left;position:sticky;left:0;background:#fff;color:#1e293b;border:none;padding:2px 8px 2px 0}
+table.hm td.sku b{color:#0f172a}table.hm td.sku span{color:#94a3b8;font-weight:400}
+.hm-legend{font-size:.68rem;color:#475569;margin-top:9px;display:flex;gap:13px;align-items:center;flex-wrap:wrap}
+.hm-legend i{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:middle;margin-right:4px;border:1px solid #e2e8f0}
 
 /* Modal detalle */
 .mw{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
@@ -88,9 +98,18 @@ table.desv th:nth-child(n+5){padding-left:8px}
     </div>
   </div>
 
+  <div class="card"><div class="ct">Quiebres por día — Informados vs Reales · clic en barra para detalle</div><div class="cw"><canvas id="cDia" style="cursor:pointer"></canvas></div></div>
   <div class="row">
-    <div class="card"><div class="ct">Quiebres por día — Informados vs Reales · clic en barra para detalle</div><div class="cw"><canvas id="cDia" style="cursor:pointer"></canvas></div></div>
     <div class="card"><div class="ct">Tipos de quiebres SEM</div><div class="cw"><canvas id="cTipo"></canvas></div></div>
+    <div class="card">
+      <div class="ct">Reincidencia — mapa de calor SKU × semana <small style="font-weight:400;color:#94a3b8;font-size:.7rem">— últimas 10 semanas · color = nº de quiebres reales</small></div>
+      <div class="hm-wrap" id="qbHeat"><div style="color:#94a3b8;font-size:.72rem;padding:18px">Cargando desde la nube…</div></div>
+      <div class="hm-legend">
+        <span><i style="background:#fff"></i>sin quiebre</span><span><i style="background:#fca5a5"></i>1</span>
+        <span><i style="background:#ef4444"></i>2</span><span><i style="background:#991b1b"></i>3+</span>
+        <span style="color:#94a3b8">reincidente = quiebre real en ≥2 de las últimas 10 semanas</span>
+      </div>
+    </div>
   </div>
   <div class="row">
     <div class="card"><div class="ct">Motivos de Quiebres Reales</div><div class="cw"><canvas id="cMot"></canvas></div></div>
@@ -206,6 +225,39 @@ function renderTrend(){
   if(live){ live.textContent='● en vivo'; live.style.color='#16a34a'; }
 }
 
+// Reincidencia — mapa de calor SKU × semana (últimas 10 semanas, desde la nube)
+function renderHeat(){
+  const host = document.getElementById('qbHeat');
+  if(!host) return;
+  const rows = (ALL_ROWS||[]).filter(r=>r.sem!=null && !isNaN(+r.sem)).map(r=>({...r, sem:+r.sem}));
+  if(!rows.length){ host.innerHTML = '<div style="color:#94a3b8;font-size:.72rem;padding:18px">'+(QB_BACKEND_URL?'Sin conexión a la nube.':'Sin backend configurado.')+'</div>'; return; }
+  const allW=[...new Set(rows.map(r=>r.sem))].sort((a,b)=>a-b);
+  const weeks = allW.slice(-10);                 // últimas 10 semanas con datos
+  const wmin = weeks[0];
+  const win = rows.filter(r=> r.sem>=wmin && isReal(r.tipo));
+  // reincidencia dentro de la ventana
+  const bySku={};
+  win.forEach(r=>{ const sku=String(r.sku||'').trim(); if(!sku) return;
+    const d=bySku[sku]||(bySku[sku]={weeks:new Set(),n:0,desc:''});
+    if(!d.desc) d.desc = r.desc||'';
+    d.n++; d.weeks.add(r.sem);
+  });
+  let reinc=Object.entries(bySku).map(([sku,d])=>({sku,desc:d.desc,nw:d.weeks.size,n:d.n})).filter(x=>x.nw>=2);
+  reinc.sort((a,b)=> b.nw-a.nw || b.n-a.n);
+  const top=reinc.slice(0,12);
+  if(!top.length){ host.innerHTML = '<div style="color:#94a3b8;font-size:.72rem;padding:18px">Sin SKUs reincidentes en las últimas 10 semanas.</div>'; return; }
+  // matriz conteo reales por sku×semana
+  const rsw={};
+  win.forEach(r=>{ const s=String(r.sku); (rsw[s]||(rsw[s]={}))[r.sem]=(rsw[s][r.sem]||0)+1; });
+  const hcol=v=>!v?'#ffffff':(v===1?'#fca5a5':(v===2?'#ef4444':'#991b1b'));
+  let h='<table class="hm"><thead><tr><th class="sku">SKU · Descripción</th>';
+  weeks.forEach(w=>{ h+='<th>S'+w+'</th>'; }); h+='</tr></thead><tbody>';
+  top.forEach(it=>{ h+='<tr><td class="sku"><b>'+it.sku+'</b> <span>'+(it.desc||'').slice(0,26)+'</span></td>';
+    weeks.forEach(w=>{ const v=(rsw[it.sku]||{})[w]||0; h+='<td style="background:'+hcol(v)+'" title="'+(v||'')+'">'+(v||'')+'</td>'; }); h+='</tr>'; });
+  h+='</tbody></table>';
+  host.innerHTML=h;
+}
+
 function renderQuiebres(){
   const ti=Q.total_informados||0, tr=Q.total_reales||0;
   document.getElementById('kInf').textContent = ti;
@@ -290,6 +342,7 @@ function renderDesv(){
 renderDesv();
 renderQuiebres();   // primero con la foto del Excel (visible al instante / fallback)
 renderTrend();      // tendencia anual (se llena al llegar los datos de la nube)
+renderHeat();       // mapa de calor reincidencia · últimas 10 semanas (idem)
 
 // Quiebres EN VIVO desde la nube
 if(QB_BACKEND_URL){
@@ -301,6 +354,7 @@ if(QB_BACKEND_URL){
         Q = aggregateQuiebres(j.rows, SEM);
         renderQuiebres();
         renderTrend();
+        renderHeat();
         const s=document.getElementById('liveTag'); if(s){ s.textContent='● en vivo'; s.style.color='#16a34a'; }
       }
     })
