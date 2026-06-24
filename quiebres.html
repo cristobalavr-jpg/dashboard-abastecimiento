@@ -18,6 +18,23 @@ h1{font-size:1.4rem;font-weight:700;color:#0f172a;margin-bottom:4px}
 .kpi.pct{border-left:4px solid #f97316}.kpi.pct .kn{color:#ea580c}
 .kn{font-size:1.6rem;font-weight:800;line-height:1.1}
 .kl{font-size:.72rem;color:#64748b;margin-top:4px}
+/* Fila superior: box resumen (3 mini) + tendencia semanal */
+.kpi-row{display:grid;grid-template-columns:270px 1fr;gap:12px;align-items:stretch;margin-bottom:18px}
+@media(max-width:980px){.kpi-row{grid-template-columns:1fr}}
+.kbox{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;box-shadow:0 1px 2px rgba(15,23,42,.04);display:flex;flex-direction:column}
+.kbox-t{font-size:.74rem;font-weight:700;color:#1e293b;margin-bottom:10px}
+.mini3{display:flex;flex-direction:column;gap:8px;flex:1;justify-content:center}
+.mini{display:flex;align-items:baseline;gap:10px;background:#f8fafc;border:1px solid #eef2f6;border-left-width:3px;border-radius:8px;padding:9px 12px}
+.mini b{font-size:1.5rem;font-weight:800;line-height:1}
+.mini span{font-size:.66rem;color:#64748b}
+.mini.inf{border-left-color:#0ea5e9}.mini.inf b{color:#0284c7}
+.mini.real{border-left-color:#ef4444}.mini.real b{color:#dc2626}
+.mini.pct{border-left-color:#f97316}.mini.pct b{color:#ea580c}
+.trend-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:11px 15px 8px;box-shadow:0 1px 2px rgba(15,23,42,.04);display:flex;flex-direction:column}
+.trend-card .tct{font-size:.78rem;font-weight:700;color:#1e293b;margin-bottom:6px}
+.trend-card .tct small{font-weight:400;color:#94a3b8;font-size:.68rem}
+.trend-card .tct .live{color:#16a34a;font-weight:600;font-size:.66rem;margin-left:6px}
+.trend-wrap{position:relative;flex:1;min-height:150px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 .card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
 .ct{font-size:.78rem;font-weight:700;color:#1e293b;border-bottom:1px solid #e2e8f0;padding-bottom:8px;margin-bottom:10px}
@@ -54,12 +71,21 @@ table.desv th:nth-child(n+5){padding-left:8px}
 <body>
 <div class="wrap">
   <h1>Quiebres y Desviaciones — Semana 26</h1>
-  <div class="sub">Generado: 23/06/2026 · datos: Quiebres y Desviaciones Semana.xlsx <span id="liveTag" style="margin-left:8px;font-weight:600"></span></div>
+  <div class="sub">Generado: 24/06/2026 · datos: Quiebres y Desviaciones Semana.xlsx <span id="liveTag" style="margin-left:8px;font-weight:600"></span></div>
 
-  <div class="kpis">
-    <div class="kpi inf"><div class="kn" id="kInf">10</div><div class="kl">Informados SEM26</div></div>
-    <div class="kpi real"><div class="kn" id="kReal">8</div><div class="kl">Reales SEM26</div></div>
-    <div class="kpi pct"><div class="kn" id="kPct">80%</div><div class="kl">% Reales / Informados</div></div>
+  <div class="kpi-row">
+    <div class="kbox">
+      <div class="kbox-t">Quiebres SEM26</div>
+      <div class="mini3">
+        <div class="mini inf"><b id="kInf">10</b><span>Informados SEM26</span></div>
+        <div class="mini real"><b id="kReal">8</b><span>Reales SEM26</span></div>
+        <div class="mini pct"><b id="kPct">80%</b><span>% Reales / Informados</span></div>
+      </div>
+    </div>
+    <div class="trend-card">
+      <div class="tct">Tendencia semanal · quiebres reales <small>— todas las semanas del año</small><span class="live" id="trendLive"></span></div>
+      <div class="trend-wrap"><canvas id="cTrend"></canvas></div>
+    </div>
   </div>
 
   <div class="row">
@@ -111,8 +137,9 @@ const dlDonut = {display:true, color:'#fff', font:{weight:'700', size:11}, forma
 }};
 
 let Q = QB.QUIEBRES;            // se reemplaza con datos de la nube si hay backend
+let ALL_ROWS = [];             // todo el histórico de la nube (para la tendencia anual)
 const D = QB.DESV;
-let chDia=null, chTipo=null, chMot=null, chCat=null;
+let chDia=null, chTipo=null, chMot=null, chCat=null, chTrend=null;
 
 // Normalización idéntica al pipeline Python (procesar_quiebres)
 function capTipo(s){ s=(s==null?'':String(s)).trim(); if(!s) return 'Sin tipo'; return s.toLowerCase()==='quiebre real'?'Quiebre Real':s; }
@@ -150,6 +177,33 @@ function aggregateQuiebres(rows, sem){
     tipos:      {labels:tipoE.map(e=>e[0]), values:tipoE.map(e=>e[1])},
     detalle
   };
+}
+
+// Tendencia semanal de quiebres reales — todas las semanas del año (desde la nube)
+function renderTrend(){
+  const live = document.getElementById('trendLive');
+  const rows = (ALL_ROWS||[]).filter(r=>r.sem!=null && !isNaN(+r.sem));
+  if(!rows.length){ if(live){ live.textContent = QB_BACKEND_URL?'● sin conexión':''; live.style.color='#94a3b8'; } return; }
+  const wset=[...new Set(rows.map(r=>+r.sem))].sort((a,b)=>a-b);
+  const wmin=wset[0], wmax=wset[wset.length-1];
+  const weeks=[]; for(let w=wmin;w<=wmax;w++) weeks.push(w);
+  const widx={}; weeks.forEach((w,i)=>widx[w]=i);
+  const reales=weeks.map(()=>0);
+  rows.forEach(r=>{ if(isReal(r.tipo)) reales[widx[+r.sem]]++; });
+  const last=reales.length-1;
+  const pr=reales.map((_,i)=> i===last?5:3);
+  const pc=reales.map((_,i)=> i===last?'#7f1d1d':'#ef4444');
+  if(chTrend) chTrend.destroy();
+  chTrend = new Chart(document.getElementById('cTrend'), {
+    type:'line',
+    data:{labels:weeks.map(w=>'S'+w), datasets:[{data:reales, borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,.12)', fill:true, tension:.3, borderWidth:2.5, pointRadius:pr, pointBackgroundColor:pc, pointBorderColor:pc}]},
+    options:{responsive:true, maintainAspectRatio:false, layout:{padding:{top:6,bottom:0}},
+      plugins:{legend:{display:false}, datalabels:{display:false},
+        tooltip:{callbacks:{title:x=>'Semana '+x[0].label.slice(1), label:x=>x.raw+' quiebres reales'}}},
+      scales:{x:{ticks:{color:'#94a3b8',font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:14}, grid:{display:false}},
+              y:{beginAtZero:true, ticks:{color:'#475569',precision:0,font:{size:10}}, grid:{color:'#eef2f6'}}}}
+  });
+  if(live){ live.textContent='● en vivo'; live.style.color='#16a34a'; }
 }
 
 function renderQuiebres(){
@@ -235,6 +289,7 @@ function renderDesv(){
 
 renderDesv();
 renderQuiebres();   // primero con la foto del Excel (visible al instante / fallback)
+renderTrend();      // tendencia anual (se llena al llegar los datos de la nube)
 
 // Quiebres EN VIVO desde la nube
 if(QB_BACKEND_URL){
@@ -242,8 +297,10 @@ if(QB_BACKEND_URL){
     .then(r=>r.json())
     .then(j=>{
       if(j && j.ok && Array.isArray(j.rows)){
+        ALL_ROWS = j.rows;
         Q = aggregateQuiebres(j.rows, SEM);
         renderQuiebres();
+        renderTrend();
         const s=document.getElementById('liveTag'); if(s){ s.textContent='● en vivo'; s.style.color='#16a34a'; }
       }
     })
