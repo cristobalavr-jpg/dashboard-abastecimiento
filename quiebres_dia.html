@@ -565,7 +565,9 @@ function qbAgenda(){
     if(j && j.agenda){
       el('agProv').textContent = j.agenda.proveedores;
       el('agSku').textContent  = j.agenda.skus;
-      bar.classList.remove('warn'); warn.textContent=''; bar.style.display='';
+      bar.style.display='';
+      if(j.warning){ bar.classList.add('warn'); warn.textContent='⚠️ '+j.warning; console.warn('[qd] agenda:', j.warning); }
+      else { bar.classList.remove('warn'); warn.textContent=''; }
     } else if(j && j.warning){
       el('agProv').textContent='—'; el('agSku').textContent='—';
       bar.classList.add('warn'); warn.textContent='⚠️ '+j.warning; bar.style.display='';
