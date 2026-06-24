@@ -383,9 +383,12 @@ function buildMotChart(){
   const m = countBy(reales, r=> r.motivo ? r.motivo : 'Sin motivo');
   chMot = buildDonut('cMot', null, chMot, m, 0);
 }
+// Regla de categoría: agrupa MP de frescos en una sola etiqueta (ver PARAMETRO.MD A.8.4)
+const CAT_MERGE_MP = new Set(['VERDURAS FRESCAS','FRUTAS FRESCAS','MP VERDURAS Y FRUTAS']);
+function normCat(c){ const s=(c==null?'':String(c)).trim(); if(CAT_MERGE_MP.has(s.toUpperCase())) return 'MP VERDURAS Y FRUTAS'; return s; }
 function buildCatChart(){
   const reales = ROWS.filter(r=>r.tipo===TIPO_REAL);
-  const m = countBy(reales, r=> r.cat ? r.cat : 'Sin categoría');
+  const m = countBy(reales, r=> { const c=normCat(r.cat); return c ? c : 'Sin categoría'; });
   chCat = buildDonut('cCat', null, chCat, m, 2);
 }
 
