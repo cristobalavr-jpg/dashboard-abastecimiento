@@ -46,6 +46,32 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 .ct{font-size:.74rem;font-weight:700;color:#c0caf5;margin-bottom:10px}
 .cw{position:relative;height:220px}
 .gk{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:14px}
+/* Inventario por categoría (INVCAT, B.12) */
+#ictbl{width:100%;border-collapse:collapse}
+#ictbl th{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700;text-align:right;padding:8px 10px;border-bottom:1px solid var(--border)}
+#ictbl th:first-child{text-align:left}
+#ictbl td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--border);font-size:.78rem}
+#ictbl td:first-child{text-align:left}
+tr.ic-cat{cursor:pointer}
+tr.ic-cat:hover{background:#232840}
+.ic-cap{display:inline-block;width:13px;color:#8b9bdd;transition:transform .15s}
+.ic-cap.open{transform:rotate(90deg)}
+.ic-bar{height:7px;background:#6366f1;border-radius:4px;display:inline-block;vertical-align:middle}
+tbody.ic-det{display:none;background:#15192a}
+tbody.ic-det.open{display:table-row-group}
+.ic-det td{font-size:.72rem;color:#aab3cc;padding:4px 10px;border-bottom:1px solid rgba(45,52,82,.5)}
+.ic-det td:first-child{padding-left:34px}
+tr.ic-subh{cursor:pointer}
+tr.ic-subh:hover{background:rgba(99,102,241,.14)}
+.ic-subh td{color:#8b9bdd;font-weight:700;font-size:.72rem;background:rgba(99,102,241,.07)}
+.ic-subh td:first-child{padding-left:24px}
+.ic-subcap{display:inline-block;width:11px;color:#8b9bdd;transition:transform .15s}
+.ic-subcap.open{transform:rotate(90deg)}
+tr.ic-subr{display:none}
+tr.ic-subr.open{display:table-row}
+.ic-subr td:first-child{padding-left:48px}
+tr.ic-subtot td{font-weight:800;color:#8b9bdd;border-top:1px solid var(--border);background:rgba(99,102,241,.06)}
+tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .gkv{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:11px 13px}
 .gkn{font-size:1.2rem;font-weight:800;color:#fff}.gkl{font-size:.63rem;color:var(--muted);margin-top:2px}
 .pkr{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
@@ -300,9 +326,16 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
     <div class="cb"><div class="ct">Distribución coberturas</div><div class="cw"><canvas id="cDon"></canvas></div></div>
     <div class="cb"><div class="ct">SKUs por estado</div><div class="cw"><canvas id="cEst"></canvas></div></div>
   </div>
-  <div class="cb" style="margin-bottom:12px"><div class="ct">Stock valorizado por Grupo de Artículo (MM CLP)</div><div class="cw" style="height:260px"><canvas id="cGru"></canvas></div></div>
-  <div class="stt">Detalle por Categoría / Grupo</div>
-  <div class="tw"><table><thead><tr><th>Categoría / Grupo</th><th>SKUs</th><th>Stock total</th><th>$Valor (MM)</th><th>Cob.prom</th><th>Distribución</th><th style="color:var(--q)">Q</th><th style="color:var(--rT)">R</th><th style="color:var(--mT)">M</th><th style="color:var(--s)">Sob</th><th style="color:var(--n)">N</th></tr></thead><tbody id="gtb"></tbody></table></div>
+  <div class="cr" style="grid-template-columns:1fr 1.15fr;align-items:start;margin-bottom:12px">
+    <div class="cb"><div class="ct">Stock valorizado por Grupo de Artículo (MM CLP)</div><div class="cw" style="height:380px"><canvas id="cGru"></canvas></div></div>
+    <div class="cb">
+      <div class="ct">Detalle por Categoría / Grupo (ZMPR · ZEMP)</div>
+      <div class="tw" style="border:none;background:transparent"><table><thead><tr><th>Categoría / Grupo</th><th>SKUs</th><th>Stock</th><th>$Valor (MM)</th><th>Cob.</th><th>Distrib.</th><th style="color:var(--q)">Q</th><th style="color:var(--rT)">R</th><th style="color:var(--mT)">M</th><th style="color:var(--s)">Sob</th><th style="color:var(--n)">N</th></tr></thead><tbody id="gtb"></tbody></table></div>
+    </div>
+  </div>
+  <div class="stt">Inventario valorizado por categoría</div>
+  <div class="tw"><table id="ictbl"><thead><tr><th>Categoría</th><th>SKUs</th><th>$Valor (MM)</th><th>% del total</th><th>Distribución</th></tr></thead></table></div>
+  <div class="cb" style="margin-top:12px"><div class="ct">Stock valorizado por categoría (MM CLP)</div><div class="cw" style="height:300px"><canvas id="cInvCat"></canvas></div></div>
 </div>
 
 <div id="t10" class="pg">
@@ -536,7 +569,7 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 
 
 // ── GLOBAL DATA NAMESPACE ───────────────────────────────────────────────────
-var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT;
+var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT,INVCAT;
 var gCompFilter='';  // filtro global de comprador
 // Filtro global PPA (Pan de Pascua). Por defecto ON — replica el contrato histórico de B.9 reporte diario.
 var PPA_SET = new Set();
@@ -1381,8 +1414,67 @@ function buildGer(){
     (gByT[ta]||[]).forEach(function(gd){var sdb=distBar([[gd[6],'#E24B4A'],[gd[7],'#E8C52A'],[gd[8],'#E87B2A'],[gd[10],'#639922'],[gd[9],'#378ADD']],80,5);
       html+='<tr class="gdet-'+gi+'" style="display:none;background:#1a1f2e"><td style="padding-left:20px;color:#c0caf5;font-size:.7rem">↳ '+gd[1]+'</td><td style="font-size:.7rem">'+f0(gd[2])+'</td><td style="text-align:right;font-size:.7rem">'+f0(gd[3])+'</td><td style="text-align:right;font-size:.7rem">$'+fMM(gd[4])+'</td><td style="text-align:right;font-size:.7rem">'+gd[5]+'w</td><td>'+sdb+'</td><td style="color:var(--q);font-size:.7rem">'+gd[6]+'</td><td style="color:var(--rT);font-size:.7rem">'+gd[7]+'</td><td style="color:var(--mT);font-size:.7rem">'+gd[8]+'</td><td style="color:var(--s);font-size:.7rem">'+gd[9]+'</td><td style="color:var(--n);font-size:.7rem">'+gd[10]+'</td></tr>';});
   });tb.innerHTML=html;
+  buildInvCat();
 }
 function togGrupos(gi){var rows=document.querySelectorAll('.gdet-'+gi);var ar=el('arr-'+gi);var showing=rows.length>0&&rows[0].style.display!=='none';for(var i=0;i<rows.length;i++)rows[i].style.display=showing?'none':'table-row';if(ar)ar.textContent=showing?'▼':'▲';}
+
+// ── Inventario valorizado por categoría (INVCAT, B.12) ──
+function buildInvCat(){
+  var tbl=el('ictbl'); if(!tbl||!INVCAT){return;}
+  // limpiar tbodies previos (deja el thead)
+  while(tbl.tBodies.length) tbl.removeChild(tbl.tBodies[0]);
+  var maxVal=Math.max.apply(null,INVCAT.cats.map(function(c){return c.val;}))||1;
+  function skRow(tb,r,cls){ // r=[sku,desc,stock,val]; cls=clase opcional para sub-skus ocultables
+    var tr=document.createElement('tr'); tr.className='ic-det-row'+(cls?(' '+cls):'');
+    if(cls){tr.style.display='none';}
+    tr.innerHTML='<td>'+r[0]+' · '+r[1]+'</td><td></td><td>$'+fMM(r[3])+'</td>'+
+      '<td colspan="2" style="text-align:left;color:var(--muted)">stock: '+f0(r[2])+'</td>';
+    tb.appendChild(tr);
+  }
+  INVCAT.cats.forEach(function(c,i){
+    var w=Math.round(c.val/maxVal*150);
+    var tbH=document.createElement('tbody');
+    var tr=document.createElement('tr'); tr.className='ic-cat';
+    tr.innerHTML='<td><span class="ic-cap" id="iccap'+i+'">▸</span>'+(i+1)+'. '+c.label+'</td>'+
+      '<td>'+f0(c.n)+'</td><td>$'+fMM(c.val)+'</td><td>'+c.pct.toFixed(1)+'%</td>'+
+      '<td><span class="ic-bar" style="width:'+w+'px"></span></td>';
+    tr.onclick=function(){ el('det'+i).classList.toggle('open'); el('iccap'+i).classList.toggle('open'); };
+    tbH.appendChild(tr); tbl.appendChild(tbH);
+    var det=document.createElement('tbody'); det.className='ic-det'; det.id='det'+i;
+    if(c.sub){ // INSUMOS: sub-grupos ZIME/ZINS, cada uno expandible
+      c.sub.forEach(function(s,j){
+        var cls='icsk'+i+'_'+j;
+        var h=document.createElement('tr'); h.className='ic-subh';
+        h.innerHTML='<td><span class="ic-subcap" id="icscap'+i+'_'+j+'">▸</span>'+s.tipo+'</td>'+
+          '<td>'+f0(s.n)+'</td><td>$'+fMM(s.val)+'</td><td colspan="2"></td>';
+        h.onclick=function(){ el('icscap'+i+'_'+j).classList.toggle('open');
+          det.querySelectorAll('tr.'+cls).forEach(function(rr){rr.classList.toggle('open');}); };
+        det.appendChild(h);
+        s.detail.forEach(function(r){ skRow(det,r,cls); });
+      });
+    } else {
+      c.detail.forEach(function(r){ skRow(det,r); });
+    }
+    tbl.appendChild(det);
+  });
+  // subtotal Total G. Planificación + TOTAL
+  var p=INVCAT.plan, tbF=document.createElement('tbody');
+  var trs=document.createElement('tr'); trs.className='ic-subtot';
+  trs.innerHTML='<td>Total G. Planificación</td><td>'+f0(p.n)+'</td><td>$'+fMM(p.val)+'</td><td>'+p.pct.toFixed(1)+'%</td><td></td>';
+  var nTot=INVCAT.cats.reduce(function(a,c){return a+c.n;},0);
+  var trt=document.createElement('tr'); trt.className='ic-tot';
+  trt.innerHTML='<td>TOTAL</td><td>'+f0(nTot)+'</td><td>$'+fMM(INVCAT.total)+'</td><td>100%</td><td></td>';
+  tbF.appendChild(trs); tbF.appendChild(trt); tbl.appendChild(tbF);
+  // gráfico de barras
+  var srt=INVCAT.cats.slice().sort(function(a,b){return b.val-a.val;});
+  var cc=el('cInvCat').getContext('2d'); if(window._cIC)window._cIC.destroy();
+  window._cIC=new Chart(cc,{type:'bar',data:{labels:srt.map(function(c){return c.label;}),
+    datasets:[{data:srt.map(function(c){return +(c.val/1e6).toFixed(1);}),backgroundColor:'#6366f199',borderColor:'#6366f1',borderWidth:1.5,borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:function(x){return '$'+x.raw.toFixed(1)+' MM';}}}},
+      scales:{x:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+v.toFixed(0)+'MM';}},grid:{color:'#2d3452'}},
+              y:{ticks:{color:'#e2e8f0',font:{size:10.5}}}}}});
+}
 
 // ── MERMAS ──
 var cMV=null,cTs=null,aMerma='';
@@ -2648,7 +2740,7 @@ fetch('data.json?v='+Date.now())
     R=_D.R;SD=_D.SD;PA=_D.PA;PC=_D.PC;PS=_D.PS;G=_D.G;GR=_D.GR;GD=_D.GD;
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
-    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;
+    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;INVCAT=_D.INVCAT||null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
     var _h=document.getElementById('hsem-txt');
