@@ -533,6 +533,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
       <span>Excluir importados</span>
       <span id="tic-imp-cnt" style="font-size:.62rem;color:var(--muted)">(—)</span>
     </label>
+    <button id="tic-fcproj-btn" onclick="onTicFCProj()" title="Calcula coberturas usando el FC proyectado de las próximas 4 semanas en lugar del consumo real" style="display:inline-flex;align-items:center;gap:5px;background:#232840;border:1px solid var(--border);border-radius:5px;padding:4px 9px;font-size:.7rem;color:#a4b4ce;cursor:pointer;user-select:none">📈 Cobertura x Proyección</button>
     <span style="font-size:.66rem;color:var(--muted)" id="tic-info"></span>
   </div>
   <div id="tic-host"></div>
@@ -2723,10 +2724,33 @@ function onTicImp(){
   buildTICob();
 }
 
+// Toggle "Cobertura x Proyección": usa FC proyectado de las próximas 4 sem en vez de consumo real
+var ticUseFCProj = false;
+function onTicFCProj(){
+  ticUseFCProj = !ticUseFCProj;
+  var btn = document.getElementById('tic-fcproj-btn');
+  if(btn){
+    btn.style.borderColor = ticUseFCProj ? '#6366f1' : 'var(--border)';
+    btn.style.color       = ticUseFCProj ? '#a5b4fc' : '#a4b4ce';
+    btn.style.background  = ticUseFCProj ? 'rgba(99,102,241,.15)' : '#232840';
+  }
+  buildTICob();
+}
+
 function ticCobReal(s){
   var c4r = s.c4r||0, stock = s.stock||0;
-  if(c4r<=0) return null;            // sin consumo real → cobertura no calculable
-  return stock / c4r;                // semanas de cobertura
+  if(c4r<=0) return null;
+  return stock / c4r;
+}
+function ticCobEff(s){
+  if(ticUseFCProj && TI && TI.fc && TI.fc.mult){
+    var arr = _tifcArr(s);
+    var n4 = TI.fc.n4 || 4;
+    var avg4 = arr.slice(0, n4).reduce(function(x,y){return x+y;}, 0) / n4;
+    if(avg4 <= 0) return null;
+    return (s.stock || 0) / avg4;
+  }
+  return ticCobReal(s);
 }
 function ticBucket(c){
   if(c==null) return 'Sin consumo';
@@ -2742,12 +2766,20 @@ function ticCalc(skus){
   var buckets={}; TIC_ORDER.forEach(function(k){buckets[k]={val:0,cnt:0,items:[]};});
   skus.forEach(function(s){
     var stock = s.stock||0;
-    var c = ticCobReal(s);
+    var c = ticCobEff(s);
     var k = ticBucket(c);
-    if(k==='Sin consumo' && stock<=0) return;   // sin consumo y sin stock → no aporta capital, descartar
+    if(k==='Sin consumo' && stock<=0) return;
     var val = s.valor||0;
+    // consumo efectivo para mostrar en el drawer: FC avg o real según modo activo
+    var effCons = (function(){
+      if(ticUseFCProj && TI && TI.fc && TI.fc.mult){
+        var arr=_tifcArr(s), n4=TI.fc.n4||4;
+        return arr.slice(0,n4).reduce(function(x,y){return x+y;},0)/n4;
+      }
+      return s.c4r||0;
+    })();
     buckets[k].val += val; buckets[k].cnt += 1;
-    buckets[k].items.push({sku:s.sku, desc:s.desc, comp:s.comp, stock:stock, val:val, cob:c, c4_real:(s.c4r||0)});
+    buckets[k].items.push({sku:s.sku, desc:s.desc, comp:s.comp, stock:stock, val:val, cob:c, c4_real:effCons});
   });
   var tot = TIC_ORDER.reduce(function(a,k){return a+buckets[k].val;},0);
   return {buckets:buckets, tot:tot};
@@ -2788,7 +2820,7 @@ function buildTICob(){
   sec.className='cov-sec';
   sec.innerHTML = ''
     + '<div class="cov-tit">'+titulo+'</div>'
-    + '<div class="cov-sub">Cobertura = stock / consumo real semanal · '+totCnt+' SKUs · Stock valorizado total: <b style="color:#fff">'+covFmtMM(tot)+'</b></div>'
+    + '<div class="cov-sub">Cobertura = stock / '+(ticUseFCProj?'FC proyectado próx. 4 sem':'consumo real últimas 4 sem')+' · '+totCnt+' SKUs · Stock valorizado total: <b style="color:#fff">'+covFmtMM(tot)+'</b></div>'
     + '<div class="cov-row">'
     +   '<div class="cb"><div class="ct">Distribución por cobertura</div><div style="overflow-x:auto"><table>'
     +     '<thead><tr><th>Cobertura</th><th>Valor Stock</th><th>% Total</th><th>SKUs</th></tr></thead><tbody id="tic-tb"></tbody></table></div></div>'
@@ -2884,7 +2916,7 @@ function ticToggleDetail(bucket, items, tbody){
     + '<div class="tw"><table><thead><tr>'
     + '<th>SKU</th><th>Descripción</th><th>Comprador</th>'
     + '<th style="text-align:right">Stock</th><th style="text-align:right">Valor Stock</th>'
-    + '<th style="text-align:right" title="Consumo real últimas 4 semanas">Cons. 4w real</th>'
+    + '<th style="text-align:right">'+(ticUseFCProj?'FC avg 4w proy':'Cons. 4w real')+'</th>'
     + '<th style="text-align:right">Cobertura (sem)</th>'
     + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
