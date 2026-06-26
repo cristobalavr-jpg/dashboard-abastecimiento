@@ -561,6 +561,10 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
     <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.25);border-radius:7px;padding:8px 12px;margin:0 0 10px;font-size:.7rem;color:#a4b4ce">
       📈 Proyección de consumo de las próximas 12 semanas por SKU. <b>FC semana = base × estacionalidad acumulada del mes</b>. Base = consumo real prom/sem de las últimas 4 sem <b>completas</b> (excluye la semana en curso; mov 601 + fallback plantas, A.4.3). Estacionalidad: variación mes-vs-mes, multiplicador = promedio 2025-2026 por categoría (ABARROTES / CAFETERIA / INSUMOS, mapa en <code>categorias_ti.json</code>). <b>Cobertura proy.</b> = stock / (promedio FC próximas 4 sem futuras).
     </div>
+    <div style="background:#1a2138;border:1px solid var(--border,#2d3452);border-radius:8px;padding:10px 12px;margin:0 0 12px;overflow:auto">
+      <div style="font-size:.72rem;font-weight:700;color:#c0caf5;margin-bottom:8px">Estacionalidad declarada — variación mes vs mes anterior (%) · multiplicador = promedio 2025-2026 (fila PROM)</div>
+      <table id="tifc-estac" style="width:100%;border-collapse:collapse;font-size:.66rem;text-align:center;white-space:nowrap"></table>
+    </div>
     <div class="fr" style="margin-bottom:8px">
       <input type="text" class="si" id="tifc-q" placeholder="Buscar por SKU o descripción..." oninput="rndTIFC()" style="width:280px">
       <select class="csel" id="tifc-cat" onchange="rndTIFC()"><option value="">Todas las categorías</option><option value="ABARROTES">ABARROTES</option><option value="CAFETERIA">CAFETERIA</option><option value="INSUMOS">INSUMOS</option></select>
@@ -2358,7 +2362,33 @@ function buildTIFC(){
   fc.weeks.forEach(function(w){ var bl=(w.mes!==lm)?'border-left:2px solid #2d3452':''; lm=w.mes; hd+='<th style="text-align:right;'+bl+'">S'+w.w+'</th>'; });
   hd+='<th style="text-align:right">ΣFC 4w</th><th style="text-align:right">ΣFC 12w</th><th style="text-align:right" title="stock / promedio FC 4 sem futuras">Cob. 4w</th><th style="text-align:right" title="(stock+OC) / promedio FC 4 sem">Cob.+OC</th>';
   head.innerHTML=hd;
+  rndTIEstac();
   rndTIFC();
+}
+// Cuadro de estacionalidad declarada (variación MoM por categoría/año + fila PROM)
+function rndTIEstac(){
+  var fc=TI&&TI.fc, t=el('tifc-estac'); if(!t) return;
+  if(!fc||!fc.estac||!fc.estac.cats){ t.innerHTML=''; return; }
+  var meses=fc.estac.meses, cats=fc.estac.cats;
+  function cell(v,bold){ if(v===null||v===undefined) return '<td style="color:var(--muted,#8892b0);padding:4px 8px">—</td>'; var c=v>0?'#1D9E75':(v<0?'#E24B4A':'#a4b4ce'); return '<td style="padding:4px 8px;color:'+c+(bold?';font-weight:700':'')+'">'+(v>0?'+':'')+(bold?Math.round(v):v)+'%</td>'; }
+  var h='<thead><tr><th style="text-align:left;padding:4px 8px;color:#c0caf5">Categoría · Año</th>';
+  meses.forEach(function(m){h+='<th style="padding:4px 8px;color:#c0caf5">'+m+'</th>';});
+  h+='</tr></thead><tbody>';
+  Object.keys(cats).forEach(function(cat){
+    var c=cats[cat];
+    ['2025','2026'].forEach(function(yr){
+      if(!c[yr])return;
+      h+='<tr><td style="text-align:left;padding:4px 8px;color:#a4b4ce">'+cat+' · '+yr+'</td>';
+      c[yr].forEach(function(v){h+=cell(v,false);});
+      h+='</tr>';
+    });
+    var prom=meses.map(function(_,i){var a=[(c['2025']||[])[i],(c['2026']||[])[i]].filter(function(x){return x!==null&&x!==undefined;});return a.length?a.reduce(function(x,y){return x+y;},0)/a.length:null;});
+    h+='<tr style="background:#1d2540"><td style="text-align:left;padding:4px 8px;font-weight:700;color:#dbe4f3">'+cat+' · PROM</td>';
+    prom.forEach(function(v){h+=cell(v,true);});
+    h+='</tr>';
+  });
+  h+='</tbody>';
+  t.innerHTML=h;
 }
 function rndTIFC(){
   var fc = TI && TI.fc; if(!fc || !fc.weeks || !fc.weeks.length) return;
