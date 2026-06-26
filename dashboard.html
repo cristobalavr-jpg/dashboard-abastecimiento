@@ -2360,7 +2360,7 @@ function buildTIFC(){
   var hd='<th>SKU</th><th>Descripción</th><th>UM</th><th>Cat.</th><th style="text-align:right">Base/sem</th>';
   var lm=null;
   fc.weeks.forEach(function(w){ var bl=(w.mes!==lm)?'border-left:2px solid #2d3452':''; lm=w.mes; hd+='<th style="text-align:right;'+bl+'">S'+w.w+'</th>'; });
-  hd+='<th style="text-align:right">ΣFC 4w</th><th style="text-align:right">ΣFC 12w</th><th style="text-align:right" title="stock / promedio FC 4 sem futuras">Cob. 4w</th><th style="text-align:right" title="(stock+OC) / promedio FC 4 sem">Cob.+OC</th>';
+  hd+='<th style="text-align:right">ΣFC 4w</th><th style="text-align:right">ΣFC 12w</th><th id="tifc-hcob4" style="text-align:right;cursor:pointer;user-select:none" onclick="_tifcSortBy(\'cob4\')" title="Click para ordenar por cobertura 4 semanas">Cob. 4w <span style="opacity:.6;font-size:.8em">↕</span></th><th id="tifc-hcoboc" style="text-align:right;cursor:pointer;user-select:none" onclick="_tifcSortBy(\'coboc\')" title="Click para ordenar por cobertura con OC">Cob.+OC <span style="opacity:.6;font-size:.8em">↕</span></th>';
   head.innerHTML=hd;
   rndTIEstac();
   rndTIFC();
@@ -2390,6 +2390,12 @@ function rndTIEstac(){
   h+='</tbody>';
   t.innerHTML=h;
 }
+window._tifcSortCol=null; window._tifcSortAsc=true;
+function _tifcSortBy(col){
+  if(window._tifcSortCol===col) window._tifcSortAsc=!window._tifcSortAsc;
+  else { window._tifcSortCol=col; window._tifcSortAsc=true; }
+  rndTIFC();
+}
 function rndTIFC(){
   var fc = TI && TI.fc; if(!fc || !fc.weeks || !fc.weeks.length) return;
   var f0=function(n){return Math.round(n).toLocaleString('es-CL');};
@@ -2405,14 +2411,35 @@ function rndTIFC(){
     if(q && !(s.sku.toLowerCase().indexOf(q)>=0 || s.desc.toLowerCase().indexOf(q)>=0)) return false;
     return true;
   });
-  rows.sort(function(a,b){ var sa=_tifcArr(a).reduce(function(x,y){return x+y;},0), sb=_tifcArr(b).reduce(function(x,y){return x+y;},0); return sb-sa; });
-  el('tifc-tb').innerHTML=rows.map(function(s){
+  // Pre-computar valores por fila para poder ordenar por cobertura
+  var rowData=rows.map(function(s){
     var arr=_tifcArr(s), b=s.bfc||0;
     var sum4=arr.slice(0,n4).reduce(function(x,y){return x+y;},0);
     var sum12=arr.reduce(function(x,y){return x+y;},0);
     var avg4=sum4/n4, stock=s.stock||0, oc=s.oc||0;
     var cob4=avg4>0?Math.round(stock/avg4*10)/10:null;
-    var cob4oc=avg4>0?Math.round((stock+oc)/avg4*10)/10:null;
+    var coboc=avg4>0?Math.round((stock+oc)/avg4*10)/10:null;
+    return {s:s,arr:arr,b:b,sum4:sum4,sum12:sum12,cob4:cob4,coboc:coboc};
+  });
+  var sc=window._tifcSortCol, asc=window._tifcSortAsc;
+  if(sc==='cob4'||sc==='coboc'){
+    rowData.sort(function(a,b){
+      var va=a[sc], vb=b[sc];
+      if(va==null&&vb==null)return 0; if(va==null)return 1; if(vb==null)return -1;
+      return asc?va-vb:vb-va;
+    });
+  } else {
+    rowData.sort(function(a,b){ return b.sum4-a.sum4; });
+  }
+  // Actualizar flechas en headers
+  ['cob4','coboc'].forEach(function(c){
+    var h=el('tifc-h'+c); if(!h)return;
+    var label=c==='cob4'?'Cob. 4w':'Cob.+OC';
+    var arrow=sc===c?(asc?' ↑':' ↓'):' ↕';
+    h.innerHTML=label+'<span style="opacity:.6;font-size:.8em">'+arrow+'</span>';
+  });
+  el('tifc-tb').innerHTML=rowData.map(function(d){
+    var s=d.s, arr=d.arr, b=d.b, sum4=d.sum4, sum12=d.sum12, cob4=d.cob4, coboc=d.coboc;
     var lm=null;
     var cells=arr.map(function(v,i){ var bl=(fc.weeks[i].mes!==lm)?'border-left:2px solid #2d3452':''; lm=fc.weeks[i].mes; return '<td style="text-align:right;color:#bcd0ff;'+bl+'">'+(v>0?f0(v):'—')+'</td>'; }).join('');
     var ec=s.ecat||'INSUMOS';
@@ -2423,9 +2450,9 @@ function rndTIFC(){
       '<td style="text-align:right;font-weight:700">'+(sum4>0?f0(sum4):'—')+'</td>'+
       '<td style="text-align:right;font-weight:700">'+(sum12>0?f0(sum12):'—')+'</td>'+
       '<td style="text-align:right">'+cobCol(cob4)+'</td>'+
-      '<td style="text-align:right">'+cobCol(cob4oc)+'</td></tr>';
+      '<td style="text-align:right">'+cobCol(coboc)+'</td></tr>';
   }).join('');
-  el('tifc-info').textContent=rows.length+' SKUs · base S'+fc.vbase[0]+'-S'+fc.vbase[fc.vbase.length-1]+' → proyección desde '+fc.cur_label;
+  el('tifc-info').textContent=rowData.length+' SKUs · base S'+fc.vbase[0]+'-S'+fc.vbase[fc.vbase.length-1]+' → proyección desde '+fc.cur_label;
 }
 // Sub-navegación de Terceros e Insumos: Inventarios / Forecast Proyectado
 function showTISub(name){
