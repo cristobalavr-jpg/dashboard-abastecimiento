@@ -506,6 +506,12 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 
 <!-- Terceros e Insumos -->
 <div id="t9" class="pg">
+  <div class="qsub-nav">
+    <button class="qsub tisub active" data-ti="inv" onclick="showTISub('inv')">📊 Inventarios</button>
+    <button class="qsub tisub" data-ti="fc" onclick="showTISub('fc')">📈 Forecast Proyectado</button>
+  </div>
+
+  <div id="tisub-inv" class="qsub-pane active">
   <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.25);border-radius:7px;padding:8px 12px;margin-bottom:10px;font-size:.7rem;color:#a4b4ce">
     💡 Categorías: PT MERCADERIA + IN INSUMOS ASEO/SEGURIDAD/GENERALES + INSUMOS GENERAL. Stock desde MOBIDIC (centros 4010/4020/4120, excl. BL01/EX01/EX02). Consumo real: MB51 mov 601 (CD→tiendas); fallback MB51 mov 201/261/262/641 centros 4010/4020 cuando el SKU se consume en plantas (ver PARAMETRO.MD A.4.3).
   </div>
@@ -530,6 +536,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
     <span style="font-size:.66rem;color:var(--muted)" id="tic-info"></span>
   </div>
   <div id="tic-host"></div>
+
   <div class="stt" style="margin-top:18px">Detalle SKU <button onclick="expXls('ti-tb','terceros_insumos')" style="float:right;background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="fr"><input type="text" class="si" id="ti-q" placeholder="Buscar por SKU o descripción..." oninput="rndTI()" style="width:280px"><select class="csel" id="ti-cat" onchange="rndTI()"><option value="">Todas las categorías</option></select><span style="font-size:.66rem;color:var(--muted)" id="ti-info"></span></div>
   <div class="tw" style="margin-bottom:6px"><table><thead><tr>
@@ -544,6 +551,27 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
     <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#63992288;margin-right:4px"></span>Consumo desde plantas (fallback)</span>
     <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#475670;margin-right:4px"></span>Sin consumo</span>
   </div>
+  </div><!-- /tisub-inv -->
+
+  <!-- Sub-sección: Forecast Proyectado por estacionalidad (ver PARAMETRO.MD A.4.4 / B.11.1) -->
+  <div id="tisub-fc" class="qsub-pane">
+    <div class="stt">📈 FC proyectado por estacionalidad
+      <button onclick="expXls('tifc-tb','fc_terceros_insumos')" style="float:right;background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button>
+    </div>
+    <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.25);border-radius:7px;padding:8px 12px;margin:0 0 10px;font-size:.7rem;color:#a4b4ce">
+      📈 Proyección de consumo de las próximas 12 semanas por SKU. <b>FC semana = base × estacionalidad acumulada del mes</b>. Base = consumo real prom/sem de las últimas 4 sem <b>completas</b> (excluye la semana en curso; mov 601 + fallback plantas, A.4.3). Estacionalidad: variación mes-vs-mes, multiplicador = promedio 2025-2026 por categoría (ABARROTES / CAFETERIA / INSUMOS, mapa en <code>categorias_ti.json</code>). <b>Cobertura proy.</b> = stock / (promedio FC próximas 4 sem futuras).
+    </div>
+    <div class="fr" style="margin-bottom:8px">
+      <input type="text" class="si" id="tifc-q" placeholder="Buscar por SKU o descripción..." oninput="rndTIFC()" style="width:280px">
+      <select class="csel" id="tifc-cat" onchange="rndTIFC()"><option value="">Todas las categorías</option><option value="ABARROTES">ABARROTES</option><option value="CAFETERIA">CAFETERIA</option><option value="INSUMOS">INSUMOS</option></select>
+      <span style="font-size:.66rem;color:var(--muted)" id="tifc-info"></span>
+    </div>
+    <div class="tw" style="margin-bottom:6px"><table>
+      <thead><tr id="tifc-mes"></tr><tr id="tifc-head"></tr></thead>
+      <tbody id="tifc-tb"></tbody>
+    </table></div>
+    <div style="font-size:.65rem;color:var(--muted);margin-top:6px">SKU sin consumo base proyecta FC=0. Cobertura: stock / promedio FC 4 sem futuras (excluye la semana en curso); "Cob.+OC" suma el tránsito. ΣFC 4w/12w en unidades.</div>
+  </div><!-- /tisub-fc -->
 </div>
 
 <!-- DRAWER -->
@@ -2262,6 +2290,7 @@ function buildTI(){
 
   rndTI();
   buildTICob();   // sección de cobertura por consumo real (B.11)
+  buildTIFC();    // sección FC proyectado por estacionalidad (A.4.4 / B.11.1)
 }
 
 function rndTI(){
@@ -2300,6 +2329,79 @@ function rndTI(){
     '</tr>';
   }).join('');
   el('ti-info').textContent = rows.length+' SKUs'+((q||cat)?(' (filtrado de '+TI.skus.length+')'):'');
+}
+
+// ── FC proyectado por estacionalidad (A.4.4 / B.11.1) ──
+function _tifcArr(s){
+  var fc=TI.fc; var mult=(fc.mult[s.ecat||'INSUMOS']||fc.mult['INSUMOS']||[]); var b=s.bfc||0;
+  return mult.map(function(m){return b*m;});
+}
+function buildTIFC(){
+  var fc = TI && TI.fc;
+  var head=el('tifc-head'), mesR=el('tifc-mes'), tb=el('tifc-tb');
+  if(!head) return;
+  if(!fc || !fc.weeks || !fc.weeks.length){
+    mesR.innerHTML=''; head.innerHTML='';
+    if(tb) tb.innerHTML='<tr><td style="padding:14px;color:var(--muted)">FC por estacionalidad no disponible (revisa estacionalidad_ti.json / categorias_ti.json).</td></tr>';
+    return;
+  }
+  // fila de meses agrupada
+  var mesRow='<th></th><th></th><th></th><th></th><th></th>';
+  var segs=[],prev=null,span=0;
+  fc.weeks.forEach(function(w,i){ if(w.mes!==prev){ if(prev)segs.push({m:prev,n:span}); prev=w.mes; span=1; } else span++; if(i===fc.weeks.length-1)segs.push({m:prev,n:span}); });
+  segs.forEach(function(s){ mesRow+='<th colspan="'+s.n+'" style="text-align:center;color:#c0caf5">'+s.m+'</th>'; });
+  mesRow+='<th></th><th></th><th></th><th></th>';
+  mesR.innerHTML=mesRow;
+  // fila de semanas
+  var hd='<th>SKU</th><th>Descripción</th><th>UM</th><th>Cat.</th><th style="text-align:right">Base/sem</th>';
+  var lm=null;
+  fc.weeks.forEach(function(w){ var bl=(w.mes!==lm)?'border-left:2px solid #2d3452':''; lm=w.mes; hd+='<th style="text-align:right;'+bl+'">S'+w.w+'</th>'; });
+  hd+='<th style="text-align:right">ΣFC 4w</th><th style="text-align:right">ΣFC 12w</th><th style="text-align:right" title="stock / promedio FC 4 sem futuras">Cob. 4w</th><th style="text-align:right" title="(stock+OC) / promedio FC 4 sem">Cob.+OC</th>';
+  head.innerHTML=hd;
+  rndTIFC();
+}
+function rndTIFC(){
+  var fc = TI && TI.fc; if(!fc || !fc.weeks || !fc.weeks.length) return;
+  var f0=function(n){return Math.round(n).toLocaleString('es-CL');};
+  var f1=function(n){return Number(n).toLocaleString('es-CL',{maximumFractionDigits:1});};
+  var f2=function(n){return Number(n).toLocaleString('es-CL',{maximumFractionDigits:2});};
+  var q=(el('tifc-q').value||'').trim().toLowerCase();
+  var cat=el('tifc-cat').value, n4=fc.n4||4;
+  function cobCol(v){ if(v==null)return '<span style="color:var(--muted)">—</span>'; var c='#74a9ff'; if(v<2.5)c='#E24B4A'; else if(v<5)c='#E87B2A'; else if(v<10)c='#E8C52A'; else if(v>=25)c='#378ADD'; return '<span style="font-weight:700;color:'+c+'">'+f1(v)+'</span>'; }
+  function tagCol(c){ return c==='ABARROTES'?'#f0a96f':(c==='CAFETERIA'?'#7bd0e0':'#b1b6e0'); }
+  var rows=TI.skus.filter(function(s){
+    var ec=s.ecat||'INSUMOS';
+    if(cat && ec!==cat) return false;
+    if(q && !(s.sku.toLowerCase().indexOf(q)>=0 || s.desc.toLowerCase().indexOf(q)>=0)) return false;
+    return true;
+  });
+  rows.sort(function(a,b){ var sa=_tifcArr(a).reduce(function(x,y){return x+y;},0), sb=_tifcArr(b).reduce(function(x,y){return x+y;},0); return sb-sa; });
+  el('tifc-tb').innerHTML=rows.map(function(s){
+    var arr=_tifcArr(s), b=s.bfc||0;
+    var sum4=arr.slice(0,n4).reduce(function(x,y){return x+y;},0);
+    var sum12=arr.reduce(function(x,y){return x+y;},0);
+    var avg4=sum4/n4, stock=s.stock||0, oc=s.oc||0;
+    var cob4=avg4>0?Math.round(stock/avg4*10)/10:null;
+    var cob4oc=avg4>0?Math.round((stock+oc)/avg4*10)/10:null;
+    var lm=null;
+    var cells=arr.map(function(v,i){ var bl=(fc.weeks[i].mes!==lm)?'border-left:2px solid #2d3452':''; lm=fc.weeks[i].mes; return '<td style="text-align:right;color:#bcd0ff;'+bl+'">'+(v>0?f0(v):'—')+'</td>'; }).join('');
+    var ec=s.ecat||'INSUMOS';
+    return '<tr>'+
+      '<td><b>'+s.sku+'</b></td><td>'+s.desc+'</td><td>'+s.um+'</td>'+
+      '<td><span style="font-size:.6rem;font-weight:700;color:'+tagCol(ec)+'">'+ec+'</span></td>'+
+      '<td style="text-align:right">'+(b>0?f2(b):'—')+'</td>'+cells+
+      '<td style="text-align:right;font-weight:700">'+(sum4>0?f0(sum4):'—')+'</td>'+
+      '<td style="text-align:right;font-weight:700">'+(sum12>0?f0(sum12):'—')+'</td>'+
+      '<td style="text-align:right">'+cobCol(cob4)+'</td>'+
+      '<td style="text-align:right">'+cobCol(cob4oc)+'</td></tr>';
+  }).join('');
+  el('tifc-info').textContent=rows.length+' SKUs · base S'+fc.vbase[0]+'-S'+fc.vbase[fc.vbase.length-1]+' → proyección desde '+fc.cur_label;
+}
+// Sub-navegación de Terceros e Insumos: Inventarios / Forecast Proyectado
+function showTISub(name){
+  window._ticur=name;
+  ['inv','fc'].forEach(function(n){var p=document.getElementById('tisub-'+n);if(p)p.classList.toggle('active',n===name);});
+  var t9=document.getElementById('t9'); if(t9){ t9.querySelectorAll('.tisub').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-ti')===name);}); }
 }
 
 // ── INIT ──
