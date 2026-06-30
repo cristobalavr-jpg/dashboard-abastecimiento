@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Abastecimiento — Semana 27 · 2026</title>
-<meta property="og:title" content="Dashboard Abastecimiento — Semana 27 · 2026">
+<title>Dashboard Abastecimiento — Semana {{SEM}} · {{YEAR}}</title>
+<meta property="og:title" content="Dashboard Abastecimiento — Semana {{SEM}} · {{YEAR}}">
 <meta property="og:description" content="Supply Chain · KPIs de inventario, mermas, capital inmovilizado, desviación de forecast y bloqueado">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
@@ -256,7 +256,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
     <div class="cb"><div class="ct">Mermas por Comprador — Valor neto ($CLP)</div><div class="cw"><canvas id="cMC"></canvas></div></div>
     <div class="cb"><div class="ct">Resumen Mermas (neta 551−552)</div><div style="overflow-x:auto"><table><thead><tr><th>Comprador</th><th>Qty neta</th><th>$Valor neto</th><th>Tasa vol.</th><th>Tasa val.</th></tr></thead><tbody id="mctb"></tbody></table></div></div>
   </div>
-  <div class="stt" style="margin-top:18px">🔎 Estado por SKU <span id="es-info" style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:8px"></span> <button onclick="expXls('es-tb','estado_por_sku')" style="float:right;background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
+  <div class="stt" style="margin-top:18px">🔎 Estado por SKU <span id="es-info" style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:8px"></span> <button onclick="expEstadoXls()" style="float:right;background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="fr" style="margin-bottom:6px"><input type="text" id="es-search" placeholder="Buscar por SKU o descripción..." oninput="rndEstado()" style="background:#13182a;color:#e2e8f0;border:1px solid var(--border);border-radius:5px;padding:5px 9px;font-size:.75rem;width:280px"><select id="es-est" onchange="rndEstado()" style="background:#13182a;color:#e2e8f0;border:1px solid var(--border);border-radius:5px;padding:5px 9px;font-size:.72rem;margin-left:6px"><option value="">Todos estados</option><option value="quiebre">Quiebre</option><option value="riesgo">Riesgo</option><option value="monitorear">Monitorear</option><option value="normal">Normal</option><option value="sobrestock">Sobrestock</option></select></div>
   <div class="tw" style="margin-bottom:6px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Comprador</th><th style="text-align:right" title="Centro Distribución (4120)">StockCD</th><th style="text-align:right" title="Centro 4010">Quilicura</th><th style="text-align:right" title="Centro 4020">Huechuraba</th><th style="text-align:right">Stock total</th><th style="text-align:right">OC tránsito</th><th style="text-align:right">Cons 4w real</th><th style="text-align:right">FC 4w</th><th style="text-align:right" title="Sesgo del FC vs consumo real últimas 4 sem">Δ FC %</th><th style="text-align:right" title="Veces por año">Rot.</th><th>Estado</th><th style="text-align:right">Cob.</th><th style="text-align:right">Cob.c/OC</th></tr></thead><tbody id="es-tb"></tbody></table></div>
   <div class="pag" id="es-pag"></div>
@@ -898,6 +898,36 @@ function expXls(tbodyId, fname){
     var ws=XLSX.utils.table_to_sheet(table,{raw:false});
     var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Datos');
     var stamp=new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb, fname+'_'+stamp+'.xlsx');
+  }catch(e){alert('Error exportando: '+e.message);}
+}
+
+// ── Export Estado por SKU (todas las páginas / datos filtrados) ──
+function expEstadoXls(){
+  if(!Array.isArray(SKUS_)) SKUS_ = (typeof SKUS!=='undefined' && Array.isArray(SKUS)) ? SKUS : [];
+  var q=(el('es-search')?el('es-search').value:'').toLowerCase().trim();
+  var est=el('es-est')?el('es-est').value:'';
+  var lst=SKUS_.slice();
+  if(gCompFilter) lst=lst.filter(function(s){return s.comp===gCompFilter;});
+  if(ppaActive()) lst=lst.filter(function(s){return !isPPA(s.sku);});
+  if(q) lst=lst.filter(function(s){return (s.sku||'').toString().toLowerCase().indexOf(q)>=0 || (s.desc||'').toLowerCase().indexOf(q)>=0;});
+  if(est) lst=lst.filter(function(s){return s.alerta===est;});
+  var ORD={quiebre:0,riesgo:1,monitorear:2,normal:3,sobrestock:4,sin_fc:5};
+  lst.sort(function(a,b){var oa=(ORD[a.alerta]!==undefined?ORD[a.alerta]:9),ob=(ORD[b.alerta]!==undefined?ORD[b.alerta]:9);if(oa!==ob)return oa-ob;return (b.val||0)-(a.val||0);});
+  try{
+    var headers=['SKU','Descripcion','Comprador','StockCD','Quilicura','Huechuraba','Stock total','OC transito','Cons 4w real','FC 4w','Delta FC %','Rot.','Estado','Cob.','Cob.c/OC'];
+    var rows=lst.map(function(s){
+      var dp=s.delta_pct;
+      var dpVal=(dp!==null && dp!==undefined)?Number(dp.toFixed(1)):null;
+      var rotVal=(s.rot!==null && s.rot!==undefined)?Number(s.rot.toFixed(1)):null;
+      var cobVal=(s.cob!==null && s.cob!==undefined && s.cob<999)?Number(Number(s.cob).toFixed(2)):null;
+      var cob4Val=(s.cob4!==null && s.cob4!==undefined && s.cob4<999)?Number(Number(s.cob4).toFixed(2)):null;
+      return [s.sku,s.desc,s.comp,s.scd||0,s.sq||0,s.sh||0,s.stock||0,s.oc||0,s.c4_real||0,s.c4||0,dpVal,rotVal,s.alerta,cobVal,cob4Val];
+    });
+    var ws=XLSX.utils.aoa_to_sheet([headers].concat(rows));
+    var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Estado por SKU');
+    var stamp=new Date().toISOString().slice(0,10);
+    var fname=(q||est)?'estado_por_sku_filtrado':'estado_por_sku';
     XLSX.writeFile(wb, fname+'_'+stamp+'.xlsx');
   }catch(e){alert('Error exportando: '+e.message);}
 }
