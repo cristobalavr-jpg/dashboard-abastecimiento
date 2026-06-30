@@ -274,21 +274,21 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 <div id="t1" class="pg">
   <div class="pkr" id="pkpis"></div>
 
-  <div class="plk-pill" onclick="togPlk('pa')"><span class="plk-ico" id="ico-pa">▸</span>Alertas — Stock actual insuficiente <button class="pbtn" onclick="event.stopPropagation();expXls('patb','alertas_stock_insuficiente')" style="background:#E24B4A30;color:#E24B4A;border:1px solid #E24B4A">📥 Excel</button></div>
+  <div class="plk-pill" onclick="togPlk('pa')"><span class="plk-ico" id="ico-pa">▸</span>Alertas — Stock actual insuficiente <button class="pbtn" onclick="event.stopPropagation();expPT('PA')" style="background:#E24B4A30;color:#E24B4A;border:1px solid #E24B4A">📥 Excel</button></div>
   <div class="plk-body" id="body-pa" style="display:none">
   <div class="fr"><button class="sb active" id="pa-ta" onclick="sPF('PA','t','')">Todos</button><button class="sb" id="pa-tz" onclick="sPF('PA','t','ZMPR')">ZMPR</button><button class="sb" id="pa-te" onclick="sPF('PA','t','ZEMP')">ZEMP</button><input type="text" class="si" id="pas" placeholder="Buscar..." oninput="sPSr('PA',this.value)"></div>
   <div class="tw" style="margin-bottom:6px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>StockCD</th><th>Quilicura</th><th>Huechuraba</th><th>Total</th><th>Cons/sem</th><th>Cob.</th><th>Estado</th></tr></thead><tbody id="patb"></tbody></table></div>
   <div class="pag" id="papag"></div>
   </div>
 
-  <div class="plk-pill" onclick="togPlk('pc')"><span class="plk-ico" id="ico-pc">▸</span>Cobertura c/OC &lt; 5 semanas <button class="pbtn" onclick="event.stopPropagation();expXls('pctb','cobertura_oc_menor_5')" style="background:#7c3aed30;color:#7c3aed;border:1px solid #7c3aed">📥 Excel</button></div>
+  <div class="plk-pill" onclick="togPlk('pc')"><span class="plk-ico" id="ico-pc">▸</span>Cobertura c/OC &lt; 5 semanas <button class="pbtn" onclick="event.stopPropagation();expPT('PC')" style="background:#7c3aed30;color:#7c3aed;border:1px solid #7c3aed">📥 Excel</button></div>
   <div class="plk-body" id="body-pc" style="display:none">
   <div class="fr"><button class="sb active" id="pc-ta" onclick="sPF('PC','t','')">Todos</button><button class="sb" id="pc-tz" onclick="sPF('PC','t','ZMPR')">ZMPR</button><button class="sb" id="pc-te" onclick="sPF('PC','t','ZEMP')">ZEMP</button><input type="text" class="si" id="pcs" placeholder="Buscar..." oninput="sPSr('PC',this.value)"></div>
   <div class="tw" style="margin-bottom:6px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>OC</th><th>Stock+OC</th><th>Cons</th><th>Cob.</th><th style="color:var(--v)">Cob.c/OC</th><th>Estado</th></tr></thead><tbody id="pctb"></tbody></table></div>
   <div class="pag" id="pcpag"></div>
   </div>
 
-  <div class="plk-pill" onclick="togPlk('ps')"><span class="plk-ico" id="ico-ps">▸</span>Sobrestock c/OC &gt; 20 semanas (con OC en tránsito) <button class="pbtn" onclick="event.stopPropagation();expXls('pstb','sobrestock_oc')" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9">📥 Excel</button></div>
+  <div class="plk-pill" onclick="togPlk('ps')"><span class="plk-ico" id="ico-ps">▸</span>Sobrestock c/OC &gt; 20 semanas (con OC en tránsito) <button class="pbtn" onclick="event.stopPropagation();expPT('PS')" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9">📥 Excel</button></div>
   <div class="plk-body" id="body-ps" style="display:none">
   <div class="fr"><button class="sb active" id="ps-ta" onclick="sPF('PS','t','')">Todos</button><button class="sb" id="ps-tz" onclick="sPF('PS','t','ZMPR')">ZMPR</button><button class="sb" id="ps-te" onclick="sPF('PS','t','ZEMP')">ZEMP</button><input type="text" class="si" id="pss" placeholder="Buscar..." oninput="sPSr('PS',this.value)"></div>
   <div class="tw" style="margin-bottom:6px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>OC</th><th>Stock+OC</th><th style="color:var(--so)">Cob.c/OC 12w</th></tr></thead><tbody id="pstb"></tbody></table></div>
@@ -929,6 +929,25 @@ function expEstadoXls(){
     var stamp=new Date().toISOString().slice(0,10);
     var fname=(q||est)?'estado_por_sku_filtrado':'estado_por_sku';
     XLSX.writeFile(wb, fname+'_'+stamp+'.xlsx');
+  }catch(e){alert('Error exportando: '+e.message);}
+}
+
+// ── Export Planificación pills (PA/PC/PS) — todas las filas, respeta filtros ──
+function expPT(n){
+  var raw=n==='PA'?PA:n==='PC'?PC:PS;
+  var fd=apF(raw,n);
+  var fname={PA:'alertas_stock_insuficiente',PC:'cobertura_oc_menor_5',PS:'sobrestock_oc'}[n];
+  var hasFilter=(aPlan||(PF[n]&&(PF[n].t||PF[n].s)));
+  var hdrs={
+    PA:['SKU','Descripcion','Tipo','Grupo','Comprador','StockCD','Quilicura','Huechuraba','Total','Cons/sem','Cob.','Estado'],
+    PC:['SKU','Descripcion','Tipo','Grupo','Comprador','Stock','OC','Stock+OC','Cons','Cob.','Cob.c/OC','Estado'],
+    PS:['SKU','Descripcion','Tipo','Grupo','Comprador','Stock','OC','Stock+OC','Cob.c/OC 12w']
+  };
+  try{
+    var ws=XLSX.utils.aoa_to_sheet([hdrs[n]].concat(fd.map(function(r){return r.slice();})));
+    var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Datos');
+    var stamp=new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb,(hasFilter?fname+'_filtrado':fname)+'_'+stamp+'.xlsx');
   }catch(e){alert('Error exportando: '+e.message);}
 }
 
