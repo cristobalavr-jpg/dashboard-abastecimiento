@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Abastecimiento — Semana 27 · 2026</title>
-<meta property="og:title" content="Dashboard Abastecimiento — Semana 27 · 2026">
+<title>Dashboard Abastecimiento — Semana {{SEM}} · {{YEAR}}</title>
+<meta property="og:title" content="Dashboard Abastecimiento — Semana {{SEM}} · {{YEAR}}">
 <meta property="og:description" content="Supply Chain · KPIs de inventario, mermas, capital inmovilizado, desviación de forecast y bloqueado">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
@@ -65,6 +65,16 @@ tr.ic-subh{cursor:pointer}
 tr.ic-subh:hover{background:rgba(99,102,241,.14)}
 .ic-subh td{color:#8b9bdd;font-weight:700;font-size:.72rem;background:rgba(99,102,241,.07)}
 .ic-subh td:first-child{padding-left:24px}
+/* Sub-nav Inventarios (Hoy / Histórico) */
+.inv-subnav{display:flex;gap:6px;border-bottom:1px solid #2d3452;margin-bottom:14px;padding-bottom:1px}
+.inv-stab{background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:6px 14px;font-size:.78rem;color:#8892b0;cursor:pointer;font-weight:500;transition:color .15s,border-color .15s}
+.inv-stab.active{color:#c0caf5;border-bottom-color:#6366f1}
+.inv-stab:hover:not(.active){color:#a4b4ce}
+/* Tabla delta histórico */
+#ih-delta-tb tr:first-child td,.inv-hist-tot{background:#1a2138!important}
+.ih-up{color:var(--rT);font-weight:700}
+.ih-dn{color:var(--n);font-weight:700}
+.ih-neu{color:var(--muted)}
 .ic-subcap{display:inline-block;width:11px;color:#8b9bdd;transition:transform .15s}
 .ic-subcap.open{transform:rotate(90deg)}
 tr.ic-subr{display:none}
@@ -321,6 +331,11 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 </div>
 
 <div id="t2" class="pg">
+  <div class="inv-subnav">
+    <button class="inv-stab active" data-inv="hoy" onclick="showInvSub('hoy')">&#128202; Inventarios Hoy</button>
+    <button class="inv-stab" data-inv="hist" onclick="showInvSub('hist')">&#128200; Hist&#243;rico de Inventarios</button>
+  </div>
+  <div id="inv-hoy">
   <div class="gk" id="gkpis"></div>
   <div class="cr">
     <div class="cb"><div class="ct">Distribución coberturas</div><div class="cw"><canvas id="cDon"></canvas></div></div>
@@ -336,6 +351,51 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="stt">Inventario valorizado por categoría</div>
   <div class="tw"><table id="ictbl"><thead><tr><th>Categoría</th><th>SKUs</th><th>$Valor (MM)</th><th>% del total</th><th>Distribución</th></tr></thead></table></div>
   <div class="cb" style="margin-top:12px"><div class="ct">Stock valorizado por categoría (MM CLP)</div><div class="cw" style="height:300px"><canvas id="cInvCat"></canvas></div></div>
+  </div>
+  <div id="inv-hist" style="display:none">
+    <div id="ih-nodata" style="display:none;text-align:center;color:var(--muted);padding:40px;font-size:.8rem">
+      Sin hist&#243;rico de inventarios disponible a&#250;n. Se construye autom&#225;ticamente con cada actualizaci&#243;n del DA.
+    </div>
+    <div id="ih-body">
+      <div class="kpia" id="ih-kpis" style="margin-bottom:14px"></div>
+      <div class="fr" style="margin-bottom:10px;align-items:center;gap:10px">
+        <span style="font-size:.72rem;color:var(--muted)">Evoluci&#243;n por:</span>
+        <button class="sb active" id="ih-btn-total" onclick="ihSetView('total')">Total</button>
+        <button class="sb" id="ih-btn-cats" onclick="ihSetView('cats')">Por categor&#237;a</button>
+      </div>
+      <div class="cb" style="margin-bottom:14px">
+        <div class="ct" id="ih-chart-title">Evoluci&#243;n del inventario total (MM CLP)</div>
+        <div class="cw" style="height:280px"><canvas id="cIHist"></canvas></div>
+      </div>
+      <div class="stt" style="margin-top:8px">
+        Variaci&#243;n entre semanas
+        <span style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:10px" id="ih-comp-lbl"></span>
+        <span style="float:right;display:flex;gap:8px;align-items:center">
+          <select id="ih-sem-a" onchange="ihBuildComp()" style="background:#13182a;color:#e2e8f0;border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:.7rem"></select>
+          <span style="color:var(--muted);font-size:.75rem">&#8594;</span>
+          <select id="ih-sem-b" onchange="ihBuildComp()" style="background:#13182a;color:#e2e8f0;border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:.7rem"></select>
+          <button onclick="expIHXls()" style="background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">&#128229; Excel</button>
+        </span>
+      </div>
+      <div class="tw" style="margin-bottom:8px">
+        <table><thead><tr>
+          <th>Categor&#237;a</th>
+          <th style="text-align:right">Sem. A</th>
+          <th style="text-align:right">Sem. B</th>
+          <th style="text-align:right">&#916; $</th>
+          <th style="text-align:right">&#916; %</th>
+          <th style="text-align:center">SKUs</th>
+        </tr></thead><tbody id="ih-delta-tb"></tbody></table>
+      </div>
+      <div id="ih-drw" style="display:none;background:#161b2e;border:1px solid #2d3452;border-radius:8px;padding:12px;margin-top:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span id="ih-drw-title" style="font-size:.8rem;font-weight:700;color:#c0caf5"></span>
+          <button onclick="document.getElementById('ih-drw').style.display='none'" style="background:none;border:1px solid #475670;color:#8892b0;border-radius:4px;padding:2px 8px;font-size:.65rem;cursor:pointer">&#10005; Cerrar</button>
+        </div>
+        <div id="ih-drw-body"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="t10" class="pg">
@@ -602,7 +662,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 
 
 // ── GLOBAL DATA NAMESPACE ───────────────────────────────────────────────────
-var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT,INVCAT;
+var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT,INVCAT,HIST_INV;
 var gCompFilter='';  // filtro global de comprador
 // Filtro global PPA (Pan de Pascua). Por defecto ON — replica el contrato histórico de B.9 reporte diario.
 var PPA_SET = new Set();
@@ -1557,6 +1617,195 @@ function buildInvCat(){
       scales:{x:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+v.toFixed(0)+'MM';}},grid:{color:'#2d3452'}},
               y:{ticks:{color:'#e2e8f0',font:{size:10.5}}}}}});
 }
+
+// ── Histórico de Inventarios (HIST_INV) ──
+var _ihView='total';
+
+function showInvSub(name){
+  ['hoy','hist'].forEach(function(n){
+    var p=el('inv-'+n); if(p) p.style.display=(n===name)?'':'none';
+  });
+  document.querySelectorAll('.inv-stab').forEach(function(b){
+    b.classList.toggle('active',b.getAttribute('data-inv')===name);
+  });
+  if(name==='hist'&&!window._ihBuilt){buildHistInv();window._ihBuilt=true;}
+}
+
+function buildHistInv(){
+  if(!HIST_INV||!HIST_INV.semanas||HIST_INV.semanas.length<1){
+    var nd=el('ih-nodata');if(nd)nd.style.display='';
+    var bd=el('ih-body');if(bd)bd.style.display='none';
+    return;
+  }
+  var nd=el('ih-nodata');if(nd)nd.style.display='none';
+  var bd=el('ih-body');if(bd)bd.style.display='';
+  var sems=HIST_INV.semanas;
+  var last=sems[sems.length-1];
+  var prev=sems.length>1?sems[sems.length-2]:null;
+  var dv=prev?last.total-prev.total:0;
+  var dpct=prev&&prev.total>0?(dv/prev.total*100):0;
+  var dCol=dv<0?'var(--n)':dv>0?'var(--rT)':'var(--muted)';
+  var dSign=dv>=0?'+':'';
+  el('ih-kpis').innerHTML=
+    '<div class="kv"><div class="kn">$'+fMM(last.total)+'</div><div class="kl">Inventario total W'+last.sem+'</div></div>'+
+    (prev?'<div class="kv"><div class="kn" style="color:'+dCol+'">'+dSign+'$'+fMM(Math.abs(dv))+(dv<0?' ↓':' ↑')+'</div><div class="kl">Δ vs semana anterior</div></div>'+
+    '<div class="kv"><div class="kn" style="color:'+dCol+'">'+dSign+dpct.toFixed(1)+'%</div><div class="kl">Variación %</div></div>':'')+
+    '<div class="kv"><div class="kn">'+sems.length+'</div><div class="kl">Semanas de histórico</div></div>';
+  var sA=el('ih-sem-a'),sB=el('ih-sem-b'); sA.innerHTML=''; sB.innerHTML='';
+  sems.forEach(function(s,i){
+    var opt='<option value="'+i+'">W'+s.sem+' ('+s.fecha+')</option>';
+    sA.innerHTML+=opt; sB.innerHTML+=opt;
+  });
+  if(sems.length>1){sA.value=sems.length-2; sB.value=sems.length-1;}
+  else{sA.value=0; sB.value=0;}
+  ihBuildChart();
+  ihBuildComp();
+}
+
+function ihSetView(v){
+  _ihView=v;
+  ['total','cats'].forEach(function(n){el('ih-btn-'+n).classList.toggle('active',n===v);});
+  ihBuildChart();
+}
+
+function ihBuildChart(){
+  if(!HIST_INV||!HIST_INV.semanas||!HIST_INV.semanas.length) return;
+  var sems=HIST_INV.semanas;
+  var labels=sems.map(function(s){return 'W'+s.sem;});
+  var cc=el('cIHist').getContext('2d');
+  if(window._cIHist) window._cIHist.destroy();
+  var PAL=['#6366f1','#E87B2A','#1D9E75','#E24B4A','#378ADD','#D85A30','#BA7517','#8892b0','#0F6E56','#D4537E'];
+  var datasets;
+  if(_ihView==='total'){
+    el('ih-chart-title').textContent='Evolución del inventario total (MM CLP)';
+    datasets=[{label:'Total',data:sems.map(function(s){return +(s.total/1e6).toFixed(1);}),
+      borderColor:'#6366f1',backgroundColor:'#6366f118',fill:true,tension:0.3,
+      pointRadius:5,pointHoverRadius:7,pointBackgroundColor:'#6366f1'}];
+  } else {
+    el('ih-chart-title').textContent='Evolución por categoría (MM CLP)';
+    var catSet={};
+    sems.forEach(function(s){(s.cats||[]).forEach(function(c){catSet[c.label]=true;});});
+    var catLabels=Object.keys(catSet);
+    datasets=catLabels.map(function(lbl,i){
+      return {label:lbl,data:sems.map(function(s){
+        var c=(s.cats||[]).find(function(x){return x.label===lbl;});
+        return c?+(c.val/1e6).toFixed(1):null;
+      }),borderColor:PAL[i%PAL.length],backgroundColor:'transparent',
+      tension:0.3,pointRadius:4,spanGaps:true};
+    });
+  }
+  window._cIHist=new Chart(cc,{type:'line',data:{labels:labels,datasets:datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:_ihView==='cats',position:'bottom',
+        labels:{color:'#8892b0',font:{size:10},boxWidth:10}},
+        tooltip:{callbacks:{label:function(x){return x.dataset.label+': $'+x.raw+' MM';}}}},
+      scales:{x:{ticks:{color:'#8892b0',font:{size:10}},grid:{color:'#2d3452'}},
+        y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+v+' MM';}},
+        grid:{color:'#2d3452'}}}}});
+}
+
+function ihBuildComp(){
+  if(!HIST_INV||!HIST_INV.semanas.length) return;
+  var sems=HIST_INV.semanas;
+  var idxA=parseInt(el('ih-sem-a').value),idxB=parseInt(el('ih-sem-b').value);
+  var tb=el('ih-delta-tb'); el('ih-drw').style.display='none';
+  if(isNaN(idxA)||isNaN(idxB)||idxA>=idxB){
+    tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:14px">Selecciona semana A anterior a semana B</td></tr>'; return;
+  }
+  var semA=sems[idxA],semB=sems[idxB];
+  el('ih-comp-lbl').textContent='W'+semA.sem+' ('+semA.fecha+') → W'+semB.sem+' ('+semB.fecha+')';
+  var cA={};(semA.cats||[]).forEach(function(c){cA[c.label]=c.val;});
+  var cB={};(semB.cats||[]).forEach(function(c){cB[c.label]=c.val;});
+  var allLbls=Object.keys(Object.assign({},cA,cB));
+  var stored=(HIST_INV.deltas||[]).find(function(d){return d.de===semA.sem&&d.a===semB.sem;})||null;
+  window._ihStoredDelta=stored;
+  var totalDv=semB.total-semA.total;
+  var totalPct=semA.total>0?(totalDv/semA.total*100):0;
+  var tSign=totalDv>=0?'+':'',tCol=totalDv<0?'var(--n)':totalDv>0?'var(--rT)':'var(--muted)';
+  var html='<tr class="inv-hist-tot" style="background:#1a2138">'+
+    '<td colspan="2" style="font-weight:700">TOTAL INVENTARIO</td>'+
+    '<td style="text-align:right">$'+fMM(semA.total)+'</td>'+
+    '<td style="text-align:right">$'+fMM(semB.total)+'</td>'+
+    '<td style="text-align:right;color:'+tCol+';font-weight:700">'+tSign+'$'+fMM(Math.abs(totalDv))+(totalDv<0?' ↓':' ↑')+'</td>'+
+    '<td style="text-align:right;color:'+tCol+';font-weight:700">'+tSign+totalPct.toFixed(1)+'%</td>'+
+    '<td></td></tr>';
+  var rows=allLbls.map(function(lbl){
+    var va=cA[lbl]||0,vb=cB[lbl]||0,dv=vb-va;
+    var dpct=va>0?(dv/va*100):(vb>0?100:0);
+    var col=dv<0?'var(--n)':dv>0?'var(--rT)':'var(--muted)';
+    var sign=dv>=0?'+':'';
+    var catStored=stored&&(stored.cats||[]).find(function(c){return c.label===lbl&&c.top&&c.top.length;});
+    var esc=lbl.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    var btn=catStored?'<button onclick="ihShowMovers(\''+esc+'\')" style="background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:4px;padding:1px 7px;font-size:.62rem;cursor:pointer">Ver SKUs</button>':'<span style="color:var(--muted);font-size:.65rem">—</span>';
+    return {lbl:lbl,va:va,vb:vb,dv:dv,dpct:dpct,col:col,sign:sign,btn:btn,absDv:Math.abs(dv)};
+  }).sort(function(a,b){return b.absDv-a.absDv;});
+  rows.forEach(function(r){
+    html+='<tr>'+
+      '<td colspan="2">'+r.lbl+'</td>'+
+      '<td style="text-align:right;color:var(--muted)">$'+fMM(r.va)+'</td>'+
+      '<td style="text-align:right;color:var(--muted)">$'+fMM(r.vb)+'</td>'+
+      '<td style="text-align:right;color:'+r.col+';font-weight:700">'+r.sign+'$'+fMM(Math.abs(r.dv))+(r.dv<0?' ↓':r.dv>0?' ↑':'')+'</td>'+
+      '<td style="text-align:right;color:'+r.col+'">'+r.sign+r.dpct.toFixed(1)+'%</td>'+
+      '<td style="text-align:center">'+r.btn+'</td></tr>';
+  });
+  tb.innerHTML=html;
+}
+
+function ihShowMovers(label){
+  var stored=window._ihStoredDelta; if(!stored) return;
+  var cat=(stored.cats||[]).find(function(c){return c.label===label;}); if(!cat||!cat.top||!cat.top.length) return;
+  el('ih-drw-title').textContent='Top movimientos SKU — '+label;
+  var sorted=cat.top.slice().sort(function(a,b){return a[2]-b[2];});
+  var html='<table style="width:100%;font-size:.7rem"><thead><tr style="background:#232840">'+
+    '<th style="padding:4px 8px">SKU</th><th style="padding:4px 8px">Descripción</th>'+
+    '<th style="padding:4px 8px;text-align:right">$ Sem. A</th>'+
+    '<th style="padding:4px 8px;text-align:right">$ Sem. B</th>'+
+    '<th style="padding:4px 8px;text-align:right">Δ $</th>'+
+    '</tr></thead><tbody>';
+  sorted.forEach(function(r){
+    var col=r[2]<0?'var(--n)':r[2]>0?'var(--rT)':'var(--muted)';
+    var sign=r[2]>=0?'+':'';
+    html+='<tr style="border-bottom:1px solid #2d3452">'+
+      '<td style="padding:4px 8px;font-family:monospace;font-size:.65rem">'+r[0]+'</td>'+
+      '<td style="padding:4px 8px">'+r[1]+'</td>'+
+      '<td style="padding:4px 8px;text-align:right;color:var(--muted)">$'+f0(r[3])+'</td>'+
+      '<td style="padding:4px 8px;text-align:right;color:var(--muted)">$'+f0(r[4])+'</td>'+
+      '<td style="padding:4px 8px;text-align:right;color:'+col+';font-weight:700">'+sign+'$'+f0(r[2])+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  el('ih-drw-body').innerHTML=html;
+  el('ih-drw').style.display='';
+  el('ih-drw').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function expIHXls(){
+  if(!HIST_INV||!HIST_INV.semanas||!HIST_INV.semanas.length) return;
+  var sems=HIST_INV.semanas;
+  var idxA=parseInt(el('ih-sem-a').value),idxB=parseInt(el('ih-sem-b').value);
+  var semA=sems[Math.min(idxA,idxB)],semB=sems[Math.max(idxA,idxB)];
+  try{
+    var allCats=[];
+    sems.forEach(function(s){(s.cats||[]).forEach(function(c){if(allCats.indexOf(c.label)<0)allCats.push(c.label);});});
+    var h1=['Semana','Fecha','Total ($)'].concat(allCats);
+    var r1=sems.map(function(s){
+      var row=['W'+s.sem,s.fecha,s.total];
+      allCats.forEach(function(l){var c=(s.cats||[]).find(function(x){return x.label===l;});row.push(c?c.val:null);});
+      return row;
+    });
+    var cA={};(semA.cats||[]).forEach(function(c){cA[c.label]=c.val;});
+    var cB={};(semB.cats||[]).forEach(function(c){cB[c.label]=c.val;});
+    var lbls=Object.keys(Object.assign({},cA,cB));
+    var h2=['Categoría','Sem. A ($)','Sem. B ($)','Δ$ (B-A)','Δ%'];
+    var r2=lbls.map(function(l){var va=cA[l]||0,vb=cB[l]||0,dv=vb-va;return[l,va,vb,dv,va>0?+(dv/va*100).toFixed(1):null];}).sort(function(a,b){return Math.abs(b[3])-Math.abs(a[3]);});
+    r2.unshift(['TOTAL INVENTARIO',semA.total,semB.total,semB.total-semA.total,semA.total>0?+((semB.total-semA.total)/semA.total*100).toFixed(1):null]);
+    var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([h1].concat(r1)),'Evolución histórica');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([h2].concat(r2)),'Comp. W'+semA.sem+'→W'+semB.sem);
+    XLSX.writeFile(wb,'historico_inventarios_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  }catch(e){alert('Error exportando: '+e.message);}
+}
+
 
 // ── MERMAS ──
 var cMV=null,cTs=null,aMerma='';
@@ -2980,7 +3229,7 @@ fetch('data.json?v='+Date.now())
     R=_D.R;SD=_D.SD;PA=_D.PA;PC=_D.PC;PS=_D.PS;G=_D.G;GR=_D.GR;GD=_D.GD;
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
-    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;INVCAT=_D.INVCAT||null;
+    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
     var _h=document.getElementById('hsem-txt');
