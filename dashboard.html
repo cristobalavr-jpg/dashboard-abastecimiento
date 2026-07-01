@@ -1370,6 +1370,35 @@ function pltCovCell(v,extra){
   var c=pltCovColor(v);var lum=(0.299*c[0]+0.587*c[1]+0.114*c[2])/255;var txt=lum>0.6?'#10141e':'#fff';
   return '<td style="text-align:right;background:rgb('+c[0]+','+c[1]+','+c[2]+');color:'+txt+';font-weight:700'+(extra||'')+'">'+Number(v).toFixed(2)+'</td>';
 }
+function _buildVendorMap(){
+  if(!OCM||!OCM.rows) return {};
+  var m={};
+  OCM.rows.forEach(function(r){
+    var sku=String(r[3]||'').trim();
+    var date=r[6]||'';
+    var vendor=r[7]||'';
+    if(!sku||!vendor) return;
+    if(!m[sku]||date>m[sku].date) m[sku]={vendor:vendor,date:date};
+  });
+  var out={};Object.keys(m).forEach(function(k){out[k]=m[k].vendor;});
+  return out;
+}
+function _buildPltCobMap(){
+  if(!PLT||!PLT.rows) return {};
+  var m={};
+  PLT.rows.forEach(function(r){
+    var sku=String(r[0]);
+    var cob12=r[40],stock=r[4]||0,real4=r[36]||0;
+    var cob=(cob12!==null&&cob12!==undefined&&cob12<200)?cob12:(real4>0?+(stock*4/real4).toFixed(2):null);
+    m[sku]=cob;
+  });
+  return m;
+}
+function _cobInlineCell(v){
+  if(v===null||v===undefined) return '<td style="padding:4px 8px;text-align:right;color:var(--muted)">—</td>';
+  var c=pltCovColor(v),lum=(0.299*c[0]+0.587*c[1]+0.114*c[2])/255,txt=lum>0.6?'#10141e':'#fff';
+  return '<td style="padding:4px 8px;text-align:right;background:rgb('+c[0]+','+c[1]+','+c[2]+');color:'+txt+';font-weight:700">'+Number(v).toFixed(1)+'w</td>';
+}
 function rndPLT(){
   if(!PLT||!PLT.rows){return;}
   var cw=PLT.cons_weeks||[], fw=PLT.fc_weeks||[], sem=PLT.sem;
@@ -1386,7 +1415,8 @@ function rndPLT(){
             ['Cob. FC 12w','stock / prom FC 12w (sem)',40,true],
             ['OC tránsito','Órdenes de compra en tránsito',9,false],
             ['Cob. 12w c/tránsito','(stock+OC) / prom FC 12w (sem)',41,true],
-            ['$Stock','Valor stock actual',42,false],['$Tránsito','Valor OC en tránsito',43,false]];
+            ['$Stock','Valor stock actual',42,false],['$Tránsito','Valor OC en tránsito',43,false],
+            ['Últ. Proveedor','Proveedor de la última OC generada para el SKU',44,false]];
   var r1='<tr>';
   froz.forEach(function(c,i){r1+='<th rowspan="2" title="'+c[1]+'" style="'+pltFzH(i)+'">'+c[0]+'</th>';});
   mid.forEach(function(c){r1+='<th rowspan="2" title="'+c[1]+'" style="text-align:right;position:sticky;top:0;z-index:6;background:#232840">'+c[0]+'</th>';});
@@ -1405,6 +1435,7 @@ function rndPLT(){
   fw.forEach(function(w,i){var curr=(w===sem);r2+='<th title="'+(curr?'Semana en curso':'')+'" style="text-align:right;position:sticky;top:'+PLT_HH+'px;z-index:5;background:'+(curr?'#1d3a2c':'#16241f')+';color:'+(curr?'#9ff0c0':'#7fc8a8')+(i===fw.length-1?';border-right:2px solid #2d3452':'')+'">S'+w+(curr?'•':'')+'</th>';});
   r2+='</tr>';
   th.innerHTML=r1+r2;
+  var vendorMap=window._vendorMap||(window._vendorMap=_buildVendorMap());
   var lst=pltFilter();
   // Orden por columna de cobertura (nulos/≥999 siempre al final)
   if(PLTF.sortCol!==null){
@@ -1445,9 +1476,11 @@ function rndPLT(){
     h+=pltCovCell(r[41]);
     h+='<td style="text-align:right">$'+f0(r[42]||0)+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">$'+f0(r[43]||0)+'</td>';
+    var vend=vendorMap[r[0]]||'';
+    h+='<td style="color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px" title="'+vend.replace(/"/g,'&quot;')+'">'+(vend||'<span style="color:#3a4566">—</span>')+'</td>';
     h+='</tr>';
     return h;
-  }).join('')||'<tr><td colspan="'+(10+nC+nF+10)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
+  }).join('')||'<tr><td colspan="'+(10+nC+nF+11)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
   var ordTxt='';
   if(PLTF.sortCol!==null){var nm={38:'Cob. FC 4w',40:'Cob. FC 12w',41:'Cob. 12w c/tránsito'}[PLTF.sortCol]||'';ordTxt=' · orden: '+nm+(PLTF.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
   var info='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(PLTF.s?' · búsqueda: "'+PLTF.s+'"':'')+ordTxt;
@@ -1467,9 +1500,10 @@ function expPLT(){
   var header=['SKU','Descripción','UNM','Comprador','Stock total','StockCD','Quilicura','Bloqueado','Huechuraba','OC tránsito']
     .concat(cw.map(function(w){return 'Cons S'+w;}))
     .concat(fw.map(function(w){return 'FC S'+w;}))
-    .concat(['ΣFC 4w','ΣReal 4w','Desv %','Cob FC 4w','ΣFC 12w','Cob FC 12w','Cob 12w c/transito','$Stock','$Transito']);
+    .concat(['ΣFC 4w','ΣReal 4w','Desv %','Cob FC 4w','ΣFC 12w','Cob FC 12w','Cob 12w c/transito','$Stock','$Transito','Ult. Proveedor']);
+  var vm=window._vendorMap||(window._vendorMap=_buildVendorMap());
   var lst=pltFilter();
-  var aoa=[header].concat(lst.map(function(r){return r.slice();}));
+  var aoa=[header].concat(lst.map(function(r){var row=r.slice();row.push(vm[r[0]]||'');return row;}));
   try{
     var ws=XLSX.utils.aoa_to_sheet(aoa);
     var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Planificacion');
@@ -1787,10 +1821,12 @@ function ihShowMovers(label){
   }
   if(!sorted||!sorted.length) return;
   el('ih-drw-title').textContent='Top movimientos SKU — '+label;
+  var cobMap=window._pltCobMap||(window._pltCobMap=_buildPltCobMap());
   var html='<table style="width:100%;font-size:.7rem"><thead><tr style="background:#232840">'+
     '<th style="padding:4px 8px">SKU</th><th style="padding:4px 8px">Descripción</th>'+
     '<th style="padding:4px 8px;text-align:right">$ Sem. A</th>'+
     '<th style="padding:4px 8px;text-align:right">$ Sem. B</th>'+
+    '<th style="padding:4px 8px;text-align:right">Cob. actual</th>'+
     '<th style="padding:4px 8px;text-align:right">Δ $</th>'+
     '</tr></thead><tbody>';
   sorted.forEach(function(r){
@@ -1801,6 +1837,7 @@ function ihShowMovers(label){
       '<td style="padding:4px 8px">'+r[1]+'</td>'+
       '<td style="padding:4px 8px;text-align:right;color:var(--muted)">$'+f0(r[3])+'</td>'+
       '<td style="padding:4px 8px;text-align:right;color:var(--muted)">$'+f0(r[4])+'</td>'+
+      _cobInlineCell(cobMap[r[0]])+
       '<td style="padding:4px 8px;text-align:right;color:'+col+';font-weight:700">'+sign+'$'+f0(r[2])+'</td></tr>';
   });
   html+='</tbody></table>';
@@ -3260,6 +3297,7 @@ fetch('data.json?v='+Date.now())
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
     TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;
+    window._vendorMap=null;window._pltCobMap=null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
     var _h=document.getElementById('hsem-txt');
