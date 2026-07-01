@@ -379,7 +379,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
       </div>
       <div class="tw" style="margin-bottom:8px">
         <table><thead><tr>
-          <th>Categor&#237;a</th>
+          <th colspan="2">Categor&#237;a</th>
           <th style="text-align:right">Sem. A</th>
           <th style="text-align:right">Sem. B</th>
           <th style="text-align:right">&#916; $</th>
@@ -1736,8 +1736,11 @@ function ihBuildComp(){
     var col=dv<0?'var(--n)':dv>0?'var(--rT)':'var(--muted)';
     var sign=dv>=0?'+':'';
     var catStored=stored&&(stored.cats||[]).find(function(c){return c.label===lbl&&c.top&&c.top.length;});
+    var catObjA=(semA.cats||[]).find(function(c){return c.label===lbl;});
+    var catObjB=(semB.cats||[]).find(function(c){return c.label===lbl;});
+    var hasD=(catObjA&&catObjA.d&&catObjA.d.length)||(catObjB&&catObjB.d&&catObjB.d.length);
     var esc=lbl.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    var btn=catStored?'<button onclick="ihShowMovers(\''+esc+'\')" style="background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:4px;padding:1px 7px;font-size:.62rem;cursor:pointer">Ver SKUs</button>':'<span style="color:var(--muted);font-size:.65rem">—</span>';
+    var btn=(catStored||hasD)?'<button onclick="ihShowMovers(\''+esc+'\')" style="background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:4px;padding:1px 7px;font-size:.62rem;cursor:pointer">Ver SKUs</button>':'<span style="color:var(--muted);font-size:.65rem">—</span>';
     return {lbl:lbl,va:va,vb:vb,dv:dv,dpct:dpct,col:col,sign:sign,btn:btn,absDv:Math.abs(dv)};
   }).sort(function(a,b){return b.absDv-a.absDv;});
   rows.forEach(function(r){
@@ -1752,11 +1755,38 @@ function ihBuildComp(){
   tb.innerHTML=html;
 }
 
+function _ihComputeMovers(label,semA,semB){
+  var catA=(semA.cats||[]).find(function(c){return c.label===label;});
+  var catB=(semB.cats||[]).find(function(c){return c.label===label;});
+  var dA=catA&&catA.d?catA.d:[];
+  var dB=catB&&catB.d?catB.d:[];
+  var mA={},mB={},desc={};
+  dA.forEach(function(r){mA[r[0]]=r[2];desc[r[0]]=r[1];});
+  dB.forEach(function(r){mB[r[0]]=r[2];desc[r[0]]=r[1];});
+  var skus=Object.keys(Object.assign({},mA,mB));
+  var movers=skus.map(function(s){
+    var va=mA[s]||0,vb=mB[s]||0,dv=vb-va;
+    return [s,desc[s]||'',Math.round(dv),Math.round(va),Math.round(vb)];
+  }).filter(function(r){return Math.abs(r[2])>500;});
+  movers.sort(function(a,b){return a[2]-b[2];});
+  var top=movers.slice(0,10);
+  movers.slice(-10).forEach(function(r){if(!top.find(function(x){return x[0]===r[0];}))top.push(r);});
+  return top.sort(function(a,b){return a[2]-b[2];});
+}
 function ihShowMovers(label){
-  var stored=window._ihStoredDelta; if(!stored) return;
-  var cat=(stored.cats||[]).find(function(c){return c.label===label;}); if(!cat||!cat.top||!cat.top.length) return;
+  var stored=window._ihStoredDelta;
+  var sems=HIST_INV.semanas;
+  var idxA=parseInt(el('ih-sem-a').value),idxB=parseInt(el('ih-sem-b').value);
+  var semA=sems[idxA],semB=sems[idxB];
+  var sorted;
+  var cat=stored&&(stored.cats||[]).find(function(c){return c.label===label;});
+  if(cat&&cat.top&&cat.top.length){
+    sorted=cat.top.slice().sort(function(a,b){return a[2]-b[2];});
+  } else {
+    sorted=_ihComputeMovers(label,semA,semB);
+  }
+  if(!sorted||!sorted.length) return;
   el('ih-drw-title').textContent='Top movimientos SKU — '+label;
-  var sorted=cat.top.slice().sort(function(a,b){return a[2]-b[2];});
   var html='<table style="width:100%;font-size:.7rem"><thead><tr style="background:#232840">'+
     '<th style="padding:4px 8px">SKU</th><th style="padding:4px 8px">Descripción</th>'+
     '<th style="padding:4px 8px;text-align:right">$ Sem. A</th>'+
