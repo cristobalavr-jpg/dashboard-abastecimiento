@@ -382,6 +382,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
           <th colspan="2">Categor&#237;a</th>
           <th style="text-align:right">Sem. A</th>
           <th style="text-align:right">Sem. B</th>
+          <th style="text-align:right" title="Stock actual / consumo real prom. &#250;ltimas 4 sem (excl. sem. en curso)">Cob. 4w</th>
           <th style="text-align:right">&#916; $</th>
           <th style="text-align:right">&#916; %</th>
           <th style="text-align:center">SKUs</th>
@@ -1739,13 +1740,36 @@ function ihBuildChart(){
         grid:{color:'#2d3452'}}}}});
 }
 
+function _buildCatCobMap(){
+  // Mapea categoría → cobertura en semanas (stock units / prom real 4w units)
+  // Fuente: PLT.rows para consumo/stock; INVCAT para SKU→categoría
+  if(!PLT||!PLT.rows||!INVCAT||!INVCAT.cats) return {};
+  var skuCat={};
+  INVCAT.cats.forEach(function(cat){
+    var walk=function(arr){(arr||[]).forEach(function(r){skuCat[String(r[0])]=cat.label;});};
+    if(cat.sub) cat.sub.forEach(function(s){walk(s.detail);}); else walk(cat.detail);
+  });
+  var agg={};
+  PLT.rows.forEach(function(r){
+    var cat=skuCat[String(r[0])]; if(!cat) return;
+    if(!agg[cat]) agg[cat]={stock:0,real4:0};
+    agg[cat].stock+=r[4]||0;
+    agg[cat].real4+=r[36]||0;
+  });
+  var out={};
+  Object.keys(agg).forEach(function(cat){
+    var d=agg[cat];
+    out[cat]=d.real4>0?+(d.stock*4/d.real4).toFixed(2):null;
+  });
+  return out;
+}
 function ihBuildComp(){
   if(!HIST_INV||!HIST_INV.semanas.length) return;
   var sems=HIST_INV.semanas;
   var idxA=parseInt(el('ih-sem-a').value),idxB=parseInt(el('ih-sem-b').value);
   var tb=el('ih-delta-tb'); el('ih-drw').style.display='none';
   if(isNaN(idxA)||isNaN(idxB)||idxA>=idxB){
-    tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:14px">Selecciona semana A anterior a semana B</td></tr>'; return;
+    tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:14px">Selecciona semana A anterior a semana B</td></tr>'; return;
   }
   var semA=sems[idxA],semB=sems[idxB];
   el('ih-comp-lbl').textContent='W'+semA.sem+' ('+semA.fecha+') → W'+semB.sem+' ('+semB.fecha+')';
@@ -1754,6 +1778,7 @@ function ihBuildComp(){
   var allLbls=Object.keys(Object.assign({},cA,cB));
   var stored=(HIST_INV.deltas||[]).find(function(d){return d.de===semA.sem&&d.a===semB.sem;})||null;
   window._ihStoredDelta=stored;
+  var catCobMap=window._catCobMap||(window._catCobMap=_buildCatCobMap());
   var totalDv=semB.total-semA.total;
   var totalPct=semA.total>0?(totalDv/semA.total*100):0;
   var tSign=totalDv>=0?'+':'',tCol=totalDv<0?'var(--n)':totalDv>0?'var(--rT)':'var(--muted)';
@@ -1761,6 +1786,7 @@ function ihBuildComp(){
     '<td colspan="2" style="font-weight:700">TOTAL INVENTARIO</td>'+
     '<td style="text-align:right">$'+fMM(semA.total)+'</td>'+
     '<td style="text-align:right">$'+fMM(semB.total)+'</td>'+
+    '<td style="text-align:right;color:var(--muted)">—</td>'+
     '<td style="text-align:right;color:'+tCol+';font-weight:700">'+tSign+'$'+fMM(Math.abs(totalDv))+(totalDv<0?' ↓':' ↑')+'</td>'+
     '<td style="text-align:right;color:'+tCol+';font-weight:700">'+tSign+totalPct.toFixed(1)+'%</td>'+
     '<td></td></tr>';
@@ -1782,6 +1808,7 @@ function ihBuildComp(){
       '<td colspan="2">'+r.lbl+'</td>'+
       '<td style="text-align:right;color:var(--muted)">$'+fMM(r.va)+'</td>'+
       '<td style="text-align:right;color:var(--muted)">$'+fMM(r.vb)+'</td>'+
+      _cobInlineCell(catCobMap[r.lbl])+
       '<td style="text-align:right;color:'+r.col+';font-weight:700">'+r.sign+'$'+fMM(Math.abs(r.dv))+(r.dv<0?' ↓':r.dv>0?' ↑':'')+'</td>'+
       '<td style="text-align:right;color:'+r.col+'">'+r.sign+r.dpct.toFixed(1)+'%</td>'+
       '<td style="text-align:center">'+r.btn+'</td></tr>';
@@ -3297,7 +3324,7 @@ fetch('data.json?v='+Date.now())
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
     TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;
-    window._vendorMap=null;window._pltCobMap=null;
+    window._vendorMap=null;window._pltCobMap=null;window._catCobMap=null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
     var _h=document.getElementById('hsem-txt');
