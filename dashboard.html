@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Abastecimiento — Semana 27 · 2026</title>
-<meta property="og:title" content="Dashboard Abastecimiento — Semana 27 · 2026">
+<title>Dashboard Abastecimiento — Semana {{SEM}} · {{YEAR}}</title>
+<meta property="og:title" content="Dashboard Abastecimiento — Semana {{SEM}} · {{YEAR}}">
 <meta property="og:description" content="Supply Chain · KPIs de inventario, mermas, capital inmovilizado, desviación de forecast y bloqueado">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
@@ -1050,7 +1050,7 @@ function showQSub(name){
     var pane=document.getElementById('qsub-'+n); if(pane) pane.classList.toggle('active', n===name);
   });
   document.querySelectorAll('.qsub').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-q')===name); });
-  var m=map[name]; if(m){ var ifr=document.getElementById(m[0]); if(ifr && !ifr.src) ifr.src=m[1]+'?v='+Date.now(); }
+  var m=map[name]; if(m){ var ifr=document.getElementById(m[0]); if(ifr) ifr.src=m[1]+'?v='+Date.now(); }
 }
 function kpill(c,l){return '<span class="kpill kp'+c+'">'+l+'</span>';}
 function pAlerta(a){var m={quiebre:'q Quiebre',riesgo:'r Riesgo',monitorear:'m Monitorear',normal:'n Normal',sobrestock:'s Sobrestock',sin_fc:'sf Sin FC'};var p=(m[a]||'sf ?').split(' ');return kpill(p[0],p.slice(1).join(' '));}
