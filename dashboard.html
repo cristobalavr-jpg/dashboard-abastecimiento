@@ -255,6 +255,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="tab" onclick="showTab(7)">🔒 Stock bloqueado</div>
   <div class="tab" onclick="showTab(9)">📦 Terceros e Insumos</div>
   <div class="tab" onclick="showTab(12)">⚠️ Quiebres</div>
+  <div class="tab" onclick="showTab(13)">✅ Plan Semanal</div>
 </div>
 
 <div id="t0" class="pg active"><div class="cards-grid" id="rcards"></div>
@@ -637,6 +638,11 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
     </table></div>
     <div style="font-size:.65rem;color:var(--muted);margin-top:6px">SKU sin consumo base proyecta FC=0. Cobertura: stock / promedio FC 4 sem futuras (excluye la semana en curso); "Cob.+OC" suma el tránsito. ΣFC 4w/12w en unidades.</div>
   </div><!-- /tisub-fc -->
+</div>
+
+<!-- Plan Semanal -->
+<div id="t13" class="pg">
+  <iframe id="ps-frame" data-src="plan_semanal.html" style="width:100%;height:86vh;border:0;border-radius:10px;background:#0f1117"></iframe>
 </div>
 
 <!-- DRAWER -->
@@ -1041,6 +1047,8 @@ function showTab(i){
   if(i===9 && !window._tiBuilt){ try{ buildTI(); window._tiBuilt=true; }catch(e){ console.error('TI build:',e); } }
   // Lazy render de Coberturas (t10)
   if(i===10){ covLoadPPA().then(function(){ try{ buildCoberturas(); }catch(e){ console.error('Cob build:',e); } }); }
+  if(i===13){var pf=document.getElementById('ps-frame');
+    if(pf&&!pf.src){pf.src=pf.getAttribute('data-src')+'?v='+Date.now();}}
 }
 // Subsecciones de "Quiebres" (Día / SEM / Histórico) — iframes aislados, lazy load
 function showQSub(name){
