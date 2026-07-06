@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plan de Trabajo Semanal · Compradores</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f1117;color:#e2e8f0;font-size:13px;min-height:100vh}
+:root{--q:#E24B4A;--r:#E8C52A;--rT:#C9A800;--m:#E87B2A;--mT:#C96000;--n:#639922;--s:#378ADD;--v:#7c3aed;--card:#1a1f2e;--border:#2d3452;--muted:#8892b0;--acc:#6366f1}
+.header{background:linear-gradient(135deg,#1a1f2e,#232840);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.header h1{font-size:1.05rem;font-weight:700;color:#fff}
+.hbadge{background:#232840;border:1px solid var(--border);border-radius:5px;padding:3px 9px;font-size:.68rem;color:var(--muted)}
+.proto{background:rgba(232,123,42,.15);border:1px solid var(--mT);color:var(--m);border-radius:5px;padding:3px 10px;font-size:.68rem;font-weight:700}
+.hsem{margin-left:auto;font-size:.75rem;color:var(--muted)}
+.editbtn{background:#232840;border:1px solid var(--border);color:#c0caf5;border-radius:7px;padding:7px 14px;font-size:.74rem;font-weight:600;cursor:pointer}
+.editbtn.on{background:rgba(99,153,34,.2);border-color:var(--n);color:#9ccc52}
+.wrap{max-width:1500px;margin:0 auto;padding:16px 24px 48px}
+.secl{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:18px 0 9px}
+/* Leaderboard */
+.lb{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px}
+.lbc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;position:relative;transition:.15s;border-top:3px solid var(--border)}
+.lbc:hover{transform:translateY(-2px)}
+.lbc.sel{outline:2px solid var(--acc);outline-offset:1px}
+.lbc .nm{font-weight:800;font-size:.9rem;letter-spacing:.3px}
+.lbc .rk{position:absolute;top:10px;right:12px;font-size:1.05rem}
+.lbc .sc{font-size:1.9rem;font-weight:800;margin:4px 0 2px}
+.lbc .scl{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.pbar{height:7px;background:#232840;border-radius:4px;margin:9px 0 5px;overflow:hidden}
+.pbar>div{height:100%;border-radius:4px;transition:width .25s}
+.lbc .pt{font-size:.68rem;color:var(--muted)}
+.lbc .chips{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.chip{font-size:.62rem;padding:2px 7px;border-radius:9px;font-weight:700}
+.chip.p1{background:rgba(226,75,74,.16);color:var(--q)}
+.chip.mm{background:rgba(36,120,201,.16);color:#63a8e8}
+.una{background:var(--card);border:1px dashed #475670;border-radius:12px;padding:12px 14px;color:var(--muted)}
+.una b{color:#c0caf5}
+/* Metas */
+.metas{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:9px}
+.meta{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:center}
+.meta .ic{font-size:1.15rem}
+.meta .tt{font-size:.72rem;font-weight:700;color:#c0caf5}
+.meta .st{font-size:.66rem;color:var(--muted);margin-top:2px}
+.meta.ok{border-color:rgba(99,153,34,.55)}
+.meta.ko{border-color:rgba(226,75,74,.45)}
+/* Tabs comprador */
+.ctabs{display:flex;gap:8px;margin:16px 0 4px;flex-wrap:wrap}
+.ctab{background:#232840;color:#a4b4ce;border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:.8rem;font-weight:700;cursor:pointer;transition:.15s}
+.ctab:hover{color:#fff;border-color:#475670}
+.ctab.active{color:#fff;border-width:1px}
+/* Tareas */
+.grp{margin-top:14px}
+.grpt{font-size:.75rem;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.grpt .cnt{font-size:.65rem;color:var(--muted);font-weight:600}
+.task{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:11px 14px;margin-bottom:8px;display:grid;grid-template-columns:34px 1fr 210px;gap:12px;align-items:start}
+.task.done{opacity:.62}
+.task.done .tsku{text-decoration:line-through}
+.ckw{padding-top:2px}
+.ck{width:22px;height:22px;border-radius:6px;border:2px solid #475670;background:#13182a;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:transparent;transition:.12s}
+.ck.on{background:var(--n);border-color:var(--n);color:#fff}
+.tmain .l1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tb{display:inline-block;padding:2px 8px;border-radius:5px;font-size:.6rem;font-weight:800;letter-spacing:.4px}
+.tb.QBR{background:rgba(226,75,74,.2);color:var(--q)}
+.tb.COB{background:rgba(232,123,42,.2);color:var(--m)}
+.tb.SOB{background:rgba(36,120,201,.2);color:#63a8e8}
+.tb.DESV{background:rgba(124,58,237,.22);color:#a78bfa}
+.tb.BLQ{background:rgba(139,116,88,.25);color:#c4a484}
+.tsku{font-weight:800;font-size:.83rem;color:#fff}
+.tdesc{color:#c0caf5;font-size:.78rem}
+.tmet{font-size:.72rem;color:var(--muted);margin-top:4px;line-height:1.5}
+.tmet b{color:#e2e8f0}
+.tctx{font-size:.68rem;color:var(--m);margin-top:3px}
+.tacc{font-size:.72rem;color:#9ccc52;margin-top:4px;font-weight:600}
+.docs{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.doc{font-size:.63rem;background:#13182a;border:1px solid var(--border);border-radius:5px;padding:2px 7px;color:#a4b4ce}
+.doc b{color:#e2e8f0}
+.tright{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.timp{font-size:.82rem;font-weight:800;color:#fff}
+.timpl{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:right}
+.auto{font-size:.64rem;font-weight:700;border-radius:6px;padding:3px 8px}
+.auto.ok{background:rgba(99,153,34,.18);color:#9ccc52}
+.auto.wait{background:#232840;color:var(--muted)}
+.cmt{width:100%;background:#13182a;border:1px solid var(--border);border-radius:6px;color:#e2e8f0;font-size:.68rem;padding:5px 8px;margin-top:7px;font-family:inherit}
+.cmt::placeholder{color:#475670}
+.who{font-size:.62rem;color:var(--muted);margin-top:4px}
+.urgbox{border:1px solid rgba(232,197,42,.5);background:rgba(232,197,42,.05);border-radius:11px;padding:10px 14px;margin-top:10px}
+.empty{color:var(--muted);font-size:.75rem;padding:14px;text-align:center}
+/* Layout inferior */
+.bott{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-top:22px}
+.cb{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+.ct{font-size:.74rem;font-weight:700;color:#c0caf5;margin-bottom:10px}
+.cw{position:relative;height:230px}
+.exp{background:#232840;border:1px solid var(--border);color:#c0caf5;border-radius:6px;padding:5px 12px;font-size:.68rem;font-weight:600;cursor:pointer;float:right}
+.note{font-size:.66rem;color:var(--muted);line-height:1.7}
+.note b{color:#c0caf5}
+/* Supervisor panel */
+.stt{font-size:.7rem;font-weight:700;color:#c0caf5;margin:10px 0 4px;border-top:1px solid var(--border);padding-top:8px}
+/* Modal PIN */
+.mod{position:fixed;inset:0;background:rgba(10,12,20,.75);display:none;align-items:flex-start;justify-content:center;z-index:50;padding-top:12vh}
+.mod.show{display:flex}
+.modc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 22px;width:320px}
+.modc h3{font-size:.9rem;margin-bottom:12px}
+.modc label{font-size:.68rem;color:var(--muted);display:block;margin:9px 0 4px}
+.modc select,.modc input{width:100%;background:#13182a;border:1px solid var(--border);border-radius:6px;color:#e2e8f0;padding:7px 9px;font-size:.78rem}
+.modc .mbtn{width:100%;margin-top:14px;background:var(--acc);border:none;color:#fff;border-radius:7px;padding:9px;font-weight:700;font-size:.78rem;cursor:pointer}
+.merr{display:none;color:var(--q);font-size:.68rem;margin-top:8px}
+.merr.show{display:block}
+@media(max-width:900px){.task{grid-template-columns:34px 1fr}.tright{align-items:flex-start}.bott{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>✅ Plan de Trabajo Semanal</h1>
+  <span class="hbadge" id="hsem"></span>
+  <span class="hbadge" id="upd"></span>
+  <span class="hsem">Plan congelado el lunes · el dato del día siguiente confirma o reabre cada tarea (9:30)</span>
+  <button class="editbtn" id="editbtn" onclick="askEdit()">🔒 Modo consulta</button>
+</div>
+<div class="wrap">
+
+  <div class="secl">Leaderboard semanal — % gestionado · score</div>
+  <div class="lb" id="lb"></div>
+
+  <div class="ctabs" id="ctabs"></div>
+
+  <div class="secl" style="margin-top:10px">Metas de la semana — <span id="mcomp" style="color:#fff"></span></div>
+  <div class="metas" id="metas"></div>
+
+  <div id="tasks"></div>
+
+  <div class="bott">
+    <div class="cb"><div class="ct">📈 Evolución del score semanal (histórico + semana actual en vivo)</div><div class="cw"><canvas id="chH"></canvas></div></div>
+    <div class="cb">
+      <button class="exp" onclick="expCSV()">📥 Exportar plan (CSV)</button>
+      <div class="ct">Cómo funciona el Plan Semanal</div>
+      <div class="note">
+        <b>Lunes 9:30</b> — el pipeline congela el plan: <b>cupo fijo de ~12 tareas para TODOS</b> (mismo tiempo de gestión). Quiebres entran siempre; el espacio restante se llena por impacto $ con mix COB 40% · SOB 30% · DESV 20% · BLQ 10%. Se envía email de inicio de semana.<br>
+        <b>Cada día (9:30)</b> — el sistema verifica automáticamente si el quiebre se resolvió, si apareció OC nueva en ME2M o si bajó la OC excedente. Una tarea marcada pasa a <b>confirmada</b> si el dato lo respalda; si no, reabre con ↺ (intento registrado).<br>
+        <b>Marcar (40% pts)</b> — cada comprador registra su gestión con PIN personal. La confirmación por datos al día siguiente vale el <b>60% restante</b>.<br>
+        <b>Excepciones "No aplica"</b> — el comprador propone y el supervisor valida. Al aprobar, entra una tarea de reemplazo del pool de candidatos.<br>
+        <b>Metas (desde el martes)</b> — M2: tasa de quiebres viernes &lt; lunes · M3: reducir ≥25% el $ sobre-OC del plan · Sprint P1: todas las P1 confirmadas antes del jueves.<br>
+        <b>⚡ Urgencias</b> — quiebres nuevos mid-week son informativos y entran al plan el próximo lunes.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal PIN -->
+<div class="mod" id="mod">
+  <div class="modc">
+    <h3>Activar modo edición</h3>
+    <label>Usuario</label>
+    <select id="musr">
+      <option value="">— selecciona —</option>
+      <option value="HECTOR">HECTOR</option>
+      <option value="JAVIERA">JAVIERA</option>
+      <option value="JOSE">JOSE</option>
+      <option value="MATIAS">MATIAS</option>
+      <option value="VICENTE">VICENTE</option>
+      <option value="CRISTOBAL">CRISTOBAL (supervisor)</option>
+    </select>
+    <label>PIN de edición</label>
+    <input id="mpin" type="password" placeholder="••••" maxlength="8">
+    <div class="merr" id="merr">PIN incorrecto o usuario no seleccionado.</div>
+    <button class="mbtn" onclick="okEdit()">Entrar</button>
+  </div>
+</div>
+
+<script>
+const PS_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbx48IPJRFdMCnhdBHzrWOWKBtO_ncFj0Q-gGIzgYl3lTslxFZhjdoeqUjZcdBgbObJf/exec';   // Apps Script (SETUP_BACKEND_PLAN.md)
+const PS_PIN = '1234';
+let D = null, SELC = null, EDIT = false, USR = '', ES_SUP = false;
+let ACC_HOY = [];            // acciones traídas de la nube (live)
+const TIPOL = {QBR:'🔴 Reponer — Quiebre', COB:'🟠 Reponer — Cobertura crítica',
+               SOB:'🔵 Ajustar OC — Sobrestock', DESV:'🟣 Revisar desviación FC',
+               BLQ:'🟤 Liberar bloqueado'};
+const PRIO = {1:'P1 · HOY', 2:'P2 · Esta semana', 3:'P3 · Antes del viernes'};
+const SCORE_CFG = {PTS:75, PESO_P1:2, PCT_MARCAR:0.4, M2:10, M3:10, SPRINT:5};
+const CCDEF={HECTOR:'#534AB7',JAVIERA:'#D85A30',JOSE:'#1D9E75',MATIAS:'#E87B2A',VICENTE:'#378ADD'};
+
+function fMM(v){ if(v==null)return '—';
+  if(Math.abs(v)<1e6) return '$'+Math.round(v).toLocaleString('es-CL');
+  return '$'+(v/1e6).toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1})+' MM'; }
+function f0(v){ return v==null?'—':Math.round(v).toLocaleString('es-CL'); }
+function f1(v){ return (v==null||v>=999)?'—':Number(v).toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1}); }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+// ── Estado efectivo de una tarea: JSON del pipeline + acciones live de hoy ──
+function estadoDe(t){
+  const base = (D.estados||{})[t.id] || {};
+  const st = {chk:!!base.chk, confirmada:!!base.confirmada, noaplica:!!base.noaplica,
+              exc_pendiente:!!base.exc_pendiente, exc_texto:base.exc_texto||'',
+              comentario:base.comentario||'', usuario:base.usuario||'', ts:base.ts||'',
+              intentos:base.intentos||0, nota_sup:base.nota_sup||''};
+  ACC_HOY.filter(a=>a.task_id===t.id).sort((a,b)=>a.ts<b.ts?-1:1).forEach(a=>{
+    if(a.accion==='check'){st.chk=true;st.usuario=a.usuario;st.ts=a.ts;}
+    else if(a.accion==='uncheck'){st.chk=false;}
+    else if(a.accion==='comentario'){st.comentario=a.valor;st.usuario=a.usuario;}
+    else if(a.accion==='excepcion'){st.exc_pendiente=true;st.exc_texto=a.valor;}
+    else if(a.accion==='validacion'){st.noaplica=true;st.exc_pendiente=false;st.nota_sup=a.valor;}
+    else if(a.accion==='rechazo'){st.noaplica=false;st.exc_pendiente=false;st.nota_sup=a.valor;}
+  });
+  return st;
+}
+function tareasDe(c){ return (D.tareas[c]||[]); }
+function vivas(c){ return tareasDe(c).filter(t=>!estadoDe(t).noaplica); }
+
+// ── Score espejo (misma fórmula que plan_semanal_core.calcular_score) ──
+function scoreOf(c){
+  const ts = vivas(c);
+  const me = (D.metas_estado||{})[c] || {m2:false,m3:false,sprint:false};
+  let total=0, done=0, conf=0;
+  if(ts.length){
+    const wTot = ts.reduce((a,t)=>a+(t.prio===1?SCORE_CFG.PESO_P1:1),0);
+    ts.forEach(t=>{
+      const w=(t.prio===1?SCORE_CFG.PESO_P1:1), pts=SCORE_CFG.PTS*w/wTot, st=estadoDe(t);
+      if(st.chk){total+=pts*SCORE_CFG.PCT_MARCAR;done++;}
+      if(st.confirmada){total+=pts*(1-SCORE_CFG.PCT_MARCAR);conf++;}
+    });
+  }
+  if(me.m2)total+=SCORE_CFG.M2; if(me.m3)total+=SCORE_CFG.M3; if(me.sprint)total+=SCORE_CFG.SPRINT;
+  return {score:Math.round(Math.min(total,100)), done, conf, tot:ts.length,
+          p1open:ts.filter(t=>t.prio===1&&!estadoDe(t).chk).length, me};
+}
+
+// ── Nube ──
+function postAccion(taskId, accion, valor, pin){
+  if(!PS_BACKEND_URL){ notifOffline(); return Promise.resolve(false); }
+  const body = JSON.stringify({pin:pin||PS_PIN, action:'save_action',
+    data:{sem:D.sem, comprador:SELC, task_id:taskId, accion:accion,
+          valor:valor||'', usuario:USR}});
+  return fetch(PS_BACKEND_URL,{method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'}, body:body})
+    .then(r=>r.json()).then(j=>{
+      if(j.ok){ ACC_HOY.push({sem:D.sem,comprador:SELC,task_id:taskId,accion:accion,
+        valor:valor||'',usuario:USR,ts:j.ts}); render(); }
+      else{ alert('No se guardó: '+(j.error||'error')); }
+      return j.ok; })
+    .catch(()=>{ alert('Sin conexión con la nube — reintenta'); return false; });
+}
+function pullNube(){
+  if(!PS_BACKEND_URL) return Promise.resolve();
+  return fetch(PS_BACKEND_URL+'?sem='+D.sem).then(r=>r.json())
+    .then(j=>{ if(j.ok) ACC_HOY=j.acciones||[]; }).catch(()=>{});
+}
+function notifOffline(){
+  document.getElementById('upd').textContent='⚠ sin backend — checks NO se guardan';
+}
+
+// ── Interacción ──
+function tg(id){
+  if(!EDIT){ askEdit(); return; }
+  const t = tareasDe(SELC).find(x=>x.id===id); const st=estadoDe(t);
+  if(st.confirmada) return;
+  postAccion(id, st.chk?'uncheck':'check');
+}
+function cm(id, v){ if(!EDIT){askEdit();return;} postAccion(id,'comentario',v); }
+function proponerExc(id){
+  if(!EDIT){ askEdit(); return; }
+  const txt = prompt('¿Por qué NO aplica esta tarea? (ej: SKU en descontinuación)');
+  if(txt && txt.trim()) postAccion(id,'excepcion',txt.trim());
+}
+function validarExc(id, ok){
+  const supPin = prompt('PIN supervisor:'); if(!supPin) return;
+  const nota = prompt(ok?'Nota (opcional):':'Motivo del rechazo:')||'';
+  postAccion(id, ok?'validacion':'rechazo', nota, supPin);
+}
+
+// ── Render ──
+function render(){ lb(); ctabs(); metas(); supPanel(); tasks(); chart(); }
+
+function lb(){
+  const rows = D.compradores.map(c=>({c,...scoreOf(c)})).sort((a,b)=>b.score-a.score);
+  const med=['🏆','🥈','🥉','',''];
+  document.getElementById('lb').innerHTML = rows.map((r,i)=>{
+    const col=CCDEF[r.c], pct=r.tot?Math.round(100*r.done/r.tot):0;
+    const delta = r.score - Math.round((D.scores[r.c]||{}).ayer||0);
+    const medk = (D.medallero||{})[r.c]||0;
+    return `<div class="lbc ${r.c===SELC?'sel':''}" style="border-top-color:${col}"
+      onclick="SELC='${r.c}';render()">
+      <div class="nm" style="color:${col}">${r.c}${medk?` <span title="semanas ganadas">🏆×${medk}</span>`:''}</div>
+      <div class="rk">${med[i]||''}</div>
+      <div class="sc">${r.score}<span style="font-size:.85rem;color:var(--muted)">/100</span></div>
+      <div class="scl">score semanal ${delta?`<span class="chip ${delta>0?'':'p1'}" style="margin-left:4px">${delta>0?'+':''}${delta} hoy</span>`:''}</div>
+      <div class="pbar"><div style="width:${pct}%;background:${col}"></div></div>
+      <div class="pt">${r.done}/${r.tot} gestionadas · ${r.conf} confirmadas por datos</div>
+      <div class="chips">${r.p1open?`<span class="chip p1">${r.p1open} P1 pendientes</span>`
+        :'<span class="chip" style="background:rgba(99,153,34,.16);color:#9ccc52">P1 al día ✓</span>'}</div>
+    </div>`; }).join('');
+}
+
+function ctabs(){
+  document.getElementById('ctabs').innerHTML = D.compradores.map(c=>{
+    const col=CCDEF[c], on=c===SELC;
+    return `<div class="ctab ${on?'active':''}" style="${on?`background:${col};border-color:${col}`:''}"
+      onclick="SELC='${c}';render()">${c} · ${vivas(c).length}</div>`;}).join('');
+}
+
+function metas(){
+  const me=(D.metas_estado||{})[SELC]||{}; const b=(D.metas||{})[SELC]||{};
+  const s=scoreOf(SELC);
+  const ms=[
+    {ok:me.sprint, tt:'Sprint P1 · todas las P1 confirmadas antes del jueves (+5 pts)',
+     st:s.p1open? s.p1open+' P1 sin gestionar':'en curso'},
+    {ok:me.m2, tt:'M2 · Tasa de quiebre viernes < lunes (+10 pts)',
+     st:`Lunes: ${b.q_lunes||0} quiebres en plan`},
+    {ok:me.m3, tt:'M3 · Reducir ≥25% el $ sobre-OC del plan (+10 pts)', st:'auto (dato)'},
+    {ok:s.done===s.tot&&s.tot>0, tt:'Plan completo al viernes', st:`${s.done}/${s.tot}`}];
+  document.getElementById('mcomp').textContent=SELC;
+  document.getElementById('metas').innerHTML = ms.map(m=>
+    `<div class="meta ${m.ok?'ok':''}"><div class="ic">${m.ok?'✅':'⏳'}</div>
+     <div><div class="tt">${m.tt}</div><div class="st">${m.st}</div></div></div>`).join('');
+}
+
+function metLine(t){
+  const b=t.base||{};
+  if(t.tipo==='QBR') return `Stock <b>0</b> · consumo ${f0(b.c4)} un/sem · OC tránsito ${f0(b.oc)} un`
+    + ((b.oc||0)>0?'':' — <b>sin OC en camino</b>');
+  if(t.tipo==='COB') return `Cobertura <b>${f1(b.cob)} sem</b> · c/OC <b>${f1(b.cob4)} sem</b> (objetivo ≥5) · OC ${f0(b.oc)} un`;
+  if(t.tipo==='SOB') return `Cob. c/OC <b>${f1(b.cob12)} sem</b> · OC abierta ${f0(b.oc)} un · excedente <b>${fMM(t.impacto)}</b>`;
+  if(t.tipo==='DESV'){const r=(b.delta_pct<0)?'riesgo QUIEBRE':'riesgo MERMA';
+    return `Real 4w ${f0(b.c4_real)} vs FC ${f0(b.c4)} un/sem (<b>${Math.round(b.delta_pct)}%</b> → ${r})`;}
+  if(t.tipo==='BLQ') return `Bloqueado BL01 · <b>${fMM(t.impacto)}</b>`;
+  return '';
+}
+
+function taskCard(t, ro){   // ro = read-only (fuera de cupo / completadas / no-aplican)
+  const st = estadoDe(t);
+  const docs=(t.docs||[]).map(d=>`<span class="doc"><b>${esc(d.doc)}</b> · ${f0(d.qty)} un pend. · ${esc(d.prov)}</span>`).join('');
+  const badgeAuto = st.confirmada
+    ? '<span class="auto ok">✓ CONFIRMADA POR DATOS</span>'
+    : (st.chk ? `<span class="auto wait">⏳ en verificación (mañana 9:30)${st.intentos?` · ↺ intento ${st.intentos}`:''}</span>`
+              : '<span class="auto wait">— sin gestionar</span>');
+  const excBadge = st.exc_pendiente
+    ? `<span class="chip p1" title="${esc(st.exc_texto)}">🚩 excepción propuesta — espera validación</span>` : '';
+  const reemp = t.reemplazo_de ? '<span class="chip mm">↪ tarea de reemplazo</span>' : '';
+  return `<div class="task ${st.chk?'done':''}">
+    <div class="ckw">${ro?'':`<div class="ck ${st.chk?'on':''}" onclick="tg('${t.id}')">✓</div>`}</div>
+    <div class="tmain">
+      <div class="l1"><span class="tb ${t.tipo}">${TIPOL[t.tipo]}</span>
+        ${t.univ==='ZIME'?'<span class="tb" style="background:rgba(167,139,250,.15);color:#a78bfa" title="Terceros e Insumos">T&amp;I</span>':''}
+        ${t.lt_largo?'<span class="tb" style="background:rgba(232,197,42,.15);color:var(--r)" title="Lead time largo — reponer con anticipación">⏳ LT LARGO</span>':''}
+        <span class="tsku">${esc(t.sku)}</span><span class="tdesc">${esc(t.desc)}</span>${excBadge}${reemp}</div>
+      <div class="tmet">${metLine(t)}</div>
+      <div class="tacc">→ ${esc(t.accion)}</div>
+      ${docs?`<div class="docs">${docs}</div>`:''}
+      ${ro?'':`<input class="cmt" placeholder="Comentario de gestión (obligatorio en DESV y excepciones)..."
+        value="${esc(st.comentario)}" onchange="cm('${t.id}',this.value)">`}
+      <div class="who">${st.usuario?`✍️ ${esc(st.usuario)} · ${esc(st.ts)}`:''}
+        ${st.nota_sup?` · 👔 supervisor: ${esc(st.nota_sup)}`:''}
+        ${ro?'':` · <a href="#" style="color:var(--muted)" onclick="proponerExc('${t.id}');return false">🚩 No aplica</a>`}</div>
+    </div>
+    <div class="tright"><div><div class="timp">${fMM(t.impacto)}</div>
+      <div class="timpl">${t.tipo==='SOB'?'excedente':(t.tipo==='BLQ'?'bloqueado':'consumo sem.')}</div></div>
+      ${badgeAuto}</div></div>`;
+}
+
+function tasks(){
+  const activas = vivas(SELC).filter(t=>!estadoDe(t).confirmada);
+  const completas = vivas(SELC).filter(t=>estadoDe(t).confirmada);
+  const noaplican = tareasDe(SELC).filter(t=>estadoDe(t).noaplica);
+  let html='';
+  [1,2,3].forEach(p=>{
+    const g=activas.filter(t=>t.prio===p); if(!g.length)return;
+    html+=`<div class="grp"><div class="grpt" style="color:${p===1?'var(--q)':(p===2?'#63a8e8':'#c4a484')}">${PRIO[p]} <span class="cnt">· ${g.length}</span></div>${g.map(t=>taskCard(t,false)).join('')}</div>`;});
+  if(completas.length) html+=`<details class="grp"><summary class="grpt" style="color:#9ccc52;cursor:pointer">✅ Completadas y confirmadas · ${completas.length}</summary>${completas.map(t=>taskCard(t,true)).join('')}</details>`;
+  if(noaplican.length) html+=`<details class="grp"><summary class="grpt" style="color:var(--muted);cursor:pointer">🚫 No aplican (validadas) · ${noaplican.length}</summary>${noaplican.map(t=>taskCard(t,true)).join('')}</details>`;
+  const fc=(D.fuera_cupo||{})[SELC]||[];
+  if(fc.length) html+=`<details class="grp"><summary class="grpt" style="color:var(--muted);cursor:pointer">📋 Fuera de cupo (informativo, no puntúa) · ${fc.length}</summary>${fc.map(t=>taskCard(t,true)).join('')}</details>`;
+  const ur=(D.urgencias||{})[SELC]||[];
+  if(ur.length) html+=`<div class="urgbox"><div class="grpt" style="color:var(--r)">⚡ Quiebres nuevos post-lunes (informativo) <span class="cnt">· entran al plan el próximo lunes</span></div>${ur.map(u=>`<div class="tmet">🔴 <b>${esc(u.sku)}</b> ${esc(u.desc)}</div>`).join('')}</div>`;
+  document.getElementById('tasks').innerHTML = html || '<div class="empty">Sin tareas 🎉</div>';
+}
+
+function supPanel(){
+  let el = document.getElementById('suppanel');
+  if(!el){ el=document.createElement('div'); el.id='suppanel';
+    document.getElementById('tasks').parentNode.insertBefore(el, document.getElementById('tasks')); }
+  if(!ES_SUP){ el.innerHTML=''; return; }
+  const pend=[], coms=[];
+  D.compradores.forEach(c=>tareasDe(c).forEach(t=>{
+    const st=estadoDe(t);
+    if(st.exc_pendiente) pend.push({c,t,st});
+    if(st.comentario) coms.push({c,t,st});
+  }));
+  el.innerHTML = `<div class="cb" style="margin:14px 0;border-color:#6366f1">
+    <div class="ct">👔 Revisión del supervisor</div>
+    <div class="stt">🚩 Excepciones por validar · ${pend.length}</div>
+    ${pend.map(x=>`<div class="tmet" style="padding:4px 0"><b style="color:${CCDEF[x.c]}">${x.c}</b>
+      · ${esc(x.t.sku)} ${esc(x.t.desc)} — <i>"${esc(x.st.exc_texto)}"</i>
+      <a href="#" onclick="validarExc('${x.t.id}',true);return false" style="color:#9ccc52;font-weight:700"> ✓ Validar</a> ·
+      <a href="#" onclick="validarExc('${x.t.id}',false);return false" style="color:var(--q);font-weight:700">✗ Rechazar</a></div>`).join('') || '<div class="tmet">— nada pendiente</div>'}
+    <div class="stt">💬 Comentarios de la semana · ${coms.length}</div>
+    ${coms.map(x=>`<div class="tmet" style="padding:2px 0"><b style="color:${CCDEF[x.c]}">${x.c}</b>
+      · ${esc(x.t.sku)} [${x.t.tipo}] — ${esc(x.st.comentario)} <span style="color:var(--muted)">(${esc(x.st.usuario)})</span></div>`).join('')}
+  </div>`;
+}
+
+let CH=null;
+function chart(){
+  const hist=D.historial||[]; const labels=hist.map(h=>'W'+h.sem).concat(['W'+D.sem]);
+  const ds=D.compradores.map(c=>({label:c,
+    data:hist.map(h=>(h.scores||{})[c]||0).concat([scoreOf(c).score]),
+    borderColor:CCDEF[c], backgroundColor:CCDEF[c], tension:.3, pointRadius:3, borderWidth:2}));
+  if(CH){CH.data.labels=labels;CH.data.datasets=ds;CH.update();return;}
+  CH=new Chart(document.getElementById('chH'),{type:'line',
+    data:{labels:labels,datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8892b0',boxWidth:14,font:{size:10}}}},
+      scales:{x:{ticks:{color:'#8892b0'},grid:{color:'#2d3452'}},
+              y:{min:0,max:100,ticks:{color:'#8892b0'},grid:{color:'#2d3452'}}}}});
+}
+
+// ── Modo edición (patrón Quiebres) ──
+function askEdit(){
+  if(EDIT){EDIT=false;USR='';ES_SUP=false;updEdit();render();return;}
+  document.getElementById('mod').classList.add('show');
+}
+function okEdit(){
+  const u=document.getElementById('musr').value, p=document.getElementById('mpin').value;
+  if(!u||!p){document.getElementById('merr').classList.add('show');return;}
+  // el PIN se valida realmente en el backend con cada POST; aquí solo gate visual
+  EDIT=true; USR=u; ES_SUP=(u==='CRISTOBAL');
+  document.getElementById('merr').classList.remove('show');
+  document.getElementById('mod').classList.remove('show'); updEdit(); render();
+}
+function updEdit(){
+  const b=document.getElementById('editbtn');
+  b.textContent=EDIT?('🔓 '+(ES_SUP?'Supervisor: ':'Editando como ')+USR):'🔒 Modo consulta';
+  b.classList.toggle('on',EDIT);
+}
+
+function expCSV(){
+  let rows=[['Semana','Comprador','Prioridad','Tipo','SKU','Descripción','Acción','Impacto $','Gestionado','Confirmada por datos','No aplica','Comentario','Usuario']];
+  D.compradores.forEach(c=>tareasDe(c).forEach(t=>{
+    const s=estadoDe(t);
+    rows.push(['W'+D.sem,c,'P'+t.prio,TIPOL[t.tipo].replace(/^[^ ]+ /,''),t.sku,t.desc,t.accion,
+      Math.round(t.impacto),s.chk?'SI':'NO',s.confirmada?'SI':'NO',s.noaplica?'SI':'NO',
+      (s.comentario||'').replace(/;/g,','),s.usuario||'']);
+  }));
+  const csv='﻿'+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(';')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='plan_semanal_W'+D.sem+'.csv'; a.click();
+}
+
+function init(){
+  fetch('plan_semanal.json?v='+Date.now()).then(r=>r.json()).then(j=>{
+    D=j; SELC=D.compradores[0];
+    document.getElementById('hsem').textContent='Semana '+D.sem+' · plan del '+D.congelado_fecha;
+    document.getElementById('upd').textContent='actualizado '+D.actualizado;
+    if(!PS_BACKEND_URL) notifOffline();
+    pullNube().then(render);
+  }).catch(e=>{ document.getElementById('tasks').innerHTML=
+    '<div class="empty">No se pudo cargar plan_semanal.json — corre generar_plan_semanal.py</div>';});
+}
+document.getElementById('mod').addEventListener('click',e=>{if(e.target.id==='mod')e.target.classList.remove('show');});
+init();
+</script>
+</body>
+</html>
