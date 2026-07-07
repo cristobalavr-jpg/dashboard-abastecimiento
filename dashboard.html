@@ -1539,17 +1539,28 @@ function expPLT(){
   }catch(e){alert('Error exportando: '+e.message);}
 }
 
-// ── Plan PPA por SKU — explosión de materia prima vs stock (B.7.3) ──
-// Misma estructura que PLT (índices 0..43 idénticos), FC desde la explosión del
-// Plan PPA. Extras: 44=fc_rest 45=semana_quiebre 46=saldo_final 47=val_saldo.
+// ── Plan PPA por SKU — explosión de materia prima vs stock (B.7.4) ──
+// FC = explosión del Plan PPA a rango COMPLETO (semana en curso → cierre plan, SEM52).
+// El ancho del bloque FC es variable (nF), así que los campos del resumen se leen con
+// un offset base dinámico B = 10 + nC + nF (ver PARAMETRO.MD B.7.4).
+// Layout fila: 0..9 scalars (3=comprador, oculto) · 10..21 cons12 · 22..(21+nF) fc ·
+//   B+0 fc4 · B+1 real4 · B+2 desv · B+3 cob4 · B+4 fc12 · B+5 cob12 · B+6 cob12oc ·
+//   B+7 $stock · B+8 $oc · B+9 fc_rest · B+10 semana_quiebre · B+11 saldo · B+12 val_saldo
 var PPAP=null;
 var PPAPF={s:'',p:1,sortCol:null,sortDir:1};
 var PPAP_PER=50;
-var PPAP_SENT=[38,40,41]; // columnas de cobertura: sentinela ≥999 = "sin dato" (al final)
+// Columnas congeladas (sin Comprador; Descripción ancha para más texto)
+var PPAP_FZ=[{w:66,left:0},{w:320,left:66},{w:46,left:386},{w:84,left:432}];
+function ppapFzH(i,extra){var f=PPAP_FZ[i];return 'position:sticky;top:0;left:'+f.left+'px;width:'+f.w+'px;min-width:'+f.w+'px;max-width:'+f.w+'px;z-index:8;background:#232840;vertical-align:middle'+(i===PPAP_FZ.length-1?';border-right:2px solid #3a4566':'')+(extra||'');}
+function ppapFzB(i,extra){var f=PPAP_FZ[i];return 'position:sticky;left:'+f.left+'px;width:'+f.w+'px;min-width:'+f.w+'px;max-width:'+f.w+'px;z-index:3;background:#111a2e'+(i===PPAP_FZ.length-1?';border-right:2px solid #3a4566':'')+(extra||'');}
+function ppapBase(){ // offset base del bloque resumen para la data actual
+  var nC=(PPAP&&PPAP.cons_weeks?PPAP.cons_weeks.length:0), nF=(PPAP&&PPAP.fc_weeks?PPAP.fc_weeks.length:0);
+  return 10+nC+nF;
+}
 function ppapFilter(){
   if(!PPAP||!PPAP.rows) return [];
   var lst=PPAP.rows.slice();
-  if(gCompFilter) lst=lst.filter(function(r){return r[3]===gCompFilter;});
+  if(gCompFilter) lst=lst.filter(function(r){return r[3]===gCompFilter;}); // comprador en data (col oculta)
   var q=(PPAPF.s||'').toLowerCase().trim();
   if(q) lst=lst.filter(function(r){return (r[0]||'').toString().toLowerCase().indexOf(q)>=0||(r[1]||'').toLowerCase().indexOf(q)>=0;});
   return lst;
@@ -1579,27 +1590,29 @@ function rndPPAP(){
   if(!th||!tb) return;
   if(!PPAP||!PPAP.rows){ if(el('ppap-info'))el('ppap-info').textContent='(sin Plan PPA cargado)'; th.innerHTML='';tb.innerHTML='';return; }
   var cw=PPAP.cons_weeks||[], fw=PPAP.fc_weeks||[], sem=PPAP.sem;
+  var nC=cw.length, nF=fw.length, FC0=10+nC, B=10+nC+nF; // offsets dinámicos
   if(el('ppap-plan-lbl')) el('ppap-plan-lbl').textContent=PPAP.plan_label||'Plan PPA';
-  var froz=[['SKU',''],['Descripción',''],['UNM',''],['Comprador',''],['Stock total','scd+sq+sh']];
+  var froz=[['SKU',''],['Descripción',''],['UNM',''],['Stock total','scd+sq+sh']];
   var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01'],['Huechuraba','Centro 4020'],['OC tránsito','Órdenes de compra en tránsito']];
-  var summ=[['Semana Quiebre','1ª semana en que el Stock Total (sin OC) no cubre el FC PPA acumulado desde la semana en curso',45,true],
-            ['ΣFC 4w','Suma FC PPA próximas 4 sem',35,false],
-            ['ΣReal 4w','Suma consumo real últimas 4 sem (excl. sem en curso)',36,false],
-            ['Desv. %','(ΣFC4−ΣReal4)/ΣReal4',37,false],
-            ['Cob. FC 4w','stock / prom FC PPA 4w (sem)',38,true],
-            ['ΣFC 12w','Suma FC PPA próximas 12 sem',39,false],
-            ['Cob. FC 12w','stock / prom FC PPA 12w (sem)',40,true],
+  var sentCols=[B+3,B+5,B+6]; // coberturas: sentinela ≥999 = "sin dato" (al final)
+  var summ=[['Semana Quiebre','1ª semana en que el Stock Total (sin OC) no cubre el FC PPA acumulado desde la semana en curso',B+10,true],
+            ['ΣFC 4w','Suma FC PPA próximas 4 sem',B+0,false],
+            ['ΣReal 4w','Suma consumo real últimas 4 sem (excl. sem en curso)',B+1,false],
+            ['Desv. %','(ΣFC4−ΣReal4)/ΣReal4',B+2,false],
+            ['Cob. FC 4w','stock / prom FC PPA 4w (sem)',B+3,true],
+            ['ΣFC 12w','Suma FC PPA próximas 12 sem',B+4,false],
+            ['Cob. FC 12w','stock / prom FC PPA 12w (sem)',B+5,true],
             ['OC tránsito','Órdenes de compra en tránsito',9,false],
-            ['Saldo Final','Stock Total + OC tránsito − ΣFC PPA restante (sem en curso → cierre de año)',46,true],
-            ['Valor Saldo Final','Saldo Final × costo unitario',47,true],
-            ['Cob. 12w c/tránsito','(stock+OC) / prom FC PPA 12w (sem)',41,true],
-            ['$Stock','Valor stock actual',42,false],['$Tránsito','Valor OC en tránsito',43,false],
+            ['Saldo Final','Stock Total + OC tránsito − ΣFC PPA total (sem en curso → cierre de año)',B+11,true],
+            ['Valor Saldo Final','Saldo Final × costo unitario',B+12,true],
+            ['Cob. 12w c/tránsito','(stock+OC) / prom FC PPA 12w (sem)',B+6,true],
+            ['$Stock','Valor stock actual',B+7,false],['$Tránsito','Valor OC en tránsito',B+8,false],
             ['Últ. Proveedor','Proveedor de la última OC generada para el SKU',-1,false]];
   var r1='<tr>';
-  froz.forEach(function(c,i){r1+='<th rowspan="2" title="'+c[1]+'" style="'+pltFzH(i)+'">'+c[0]+'</th>';});
+  froz.forEach(function(c,i){r1+='<th rowspan="2" title="'+c[1]+'" style="'+ppapFzH(i)+'">'+c[0]+'</th>';});
   mid.forEach(function(c){r1+='<th rowspan="2" title="'+c[1]+'" style="text-align:right;position:sticky;top:0;z-index:6;background:#232840">'+c[0]+'</th>';});
   r1+='<th colspan="'+cw.length+'" style="text-align:center;position:sticky;top:0;z-index:6;background:#1c2438;border-left:2px solid #2d3452;border-right:2px solid #2d3452">Consumo real (sem)</th>';
-  r1+='<th colspan="'+fw.length+'" style="text-align:center;position:sticky;top:0;z-index:6;background:#241f16;border-right:2px solid #2d3452">FC Plan PPA (sem)</th>';
+  r1+='<th colspan="'+fw.length+'" title="FC Plan PPA — semana en curso hasta el cierre del plan" style="text-align:center;position:sticky;top:0;z-index:6;background:#241f16;border-right:2px solid #2d3452">FC Plan PPA (sem) — S'+sem+'→S'+(fw.length?fw[fw.length-1]:sem)+'</th>';
   summ.forEach(function(c,i){
     var colIdx=c[2]; var isSort=c[3];
     var arrow='';
@@ -1616,7 +1629,7 @@ function rndPPAP(){
   var vendorMap=window._vendorMap||(window._vendorMap=_buildVendorMap());
   var lst=ppapFilter();
   if(PPAPF.sortCol!==null){
-    var sc=PPAPF.sortCol, sd=PPAPF.sortDir, sent=PPAP_SENT.indexOf(sc)>=0;
+    var sc=PPAPF.sortCol, sd=PPAPF.sortDir, sent=sentCols.indexOf(sc)>=0;
     lst.sort(function(a,b){
       var va=a[sc], vb=b[sc];
       var na=(va===null||va===undefined||(sent&&va>=999)), nb=(vb===null||vb===undefined||(sent&&vb>=999));
@@ -1627,42 +1640,39 @@ function rndPPAP(){
   var tot=lst.length, pages=Math.max(1,Math.ceil(tot/PPAP_PER));
   PPAPF.p=Math.min(PPAPF.p,pages);
   var sl=lst.slice((PPAPF.p-1)*PPAP_PER,PPAPF.p*PPAP_PER);
-  var nC=cw.length, nF=fw.length;
   tb.innerHTML=sl.map(function(r){
-    var col=CC[r[3]]||'#8892b0';
     var h='<tr>';
-    h+='<td style="font-family:monospace;font-size:.68rem;'+pltFzB(0)+'">'+r[0]+'</td>';
-    h+='<td title="'+(r[1]||'').replace(/"/g,'&quot;')+'" style="'+pltFzB(1,';white-space:nowrap;overflow:hidden;text-overflow:ellipsis')+'">'+r[1]+'</td>';
-    h+='<td style="color:var(--muted);'+pltFzB(2)+'">'+(r[2]||'')+'</td>';
-    h+='<td style="'+pltFzB(3)+'"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+col+';margin-right:5px;vertical-align:middle"></span>'+(r[3]||'<span style="color:#3a4566">—</span>')+'</td>';
-    h+='<td style="text-align:right;font-weight:700;'+pltFzB(4)+'">'+f0(r[4]||0)+'</td>';
+    h+='<td style="font-family:monospace;font-size:.68rem;'+ppapFzB(0)+'">'+r[0]+'</td>';
+    h+='<td title="'+(r[1]||'').replace(/"/g,'&quot;')+'" style="'+ppapFzB(1,';white-space:nowrap;overflow:hidden;text-overflow:ellipsis')+'">'+r[1]+'</td>';
+    h+='<td style="color:var(--muted);'+ppapFzB(2)+'">'+(r[2]||'')+'</td>';
+    h+='<td style="text-align:right;font-weight:700;'+ppapFzB(3)+'">'+f0(r[4]||0)+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[5]||0)+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[6]||0)+'</td>';
     var blq=r[7]||0;h+='<td style="text-align:right;color:'+(blq>0?'#E8924A;font-weight:700':'var(--muted)')+'" title="Stock bloqueado BL01">'+(blq>0?f0(blq):'<span style="color:#3a4566">—</span>')+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[8]||0)+'</td>';
     h+='<td style="text-align:right">'+f0(r[9]||0)+'</td>';
-    for(var i=0;i<nC;i++){var v=r[PLT_C0+i]||0;h+='<td style="text-align:right;background:rgba(99,131,200,.06)'+(i===0?';border-left:2px solid #2d3452':'')+(i===nC-1?';border-right:2px solid #2d3452':'')+'">'+(v?f0(v):'<span style="color:#3a4566">—</span>')+'</td>';}
-    for(var j=0;j<nF;j++){var curr=(fw[j]===sem);var fv=r[PLT_F0+j]||0;h+='<td style="text-align:right;background:'+(curr?'rgba(220,180,120,.14)':'rgba(200,168,127,.06)')+(j===nF-1?';border-right:2px solid #2d3452':'')+'">'+(fv?f0(fv):'<span style="color:#3a4566">—</span>')+'</td>';}
-    h+=ppapSqCell(r[45]);
-    h+='<td style="text-align:right;font-weight:700">'+f0(r[35]||0)+'</td>';
-    h+='<td style="text-align:right">'+f0(r[36]||0)+'</td>';
-    h+='<td style="text-align:right">'+pltDesv(r[37])+'</td>';
-    h+=pltCovCell(r[38]);
-    h+='<td style="text-align:right;font-weight:700">'+f0(r[39]||0)+'</td>';
-    h+=pltCovCell(r[40]);
+    for(var i=0;i<nC;i++){var v=r[10+i]||0;h+='<td style="text-align:right;background:rgba(99,131,200,.06)'+(i===0?';border-left:2px solid #2d3452':'')+(i===nC-1?';border-right:2px solid #2d3452':'')+'">'+(v?f0(v):'<span style="color:#3a4566">—</span>')+'</td>';}
+    for(var j=0;j<nF;j++){var curr=(fw[j]===sem);var fv=r[FC0+j]||0;h+='<td style="text-align:right;background:'+(curr?'rgba(220,180,120,.14)':'rgba(200,168,127,.06)')+(j===nF-1?';border-right:2px solid #2d3452':'')+'">'+(fv?f0(fv):'<span style="color:#3a4566">—</span>')+'</td>';}
+    h+=ppapSqCell(r[B+10]);
+    h+='<td style="text-align:right;font-weight:700">'+f0(r[B+0]||0)+'</td>';
+    h+='<td style="text-align:right">'+f0(r[B+1]||0)+'</td>';
+    h+='<td style="text-align:right">'+pltDesv(r[B+2])+'</td>';
+    h+=pltCovCell(r[B+3]);
+    h+='<td style="text-align:right;font-weight:700">'+f0(r[B+4]||0)+'</td>';
+    h+=pltCovCell(r[B+5]);
     h+='<td style="text-align:right">'+f0(r[9]||0)+'</td>';
-    h+=ppapSaldoCell(r[46],false);
-    h+=ppapSaldoCell(r[47],true);
-    h+=pltCovCell(r[41]);
-    h+='<td style="text-align:right">$'+f0(r[42]||0)+'</td>';
-    h+='<td style="text-align:right;color:var(--muted)">$'+f0(r[43]||0)+'</td>';
+    h+=ppapSaldoCell(r[B+11],false);
+    h+=ppapSaldoCell(r[B+12],true);
+    h+=pltCovCell(r[B+6]);
+    h+='<td style="text-align:right">$'+f0(r[B+7]||0)+'</td>';
+    h+='<td style="text-align:right;color:var(--muted)">$'+f0(r[B+8]||0)+'</td>';
     var vend=vendorMap[r[0]]||'';
     h+='<td style="color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px" title="'+vend.replace(/"/g,'&quot;')+'">'+(vend||'<span style="color:#3a4566">—</span>')+'</td>';
     h+='</tr>';
     return h;
-  }).join('')||'<tr><td colspan="'+(10+nC+nF+14)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
+  }).join('')||'<tr><td colspan="'+(9+nC+nF+14)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
   var ordTxt='';
-  if(PPAPF.sortCol!==null){var nm={45:'Semana Quiebre',38:'Cob. FC 4w',40:'Cob. FC 12w',41:'Cob. 12w c/tránsito',46:'Saldo Final',47:'Valor Saldo Final'}[PPAPF.sortCol]||'';ordTxt=' · orden: '+nm+(PPAPF.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
+  if(PPAPF.sortCol!==null){var nm={};nm[B+10]='Semana Quiebre';nm[B+3]='Cob. FC 4w';nm[B+5]='Cob. FC 12w';nm[B+6]='Cob. 12w c/tránsito';nm[B+11]='Saldo Final';nm[B+12]='Valor Saldo Final';var nn=nm[PPAPF.sortCol]||'';ordTxt=' · orden: '+nn+(PPAPF.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
   var info='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+' del '+(PPAP.plan_label||'Plan PPA')+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(PPAPF.s?' · búsqueda: "'+PPAPF.s+'"':'')+ordTxt;
   if(el('ppap-info')) el('ppap-info').innerHTML=info;
   var div=el('ppappag');
@@ -1675,18 +1685,19 @@ function rndPPAP(){
 }
 function expPPAP(){
   if(!PPAP||!PPAP.rows){alert('Sin Plan PPA cargado');return;}
-  var cw=PPAP.cons_weeks||[], fw=PPAP.fc_weeks||[];
-  var header=['SKU','Descripción','UNM','Comprador','Stock total','StockCD','Quilicura','Bloqueado','Huechuraba','OC tránsito']
+  var cw=PPAP.cons_weeks||[], fw=PPAP.fc_weeks||[], nC=cw.length, nF=fw.length, FC0=10+nC, B=10+nC+nF;
+  var header=['SKU','Descripción','UNM','Stock total','StockCD','Quilicura','Bloqueado','Huechuraba','OC tránsito']
     .concat(cw.map(function(w){return 'Cons S'+w;}))
     .concat(fw.map(function(w){return 'FC PPA S'+w;}))
     .concat(['Semana Quiebre','ΣFC 4w','ΣReal 4w','Desv %','Cob FC 4w','ΣFC 12w','Cob FC 12w','OC transito','Saldo Final','Valor Saldo Final','Cob 12w c/transito','$Stock','$Transito','Ult. Proveedor']);
   var vm=window._vendorMap||(window._vendorMap=_buildVendorMap());
   var lst=ppapFilter();
   var aoa=[header].concat(lst.map(function(r){
-    var base=r.slice(0,35);                 // 0..34: sku..fc
-    var sq=(r[45]==null?'':r[45]);
-    var extra=[sq,r[35],r[36],r[37],r[38],r[39],r[40],r[9],r[46],r[47],r[41],r[42],r[43],vm[r[0]]||''];
-    return base.concat(extra);
+    var base=[r[0],r[1],r[2],r[4],r[5],r[6],r[7],r[8],r[9]];   // sin Comprador (r[3])
+    for(var i=0;i<nC;i++) base.push(r[10+i]);
+    for(var j=0;j<nF;j++) base.push(r[FC0+j]);
+    var sq=(r[B+10]==null?'':r[B+10]);
+    return base.concat([sq,r[B+0],r[B+1],r[B+2],r[B+3],r[B+4],r[B+5],r[9],r[B+11],r[B+12],r[B+6],r[B+7],r[B+8],vm[r[0]]||'']);
   }));
   try{
     var ws=XLSX.utils.aoa_to_sheet(aoa);
