@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Quiebres y Desviaciones SEM27</title>
+<title>Quiebres y Desviaciones SEM28</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
@@ -82,15 +82,15 @@ table.hm td.sku b{color:#0f172a}table.hm td.sku span{color:#94a3b8;font-weight:4
 </head>
 <body>
 <div class="wrap">
-  <h1>Quiebres y Desviaciones — Semana 27</h1>
-  <div class="sub">Generado: 02/07/2026 · datos: Desviaciones Semanales.xlsx <span id="liveTag" style="margin-left:8px;font-weight:600"></span></div>
+  <h1>Quiebres y Desviaciones — Semana 28</h1>
+  <div class="sub">Generado: 09/07/2026 · datos: Desviaciones Semanales.xlsx <span id="liveTag" style="margin-left:8px;font-weight:600"></span></div>
 
   <div class="kpi-row">
     <div class="kbox">
-      <div class="kbox-t">Quiebres SEM27</div>
+      <div class="kbox-t">Quiebres SEM28</div>
       <div class="mini3">
-        <div class="mini inf"><b id="kInf">0</b><span>Informados SEM27</span></div>
-        <div class="mini real"><b id="kReal">0</b><span>Reales SEM27</span></div>
+        <div class="mini inf"><b id="kInf">0</b><span>Informados SEM28</span></div>
+        <div class="mini real"><b id="kReal">0</b><span>Reales SEM28</span></div>
         <div class="mini pct"><b id="kPct">0%</b><span>% Reales / Informados</span></div>
       </div>
     </div>
@@ -118,7 +118,7 @@ table.hm td.sku b{color:#0f172a}table.hm td.sku span{color:#94a3b8;font-weight:4
     <div class="card"><div class="ct">Categorías de Quiebres Reales</div><div class="cw"><canvas id="cCat"></canvas></div></div>
   </div>
   <div class="card">
-    <div class="ct">Desviaciones MP frescas — proyección vs consumo real (SEM 26 y 27)</div>
+    <div class="ct">Desviaciones MP frescas — proyección vs consumo real (SEM 27 y 28)</div>
     <div class="desv-wrap"><table class="desv" id="tDesv"><thead></thead><tbody></tbody></table></div>
     <div class="legend">
       <span><span class="sw" style="background:#fecaca;border:1px solid #f87171"></span>≥ 50%</span>
@@ -135,7 +135,7 @@ table.hm td.sku b{color:#0f172a}table.hm td.sku span{color:#94a3b8;font-weight:4
 </div></div>
 
 <script>
-const QB = {"SEM": 27, "QUIEBRES": {"sem": 27, "total_informados": 0, "total_reales": 0, "por_dia": {"labels": [], "fechas": [], "informados": [], "reales": []}, "motivos": {"labels": [], "values": []}, "categorias": {"labels": [], "values": []}, "tipos": {"labels": [], "values": []}, "detalle": []}, "DESV": {"sem": 27, "sems": [26, 27], "dias": ["S26 Sáb", "S27 Lun", "S27 Mar", "S27 Mié", "S27 Jue"], "skus": [{"sku": "300185", "desc": "CLARA LIQUIDA", "dmax": 14, "lt": "48-72 HRS"}, {"sku": "300169", "desc": "PEPINOS", "dmax": 5, "lt": "24 HRS"}, {"sku": "300145", "desc": "LECHUGA GRANEL", "dmax": 1, "lt": "24 HRS"}, {"sku": "300318", "desc": "CILANTRO FRESCO", "dmax": 2, "lt": "24 HRS"}, {"sku": "300317", "desc": "CEBOLLA MORADA", "dmax": 5, "lt": "24 HRS"}, {"sku": "300141", "desc": "TOMATE COCTEL GRANEL", "dmax": 3, "lt": "24 HRS"}, {"sku": "300291", "desc": "ALBAHACA FRESCA", "dmax": 1, "lt": "24 HRS"}, {"sku": "300184", "desc": "CEBOLLINES", "dmax": 3, "lt": "24 HRS"}, {"sku": "300245", "desc": "PIÑA TROZO", "dmax": 1, "lt": "48 HRS"}, {"sku": "300529", "desc": "KIWI PELADO", "dmax": 1, "lt": "48 HRS"}, {"sku": "300136", "desc": "PERA", "dmax": 2, "lt": "24 HRS"}, {"sku": "300166", "desc": "HUEVO DURO", "dmax": 14, "lt": "48-72 HRS"}, {"sku": "300522", "desc": "CEBOLLA PLUMA", "dmax": 6, "lt": "48 HRS"}, {"sku": "300187", "desc": "HUEVO LIQUIDO", "dmax": 7, "lt": "48-72 HRS"}, {"sku": "300155", "desc": "ESPINACA PICADA", "dmax": 1, "lt": "48 HRS"}, {"sku": "300124", "desc": "TOMATE", "dmax": 3, "lt": "24 HRS"}, {"sku": "300179", "desc": "ZANAHORIA RALLADA", "dmax": 4, "lt": "48 HRS"}, {"sku": "300111", "desc": "CEBOLLA PICADA CUBO", "dmax": 6, "lt": "48 HRS"}, {"sku": "300123", "desc": "PALTA", "dmax": 1, "lt": "24 HRS"}, {"sku": "300182", "desc": "PIMENTON ROJO ENTERO", "dmax": 5, "lt": "24 HRS"}, {"sku": "300416", "desc": "CLEMENTINA", "dmax": 2, "lt": "24 HRS"}], "data": [[584.7, -100.0, 90.7, -100.0, 249.2], [8.7, 12.9, 7.6, 36.2, 73.2], [43.5, 34.0, 25.0, 62.0, 71.4], [7.5, 7.6, 4.5, 26.4, 55.0], [550.5, 7.3, 4.7, 27.9, 52.1], [15.6, 1.7, 4.2, 35.6, 32.6], [41.9, 10.3, 1.1, 38.6, 32.2], [19.9, 4.3, 8.2, 22.7, 30.2], [19.7, 10.4, 2.2, 23.8, 30.1], [19.7, 10.4, 2.2, 23.8, 30.1], [19.7, 10.4, 2.2, 23.8, 30.1], [96.4, -12.1, -6.1, 5.8, 29.8], [104.7, 2.1, -12.0, 8.9, 28.8], [89.9, -16.8, -24.2, -1.9, 28.4], [32.5, -2.5, -4.5, 27.5, 23.8], [210.5, -2.4, -7.7, 24.0, 21.2], [11.8, -30.8, -15.9, -1.8, 20.2], [123.3, -14.8, -7.8, -1.3, 16.9], [9.0, -4.5, 9.0, 46.5, 15.5], [203.0, 0.9, -8.5, 28.7, 14.8], [297.7, -100.0, -100.0, -100.0, -100.0]]}};                       // foto del Excel (fallback)
+const QB = {"SEM": 28, "QUIEBRES": {"sem": 28, "total_informados": 0, "total_reales": 0, "por_dia": {"labels": [], "fechas": [], "informados": [], "reales": []}, "motivos": {"labels": [], "values": []}, "categorias": {"labels": [], "values": []}, "tipos": {"labels": [], "values": []}, "detalle": []}, "DESV": {"sem": 28, "sems": [27, 28], "dias": ["S27 Sáb", "S28 Lun", "S28 Mar", "S28 Mié", "S28 Jue"], "skus": [{"sku": "300111", "desc": "CEBOLLA PICADA CUBO", "dmax": 6, "lt": "48 HRS"}, {"sku": "300155", "desc": "ESPINACA PICADA", "dmax": 1, "lt": "48 HRS"}, {"sku": "300184", "desc": "CEBOLLINES", "dmax": 3, "lt": "24 HRS"}, {"sku": "300245", "desc": "PIÑA TROZO", "dmax": 1, "lt": "48 HRS"}, {"sku": "300136", "desc": "PERA", "dmax": 2, "lt": "24 HRS"}, {"sku": "300179", "desc": "ZANAHORIA RALLADA", "dmax": 4, "lt": "48 HRS"}, {"sku": "300166", "desc": "HUEVO DURO", "dmax": 14, "lt": "48-72 HRS"}, {"sku": "300124", "desc": "TOMATE", "dmax": 3, "lt": "24 HRS"}, {"sku": "300123", "desc": "PALTA", "dmax": 1, "lt": "24 HRS"}, {"sku": "300187", "desc": "HUEVO LIQUIDO", "dmax": 7, "lt": "48-72 HRS"}, {"sku": "300182", "desc": "PIMENTON ROJO ENTERO", "dmax": 5, "lt": "24 HRS"}, {"sku": "300318", "desc": "CILANTRO FRESCO", "dmax": 2, "lt": "24 HRS"}, {"sku": "300529", "desc": "KIWI PELADO", "dmax": 1, "lt": "48 HRS"}, {"sku": "300145", "desc": "LECHUGA GRANEL", "dmax": 1, "lt": "24 HRS"}, {"sku": "300141", "desc": "TOMATE COCTEL GRANEL", "dmax": 3, "lt": "24 HRS"}, {"sku": "300522", "desc": "CEBOLLA PLUMA", "dmax": 6, "lt": "48 HRS"}, {"sku": "300169", "desc": "PEPINOS", "dmax": 5, "lt": "24 HRS"}, {"sku": "300317", "desc": "CEBOLLA MORADA", "dmax": 5, "lt": "24 HRS"}, {"sku": "300291", "desc": "ALBAHACA FRESCA", "dmax": 1, "lt": "24 HRS"}, {"sku": "300416", "desc": "CLEMENTINA", "dmax": 2, "lt": "24 HRS"}, {"sku": "300185", "desc": "CLARA LIQUIDA", "dmax": 14, "lt": "48-72 HRS"}], "data": [[-21.8, 9.8, 25.1, 5.4, 58.3], [-2.6, -1.2, 4.7, 9.2, 15.0], [11.4, 14.0, 19.4, 21.6, 14.6], [1.9, 7.9, 18.2, 27.6, 10.4], [1.9, 7.9, 18.2, 27.6, 10.4], [-30.6, -24.0, -16.8, -13.4, 10.2], [-20.3, -7.9, 25.6, 30.3, 1.0], [0.3, -6.1, -2.5, 0.0, 0.6], [1.2, 2.7, 10.6, 11.2, -3.5], [-26.0, -2.4, -11.4, -1.0, -5.8], [1.9, 7.5, 6.2, 13.5, -7.8], [1.2, 25.2, 40.6, 48.7, -8.9], [-17.1, -12.3, -3.9, 3.7, -10.2], [0.9, 16.3, 25.3, 34.0, -12.1], [1.3, 9.4, 16.9, 20.2, -12.8], [-0.3, -1.9, -4.7, 5.6, -13.1], [2.0, 22.5, 28.2, 41.1, -15.1], [1.5, 15.3, 29.2, 35.4, -15.3], [6.0, 6.9, 6.0, 9.8, -17.8], [-100.0, -100.0, -100.0, -100.0, -100.0], [-100.0, 93.5, -100.0, 130.5, -100.0]]}};                       // foto del Excel (fallback)
 const QB_BACKEND_URL = "https://script.google.com/macros/s/AKfycbwm2pqimyRXfc4ojTB7V00BFr3HqrYuyeY3HcpAmU08hqMKfO0MJS92xcWx_QMZTq5d/exec";    // si está set → quiebres EN VIVO desde la nube
 const SEM = QB.SEM;
 
