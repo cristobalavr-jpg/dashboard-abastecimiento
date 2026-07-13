@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NDS Abastecimiento · Histórico semanal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e;
+  --muted:#898781; --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.10);
+  --s1:#2a78d6; --s2:#1baf7a; --s3:#eda100; --s4:#008300; --s5:#4a3aa7;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --surface:#1a1a19; --page:#0d0d0d; --ink:#ffffff; --ink2:#c3c2b7;
+    --muted:#898781; --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
+    --s1:#3987e5; --s2:#199e70; --s3:#c98500; --s4:#008300; --s5:#9085e9;
+  }
+}
+/* Embebido en el DA (oscuro): se fuerza tema oscuro vía clase .dark (ver script) */
+:root.dark{
+  --surface:#1a1a19; --page:#0d0d0d; --ink:#ffffff; --ink2:#c3c2b7;
+  --muted:#898781; --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
+  --s1:#3987e5; --s2:#199e70; --s3:#c98500; --s4:#008300; --s5:#9085e9;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
+body{background:var(--page);color:var(--ink);padding:22px}
+.wrap{max-width:1400px;margin:0 auto}
+h1{font-size:1.35rem;font-weight:700}
+.sub{font-size:.8rem;color:var(--ink2);margin:4px 0 16px}
+.chain{font-size:.74rem;color:var(--ink2);background:var(--surface);border:1px solid var(--ring);
+  border-radius:9px;padding:10px 14px;margin-bottom:16px;line-height:1.5}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin-bottom:18px}
+.tile{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:14px 16px}
+.tile .k{font-size:.68rem;color:var(--ink2);display:flex;align-items:center;gap:6px}
+.tile .k i{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.tile .v{font-size:1.65rem;font-weight:750;margin-top:4px}
+.tile .d{font-size:.68rem;color:var(--muted);margin-top:3px}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:16px;margin-bottom:16px}
+.ct{font-size:.85rem;font-weight:700;padding-bottom:9px;margin-bottom:10px;border-bottom:1px solid var(--grid)}
+.ct small{font-weight:400;color:var(--muted);font-size:.68rem}
+.cw{position:relative;height:300px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.row2 .card{margin-bottom:16px}
+@media(max-width:980px){.row2{grid-template-columns:1fr}}
+table.t{border-collapse:collapse;width:100%;font-size:.72rem}
+table.t th{color:var(--ink2);font-weight:600;padding:7px 8px;text-align:right;border-bottom:1px solid var(--grid);white-space:nowrap}
+table.t th:first-child, table.t td:first-child{text-align:left}
+table.t td{padding:5px 8px;border-bottom:1px solid var(--grid);text-align:right;font-variant-numeric:tabular-nums}
+table.t tr.parcial td{color:var(--muted);font-style:italic}
+.note{font-size:.7rem;color:var(--muted);margin-top:8px;line-height:1.5}
+.scroll{overflow-x:auto}
+</style></head>
+<body><div class="wrap">
+<h1>Nivel de Servicio de Abastecimiento — NDS</h1>
+<div class="sub" id="sub"></div>
+<div class="chain"><b>Cadena de lectura:</b> OTIF proveedor (pendiente) →
+<b style="color:var(--s1)">NDS-1a Disponibilidad de MP · por SKU</b> (SKUs distintos en quiebre vs SKUs requeridos) ·
+<b style="color:var(--s2)">NDS-1b · total semana</b> (registros de quiebre vs total de MP requeridas) →
+<b style="color:var(--s3)">NDS-3 Cumplimiento de producción</b> (solo producto terminado, unidades producidas vs planificadas) →
+<b style="color:var(--s4)">NDS-4 Atribución a MP*</b> (% del volumen no producido con quiebre de componente).
+Cada eslabón explica al siguiente: NDS-3 ronda ~84% en unidades de producto terminado, pero del volumen no producido sólo una fracción menor (mediana ~1%) tiene un quiebre de material detrás — el resto es capacidad, calidad o dotación, fuera de abastecimiento.</div>
+
+<div class="tiles" id="tiles"></div>
+
+<div class="card">
+  <div class="ct">NDS semanal — disponibilidad de MP y cumplimiento de producción <small>· % · semana en curso punteada (parcial)</small></div>
+  <div class="cw"><canvas id="cMain"></canvas></div>
+</div>
+
+<div class="row2">
+  <div class="card">
+    <div class="ct">NDS-1 · Disponibilidad de MP — dos lentes <small>· por SKU (sin duplicados) · total semana</small></div>
+    <div class="cw" style="height:260px"><canvas id="cN1"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="ct">NDS-4 · Incumplimiento atribuible a falta de MP* <small>· barras = % de las UNIDADES de PT no producidas por quiebre · línea = impacto sobre la producción total planificada — mapeo, no atribución fina</small></div>
+    <div class="cw" style="height:260px"><canvas id="cN4"></canvas></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ct">Tabla semanal completa <small>· fuente: quiebres nube + MOBIDIC + MB51 + COOIS</small></div>
+  <div class="scroll"><table class="t" id="tbl"></table></div>
+  <div class="note" id="notas"></div>
+</div>
+
+<div class="card" id="cardReclas" style="display:none">
+  <div class="ct">Depuración por cambio de código <small>· quiebres reclasificados: el stock vive en el código sucesor</small></div>
+  <div class="scroll"><table class="t" id="tblReclas"></table></div>
+</div>
+
+</div>
+<script>
+// Si el visor va embebido dentro del DA (iframe), forzar tema oscuro para calzar
+if(window.self!==window.top){document.documentElement.classList.add('dark');}
+const D = {"generado": "2026-07-12T17:18:58", "anio": 2026, "sem_actual": 28, "sem_parcial": 28, "nds1": [{"sem": 1, "activos": 763, "requeridos": 567, "lineas_req": 9374, "skus_quiebre": 1, "registros_quiebre": 1, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 1, "severidad": 1.0, "fuente_req": "COOIS", "simple": 99.8, "simple_tot": 99.99, "pond": 100.0}, {"sem": 2, "activos": 767, "requeridos": 583, "lineas_req": 10756, "skus_quiebre": 12, "registros_quiebre": 23, "skus_quiebre_no_req": 1, "sku_dias_quiebre": 21, "severidad": 1.75, "fuente_req": "COOIS", "simple": 97.9, "simple_tot": 99.79, "pond": 99.99}, {"sem": 3, "activos": 772, "requeridos": 558, "lineas_req": 10534, "skus_quiebre": 9, "registros_quiebre": 16, "skus_quiebre_no_req": 3, "sku_dias_quiebre": 13, "severidad": 1.44, "fuente_req": "COOIS", "simple": 98.4, "simple_tot": 99.85, "pond": 99.96}, {"sem": 4, "activos": 776, "requeridos": 549, "lineas_req": 10879, "skus_quiebre": 9, "registros_quiebre": 19, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 19, "severidad": 2.11, "fuente_req": "COOIS", "simple": 98.4, "simple_tot": 99.83, "pond": 99.99}, {"sem": 5, "activos": 778, "requeridos": 552, "lineas_req": 10538, "skus_quiebre": 8, "registros_quiebre": 14, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 14, "severidad": 1.75, "fuente_req": "COOIS", "simple": 98.6, "simple_tot": 99.87, "pond": 100.0}, {"sem": 6, "activos": 787, "requeridos": 544, "lineas_req": 9997, "skus_quiebre": 10, "registros_quiebre": 18, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 18, "severidad": 1.8, "fuente_req": "COOIS", "simple": 98.2, "simple_tot": 99.82, "pond": 99.99}, {"sem": 7, "activos": 790, "requeridos": 590, "lineas_req": 10042, "skus_quiebre": 6, "registros_quiebre": 8, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 8, "severidad": 1.33, "fuente_req": "COOIS", "simple": 99.0, "simple_tot": 99.92, "pond": 99.97}, {"sem": 8, "activos": 796, "requeridos": 567, "lineas_req": 9642, "skus_quiebre": 4, "registros_quiebre": 5, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 5, "severidad": 1.25, "fuente_req": "COOIS", "simple": 99.3, "simple_tot": 99.95, "pond": 100.0}, {"sem": 9, "activos": 796, "requeridos": 576, "lineas_req": 9468, "skus_quiebre": 6, "registros_quiebre": 8, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 8, "severidad": 1.33, "fuente_req": "COOIS", "simple": 99.0, "simple_tot": 99.92, "pond": 99.99}, {"sem": 10, "activos": 792, "requeridos": 607, "lineas_req": 10749, "skus_quiebre": 17, "registros_quiebre": 31, "skus_quiebre_no_req": 1, "sku_dias_quiebre": 29, "severidad": 1.71, "fuente_req": "COOIS", "simple": 97.2, "simple_tot": 99.71, "pond": 99.99}, {"sem": 11, "activos": 790, "requeridos": 580, "lineas_req": 10443, "skus_quiebre": 13, "registros_quiebre": 26, "skus_quiebre_no_req": 3, "sku_dias_quiebre": 23, "severidad": 1.77, "fuente_req": "COOIS", "simple": 97.8, "simple_tot": 99.75, "pond": 99.91}, {"sem": 12, "activos": 793, "requeridos": 581, "lineas_req": 10277, "skus_quiebre": 7, "registros_quiebre": 13, "skus_quiebre_no_req": 1, "sku_dias_quiebre": 12, "severidad": 1.71, "fuente_req": "COOIS", "simple": 98.8, "simple_tot": 99.87, "pond": 98.99}, {"sem": 13, "activos": 793, "requeridos": 567, "lineas_req": 9871, "skus_quiebre": 9, "registros_quiebre": 15, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 15, "severidad": 1.67, "fuente_req": "COOIS", "simple": 98.4, "simple_tot": 99.85, "pond": 99.99}, {"sem": 14, "activos": 790, "requeridos": 594, "lineas_req": 10535, "skus_quiebre": 7, "registros_quiebre": 10, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 10, "severidad": 1.43, "fuente_req": "COOIS", "simple": 98.8, "simple_tot": 99.91, "pond": 99.99}, {"sem": 15, "activos": 791, "requeridos": 577, "lineas_req": 10043, "skus_quiebre": 9, "registros_quiebre": 12, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 12, "severidad": 1.33, "fuente_req": "COOIS", "simple": 98.4, "simple_tot": 99.88, "pond": 99.93}, {"sem": 16, "activos": 789, "requeridos": 588, "lineas_req": 11141, "skus_quiebre": 18, "registros_quiebre": 28, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 28, "severidad": 1.56, "fuente_req": "COOIS", "simple": 96.9, "simple_tot": 99.75, "pond": 99.99}, {"sem": 17, "activos": 793, "requeridos": 609, "lineas_req": 12216, "skus_quiebre": 16, "registros_quiebre": 24, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 24, "severidad": 1.5, "fuente_req": "COOIS", "simple": 97.4, "simple_tot": 99.8, "pond": 99.94}, {"sem": 18, "activos": 798, "requeridos": 587, "lineas_req": 11291, "skus_quiebre": 14, "registros_quiebre": 18, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 18, "severidad": 1.29, "fuente_req": "COOIS", "simple": 97.6, "simple_tot": 99.84, "pond": 100.0}, {"sem": 19, "activos": 798, "requeridos": 607, "lineas_req": 12084, "skus_quiebre": 13, "registros_quiebre": 23, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 23, "severidad": 1.77, "fuente_req": "COOIS", "simple": 97.9, "simple_tot": 99.81, "pond": 99.99}, {"sem": 20, "activos": 801, "requeridos": 605, "lineas_req": 12078, "skus_quiebre": 9, "registros_quiebre": 10, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 10, "severidad": 1.11, "fuente_req": "COOIS", "simple": 98.5, "simple_tot": 99.92, "pond": 100.0}, {"sem": 21, "activos": 799, "requeridos": 597, "lineas_req": 10491, "skus_quiebre": 10, "registros_quiebre": 14, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 14, "severidad": 1.4, "fuente_req": "COOIS", "simple": 98.3, "simple_tot": 99.87, "pond": 100.0}, {"sem": 22, "activos": 807, "requeridos": 614, "lineas_req": 12996, "skus_quiebre": 9, "registros_quiebre": 15, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 15, "severidad": 1.67, "fuente_req": "COOIS", "simple": 98.5, "simple_tot": 99.88, "pond": 99.99}, {"sem": 23, "activos": 805, "requeridos": 616, "lineas_req": 12996, "skus_quiebre": 9, "registros_quiebre": 20, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 20, "severidad": 2.22, "fuente_req": "COOIS", "simple": 98.5, "simple_tot": 99.85, "pond": 99.99}, {"sem": 24, "activos": 814, "requeridos": 600, "lineas_req": 12700, "skus_quiebre": 9, "registros_quiebre": 18, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 18, "severidad": 2.0, "fuente_req": "COOIS", "simple": 98.5, "simple_tot": 99.86, "pond": 99.99}, {"sem": 25, "activos": 808, "requeridos": 609, "lineas_req": 11923, "skus_quiebre": 7, "registros_quiebre": 14, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 14, "severidad": 2.0, "fuente_req": "COOIS", "simple": 98.9, "simple_tot": 99.88, "pond": 99.98}, {"sem": 26, "activos": 806, "requeridos": 606, "lineas_req": 11934, "skus_quiebre": 7, "registros_quiebre": 14, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 14, "severidad": 2.0, "fuente_req": "COOIS", "simple": 98.8, "simple_tot": 99.88, "pond": 99.98}, {"sem": 27, "activos": 810, "requeridos": 561, "lineas_req": 11903, "skus_quiebre": 13, "registros_quiebre": 20, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 20, "severidad": 1.54, "fuente_req": "COOIS", "simple": 97.7, "simple_tot": 99.83, "pond": 99.98}, {"sem": 28, "activos": 810, "requeridos": 600, "lineas_req": 10515, "skus_quiebre": 10, "registros_quiebre": 20, "skus_quiebre_no_req": 0, "sku_dias_quiebre": 20, "severidad": 2.0, "fuente_req": "COOIS", "simple": 98.3, "simple_tot": 99.81, "pond": 99.98}], "nds3": [{"sem": 1, "ordenes": 825, "completas": 641, "pct_ordenes": 77.7, "pct_qty": 82.1}, {"sem": 2, "ordenes": 978, "completas": 806, "pct_ordenes": 82.4, "pct_qty": 83.8}, {"sem": 3, "ordenes": 1002, "completas": 849, "pct_ordenes": 84.7, "pct_qty": 83.0}, {"sem": 4, "ordenes": 983, "completas": 799, "pct_ordenes": 81.3, "pct_qty": 82.5}, {"sem": 5, "ordenes": 971, "completas": 836, "pct_ordenes": 86.1, "pct_qty": 88.6}, {"sem": 6, "ordenes": 967, "completas": 826, "pct_ordenes": 85.4, "pct_qty": 82.4}, {"sem": 7, "ordenes": 967, "completas": 798, "pct_ordenes": 82.5, "pct_qty": 78.8}, {"sem": 8, "ordenes": 889, "completas": 741, "pct_ordenes": 83.4, "pct_qty": 83.9}, {"sem": 9, "ordenes": 890, "completas": 767, "pct_ordenes": 86.2, "pct_qty": 87.1}, {"sem": 10, "ordenes": 977, "completas": 737, "pct_ordenes": 75.4, "pct_qty": 85.0}, {"sem": 11, "ordenes": 932, "completas": 796, "pct_ordenes": 85.4, "pct_qty": 91.9}, {"sem": 12, "ordenes": 938, "completas": 759, "pct_ordenes": 80.9, "pct_qty": 88.5}, {"sem": 13, "ordenes": 911, "completas": 749, "pct_ordenes": 82.2, "pct_qty": 86.6}, {"sem": 14, "ordenes": 960, "completas": 777, "pct_ordenes": 80.9, "pct_qty": 73.3}, {"sem": 15, "ordenes": 934, "completas": 774, "pct_ordenes": 82.9, "pct_qty": 85.7}, {"sem": 16, "ordenes": 909, "completas": 747, "pct_ordenes": 82.2, "pct_qty": 83.4}, {"sem": 17, "ordenes": 956, "completas": 807, "pct_ordenes": 84.4, "pct_qty": 90.0}, {"sem": 18, "ordenes": 914, "completas": 776, "pct_ordenes": 84.9, "pct_qty": 84.2}, {"sem": 19, "ordenes": 933, "completas": 779, "pct_ordenes": 83.5, "pct_qty": 87.4}, {"sem": 20, "ordenes": 924, "completas": 789, "pct_ordenes": 85.4, "pct_qty": 89.0}, {"sem": 21, "ordenes": 737, "completas": 622, "pct_ordenes": 84.4, "pct_qty": 88.3}, {"sem": 22, "ordenes": 991, "completas": 810, "pct_ordenes": 81.7, "pct_qty": 87.0}, {"sem": 23, "ordenes": 987, "completas": 826, "pct_ordenes": 83.7, "pct_qty": 83.4}, {"sem": 24, "ordenes": 982, "completas": 757, "pct_ordenes": 77.1, "pct_qty": 83.6}, {"sem": 25, "ordenes": 951, "completas": 782, "pct_ordenes": 82.2, "pct_qty": 81.7}, {"sem": 26, "ordenes": 904, "completas": 784, "pct_ordenes": 86.7, "pct_qty": 79.4}, {"sem": 27, "ordenes": 974, "completas": 784, "pct_ordenes": 80.5, "pct_qty": 75.6}, {"sem": 28, "ordenes": 856, "completas": 589, "pct_ordenes": 68.8, "pct_qty": 76.4}], "nds4": [{"sem": 1, "un_plan": 1642346, "un_faltantes": 294742, "un_faltantes_mp": 37465, "pct_atrib_un": 12.7, "pct_impacto": 2.281, "incumplidas": 184, "atribuibles_mp": 5, "pct_atrib": 2.7}, {"sem": 2, "un_plan": 1894783, "un_faltantes": 307238, "un_faltantes_mp": 41905, "pct_atrib_un": 13.6, "pct_impacto": 2.212, "incumplidas": 172, "atribuibles_mp": 21, "pct_atrib": 12.2}, {"sem": 3, "un_plan": 1853191, "un_faltantes": 314355, "un_faltantes_mp": 5899, "pct_atrib_un": 1.9, "pct_impacto": 0.318, "incumplidas": 153, "atribuibles_mp": 5, "pct_atrib": 3.3}, {"sem": 4, "un_plan": 1793208, "un_faltantes": 313822, "un_faltantes_mp": 700, "pct_atrib_un": 0.2, "pct_impacto": 0.039, "incumplidas": 184, "atribuibles_mp": 5, "pct_atrib": 2.7}, {"sem": 5, "un_plan": 1653853, "un_faltantes": 188812, "un_faltantes_mp": 20, "pct_atrib_un": 0.0, "pct_impacto": 0.001, "incumplidas": 135, "atribuibles_mp": 0, "pct_atrib": 0.0}, {"sem": 6, "un_plan": 1857122, "un_faltantes": 326556, "un_faltantes_mp": 1829, "pct_atrib_un": 0.6, "pct_impacto": 0.098, "incumplidas": 141, "atribuibles_mp": 5, "pct_atrib": 3.5}, {"sem": 7, "un_plan": 1853372, "un_faltantes": 393727, "un_faltantes_mp": 11889, "pct_atrib_un": 3.0, "pct_impacto": 0.641, "incumplidas": 169, "atribuibles_mp": 5, "pct_atrib": 3.0}, {"sem": 8, "un_plan": 1628322, "un_faltantes": 261621, "un_faltantes_mp": 1640, "pct_atrib_un": 0.6, "pct_impacto": 0.101, "incumplidas": 148, "atribuibles_mp": 2, "pct_atrib": 1.4}, {"sem": 9, "un_plan": 1763147, "un_faltantes": 228054, "un_faltantes_mp": 301, "pct_atrib_un": 0.1, "pct_impacto": 0.017, "incumplidas": 123, "atribuibles_mp": 1, "pct_atrib": 0.8}, {"sem": 10, "un_plan": 1766453, "un_faltantes": 265235, "un_faltantes_mp": 36302, "pct_atrib_un": 13.7, "pct_impacto": 2.055, "incumplidas": 240, "atribuibles_mp": 14, "pct_atrib": 5.8}, {"sem": 11, "un_plan": 1833002, "un_faltantes": 148856, "un_faltantes_mp": 2574, "pct_atrib_un": 1.7, "pct_impacto": 0.14, "incumplidas": 136, "atribuibles_mp": 10, "pct_atrib": 7.4}, {"sem": 12, "un_plan": 2082482, "un_faltantes": 238463, "un_faltantes_mp": 26458, "pct_atrib_un": 11.1, "pct_impacto": 1.271, "incumplidas": 179, "atribuibles_mp": 23, "pct_atrib": 12.8}, {"sem": 13, "un_plan": 2003151, "un_faltantes": 268160, "un_faltantes_mp": 22432, "pct_atrib_un": 8.4, "pct_impacto": 1.12, "incumplidas": 162, "atribuibles_mp": 13, "pct_atrib": 8.0}, {"sem": 14, "un_plan": 2239159, "un_faltantes": 598592, "un_faltantes_mp": 20332, "pct_atrib_un": 3.4, "pct_impacto": 0.908, "incumplidas": 183, "atribuibles_mp": 4, "pct_atrib": 2.2}, {"sem": 15, "un_plan": 1900341, "un_faltantes": 271719, "un_faltantes_mp": 536, "pct_atrib_un": 0.2, "pct_impacto": 0.028, "incumplidas": 160, "atribuibles_mp": 5, "pct_atrib": 3.1}, {"sem": 16, "un_plan": 1964635, "un_faltantes": 326133, "un_faltantes_mp": 3666, "pct_atrib_un": 1.1, "pct_impacto": 0.187, "incumplidas": 162, "atribuibles_mp": 8, "pct_atrib": 4.9}, {"sem": 17, "un_plan": 2218310, "un_faltantes": 220991, "un_faltantes_mp": 20123, "pct_atrib_un": 9.1, "pct_impacto": 0.907, "incumplidas": 149, "atribuibles_mp": 18, "pct_atrib": 12.1}, {"sem": 18, "un_plan": 1858472, "un_faltantes": 293470, "un_faltantes_mp": 5666, "pct_atrib_un": 1.9, "pct_impacto": 0.305, "incumplidas": 138, "atribuibles_mp": 3, "pct_atrib": 2.2}, {"sem": 19, "un_plan": 1931658, "un_faltantes": 243383, "un_faltantes_mp": 2937, "pct_atrib_un": 1.2, "pct_impacto": 0.152, "incumplidas": 154, "atribuibles_mp": 6, "pct_atrib": 3.9}, {"sem": 20, "un_plan": 1902992, "un_faltantes": 209418, "un_faltantes_mp": 3949, "pct_atrib_un": 1.9, "pct_impacto": 0.208, "incumplidas": 135, "atribuibles_mp": 3, "pct_atrib": 2.2}, {"sem": 21, "un_plan": 1507197, "un_faltantes": 176935, "un_faltantes_mp": 356, "pct_atrib_un": 0.2, "pct_impacto": 0.024, "incumplidas": 115, "atribuibles_mp": 2, "pct_atrib": 1.7}, {"sem": 22, "un_plan": 2430501, "un_faltantes": 316074, "un_faltantes_mp": 1852, "pct_atrib_un": 0.6, "pct_impacto": 0.076, "incumplidas": 181, "atribuibles_mp": 7, "pct_atrib": 3.9}, {"sem": 23, "un_plan": 2315542, "un_faltantes": 385060, "un_faltantes_mp": 376, "pct_atrib_un": 0.1, "pct_impacto": 0.016, "incumplidas": 161, "atribuibles_mp": 3, "pct_atrib": 1.9}, {"sem": 24, "un_plan": 2375463, "un_faltantes": 390033, "un_faltantes_mp": 1810, "pct_atrib_un": 0.5, "pct_impacto": 0.076, "incumplidas": 225, "atribuibles_mp": 8, "pct_atrib": 3.6}, {"sem": 25, "un_plan": 2090631, "un_faltantes": 381925, "un_faltantes_mp": 848, "pct_atrib_un": 0.2, "pct_impacto": 0.041, "incumplidas": 169, "atribuibles_mp": 4, "pct_atrib": 2.4}, {"sem": 26, "un_plan": 1752141, "un_faltantes": 361064, "un_faltantes_mp": 3337, "pct_atrib_un": 0.9, "pct_impacto": 0.19, "incumplidas": 120, "atribuibles_mp": 5, "pct_atrib": 4.2}, {"sem": 27, "un_plan": 2217610, "un_faltantes": 541090, "un_faltantes_mp": 2637, "pct_atrib_un": 0.5, "pct_impacto": 0.119, "incumplidas": 190, "atribuibles_mp": 5, "pct_atrib": 2.6}, {"sem": 28, "un_plan": 1604432, "un_faltantes": 378171, "un_faltantes_mp": 13194, "pct_atrib_un": 3.5, "pct_impacto": 0.822, "incumplidas": 267, "atribuibles_mp": 8, "pct_atrib": 3.0}], "reclasificados": [{"sem": 28, "sku": "400542", "desc": "ETIQ CAS GALL LENGUA GATO 75G 06.25 FRO", "sucesor": "400673"}], "sucesores_propuestos": [{"viejo": "400542", "nuevo": "400673", "similitud": 1.0, "desc_viejo": "ETIQ CAS GALL LENGUA GATO 75G 06.25 FRO", "desc_nuevo": "ETIQ CAS GALL LENGUA GATO 75G 05.26 FRO", "ult_consumo_viejo": 27, "prim_consumo_nuevo": 28}], "mix_clases_orden": {"ZACO": 22041, "ZDLV": 288, "ZDOS": 10261, "ZEMP": 5275, "ZFRI": 9660, "ZHOJ": 3906, "ZHUE": 1632, "ZMOL": 4219, "ZPAS": 9880, "ZPPA": 120, "ZQUI": 254}, "nds1_meta": {"p50": 98.4, "p75": 98.8}, "nds1b_meta": {"p50": 99.86, "p75": 99.88}, "nds3_meta": {"p50": 83.9, "p75": 87.25}, "nds4_meta": {"p50": 1.1, "p75": 3.2}};
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt = (x,dec=1) => x==null ? '—' :
+  x.toLocaleString('es-CL',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+const f0 = x => x==null ? '—' : x.toLocaleString('es-CL',{maximumFractionDigits:0});
+const SEMP = D.sem_parcial;
+const labels = D.nds1.map(x=>'S'+x.sem);
+
+document.getElementById('sub').textContent =
+  'Año '+D.anio+' · semanas 1–'+D.sem_actual+' (S'+SEMP+' parcial) · generado '+D.generado.replace('T',' ');
+
+function serie(arr, campo){ return arr.map(x=>x[campo]==null?null:x[campo]); }
+const n1a=serie(D.nds1,'simple'), n1b=serie(D.nds1,'simple_tot'), n1p=serie(D.nds1,'pond');
+const n3 =serie(D.nds3,'pct_qty');       // headline = por unidades
+const n3o=serie(D.nds3,'pct_ordenes');   // secundario = por conteo de órdenes
+const n4 =serie(D.nds4,'pct_atrib_un');
+const n4i=serie(D.nds4,'pct_impacto');   // impacto sobre producción total planificada
+
+// ── tiles: última semana completa vs promedio 4 previas ──
+const iUlt = D.nds1.findIndex(x=>x.sem===SEMP-1);
+function prom4(a,i){ const v=a.slice(Math.max(0,i-4),i).filter(x=>x!=null);
+  return v.length? v.reduce((s,x)=>s+x,0)/v.length : null; }
+function tile(nombre,color,val,base,inverso,dec,extra){
+  dec=dec==null?1:dec;
+  let d='sin comparable';
+  if(val!=null&&base!=null){ const df=val-base;
+    const buena=inverso? df<=0 : df>=0;
+    d=(df>=0?'+':'')+fmt(df,dec)+' pts vs prom. 4 sem ('+fmt(base,dec)+'%) '+(buena?'✓':'✗'); }
+  return '<div class="tile"><div class="k"><i style="background:'+color+'"></i>'+nombre+'</div>'+
+    '<div class="v">'+(val==null?'—':fmt(val,dec)+'%')+'</div><div class="d">'+d+'</div>'+
+    (extra?'<div class="d" style="margin-top:5px;padding-top:5px;border-top:1px solid var(--grid);color:var(--ink2)">'+extra+'</div>':'')+'</div>';
+}
+let tiles='';
+tiles+=tile('NDS-1a Disponibilidad MP · SKU (S'+(SEMP-1)+')',css('--s1'),n1a[iUlt],prom4(n1a,iUlt),false,1);
+tiles+=tile('NDS-1b Disponibilidad MP · total sem',css('--s2'),n1b[iUlt],prom4(n1b,iUlt),false,2);
+tiles+=tile('NDS-3 Cumplimiento producción (PT, unidades)',css('--s3'),n3[iUlt],prom4(n3,iUlt),false,1,
+  'Por conteo de órdenes: '+fmt(n3o[iUlt],1)+'%');
+tiles+=tile('NDS-4 Vol. no prod. atribuible a MP*',css('--s4'),n4[iUlt],prom4(n4,iUlt),true,1,
+  '<b>Impacto sobre producción total: '+fmt(n4i[iUlt],2)+'%</b><br>('+f0(D.nds4[iUlt].un_faltantes_mp)+' un por MP de '+f0(D.nds4[iUlt].un_plan)+' un planificadas)');
+document.getElementById('tiles').innerHTML=tiles;
+
+// ── charts ──
+Chart.defaults.color=css('--ink2');
+Chart.defaults.borderColor=css('--grid');
+Chart.defaults.font.size=10;
+Chart.defaults.animation=false;
+const dash=(ctx)=> ctx.p1DataIndex>=labels.length-1 ? [5,4] : undefined;
+function lineDS(label,data,color,faded){
+  return {label, data, borderColor:color, backgroundColor:color,
+    borderWidth:faded?1.5:2, pointRadius:faded?0:2.5, pointHoverRadius:5, tension:.25, spanGaps:true,
+    borderDash:faded?[4,3]:undefined, segment:{borderDash:dash}};
+}
+const scalesPct=(min)=>({x:{grid:{display:false},ticks:{color:css('--muted')}},
+  y:{min:min, max:100, ticks:{color:css('--muted'),callback:v=>fmt(v,0)+'%'},grid:{color:css('--grid')}}});
+const ttPct={mode:'index',intersect:false,
+  callbacks:{title:i=>'Semana '+i[0].label.slice(1)+(i[0].dataIndex===labels.length-1?' (parcial)':''),
+             label:c=>c.dataset.label+': '+(c.raw==null?'—':fmt(c.raw,c.raw>=99.5?2:1)+'%')}};
+
+// Main: NDS-1a, NDS-1b, NDS-3
+const minMain=Math.max(0,Math.floor((Math.min(...[...n1a,...n3].filter(x=>x!=null))-3)/5)*5);
+new Chart(document.getElementById('cMain'),{type:'line',
+  data:{labels,datasets:[
+    lineDS('NDS-1a Disponibilidad MP · SKU',n1a,css('--s1')),
+    lineDS('NDS-1b Disponibilidad MP · total semana',n1b,css('--s2')),
+    lineDS('NDS-3 Cumplimiento producción (PT, unidades)',n3,css('--s3'))]},
+  options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{boxWidth:14,boxHeight:3}},tooltip:ttPct},
+    scales:scalesPct(minMain)}});
+
+// NDS-1 detalle: tres lentes
+const minN1=Math.max(90,Math.floor((Math.min(...n1a.filter(x=>x!=null))-1)));
+new Chart(document.getElementById('cN1'),{type:'line',
+  data:{labels,datasets:[
+    lineDS('Por SKU (sin dup.)',n1a,css('--s1')),
+    lineDS('Total semana',n1b,css('--s2'))]},
+  options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{boxWidth:14,boxHeight:3}},tooltip:{...ttPct,callbacks:{...ttPct.callbacks,
+      afterBody:i=>{const w=D.nds1[i[0].dataIndex];
+        return ['SKU en quiebre: '+w.skus_quiebre+' de '+w.requeridos+' requeridos',
+                'SKU totales en quiebre: '+w.registros_quiebre+' de '+f0(w.lineas_req)+' líneas MP'];}}}},
+    scales:scalesPct(minN1)}});
+
+// NDS-4: barras (eje izq) = % del incumplimiento por MP · línea punteada (eje der) = impacto sobre plan total
+const n4max=Math.max(10,Math.ceil(Math.max(...n4.filter(x=>x!=null))*1.2/5)*5);
+const n4imax=Math.max(1,Math.ceil(Math.max(...n4i.filter(x=>x!=null))*1.3*10)/10);
+new Chart(document.getElementById('cN4'),{
+  data:{labels,datasets:[
+    {type:'bar', label:'% del incumplimiento atribuible a MP (eje izq.)', data:n4, yAxisID:'y',
+     backgroundColor:css('--s4'), borderRadius:4, maxBarThickness:22, order:2},
+    {type:'line', label:'% impacto sobre producción total planificada (eje der.)', data:n4i, yAxisID:'y2',
+     borderColor:css('--s5'), backgroundColor:css('--s5'), borderWidth:2, borderDash:[4,3],
+     pointRadius:2.5, pointHoverRadius:4, tension:.25, order:1}]},
+  options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{boxWidth:14,boxHeight:3,font:{size:9}}},tooltip:{callbacks:{
+      title:i=>'Semana '+i[0].label.slice(1),
+      label:c=>{const w=D.nds4[c.dataIndex];
+        if(c.datasetIndex===1) return 'Impacto s/ producción total: '+fmt(c.raw,2)+'%';
+        return [fmt(c.raw)+'% del volumen no producido fue por MP',
+                f0(w.un_faltantes_mp)+' un por MP de '+f0(w.un_faltantes)+' no producidas · plan '+f0(w.un_plan)];}}}},
+    scales:{x:{grid:{display:false},ticks:{color:css('--muted')}},
+            y:{position:'left',min:0,max:n4max,ticks:{color:css('--s4'),callback:v=>v+'%'},grid:{color:css('--grid')},
+               title:{display:true,text:'% del incumplimiento',color:css('--s4'),font:{size:9}}},
+            y2:{position:'right',min:0,max:n4imax,ticks:{color:css('--s5'),callback:v=>fmt(v,1)+'%'},grid:{display:false},
+               title:{display:true,text:'% impacto s/ plan total',color:css('--s5'),font:{size:9}}}}}});
+
+// ── tabla ──
+let h='<thead><tr><th>Sem</th><th>SKUs req.</th><th>Líneas MP</th><th>SKU quiebre</th><th>SKU totales en quiebre</th>'+
+      '<th>No req.</th><th>Sev. días</th><th>NDS-1a %</th><th>NDS-1b %</th>'+
+      '<th>Órd. PT</th><th>Compl.</th><th>NDS-3 un %</th><th>por órd. %</th>'+
+      '<th>Plan PT un</th><th>Un. no prod.</th><th>MP un</th><th>NDS-4 un %</th><th>Impacto prod. %</th></tr></thead><tbody>';
+D.nds1.forEach((x,i)=>{
+  const parcial=x.sem===SEMP; const y3=D.nds3[i]||{}, y4=D.nds4[i]||{};
+  h+='<tr'+(parcial?' class="parcial"':'')+'><td>S'+x.sem+(parcial?' *':'')+'</td>'+
+     '<td>'+x.requeridos+'</td><td>'+f0(x.lineas_req)+'</td><td>'+x.skus_quiebre+'</td><td>'+x.registros_quiebre+'</td>'+
+     '<td>'+(x.skus_quiebre_no_req||0)+'</td><td>'+fmt(x.severidad)+'</td>'+
+     '<td>'+fmt(x.simple)+'</td><td>'+fmt(x.simple_tot,2)+'</td>'+
+     '<td>'+(y3.ordenes??'—')+'</td><td>'+(y3.completas??'—')+'</td><td>'+fmt(y3.pct_qty)+'</td><td>'+fmt(y3.pct_ordenes)+'</td>'+
+     '<td>'+(y4.un_plan!=null?f0(y4.un_plan):'—')+'</td><td>'+(y4.un_faltantes!=null?f0(y4.un_faltantes):'—')+'</td><td>'+(y4.un_faltantes_mp!=null?f0(y4.un_faltantes_mp):'—')+'</td><td>'+fmt(y4.pct_atrib_un)+'</td><td>'+fmt(y4.pct_impacto,2)+'</td></tr>';
+});
+h+='</tbody>';
+document.getElementById('tbl').innerHTML=h;
+document.getElementById('notas').innerHTML=
+  '* semana en curso, parcial. Todo sobre 2026. '+
+  '<b>NDS-1a</b> = 1 − SKUs distintos en quiebre real / SKUs MP requeridos (demanda COOIS); cuenta por SKU, sin duplicados. '+
+  '<b>NDS-1b</b> = 1 − registros de quiebre de la semana / total de líneas de MP requeridas (ocurrencias); mide la incidencia sobre el total de la operación semanal. '+
+  '<b>pond</b> = 1 − Σ peso$(sku)×(días quiebre/6), peso$ = share del consumo valorizado del año. <b>Sev. días</b> = días promedio que persistió cada quiebre (la recurrencia). '+
+  '<b>NDS-3</b> (headline) = <b>por unidades</b>: Σ unidades producidas (capeadas al plan por orden) / Σ unidades planificadas, sólo <b>producto terminado</b> (código 1; se excluyen dosis código 2). El secundario "por órd." = órdenes con entrega ≥98% / total órdenes (trata igual órdenes chicas y grandes). Divergen cuando las órdenes grandes se cumplen distinto que las chicas. '+
+  '<b>NDS-4*</b> tiene dos lecturas: (a) <b>% del incumplimiento</b> = unidades de PT no producidas en órdenes con componente en quiebre / total de unidades de PT no producidas (¿de lo que faltó, cuánto fue por MP?); (b) <b>Impacto sobre producción total</b> = esas mismas unidades / total de unidades de PT planificadas (¿cuánto del total mandado a fabricar se perdió por MP? — prom ~0,5%, máx ~2,3%). La (b) es el impacto real de abastecimiento sobre la producción; la (a) contextualiza dentro del incumplimiento. '+
+  '<b>* Mapeo, no atribución fina — tiende a SOBRE-atribuir a abastecimiento:</b> muchas MP frescas (frutas/verduras) amanecen en quiebre y se reponen en la misma mañana; el quiebre queda registrado aunque el material sí llegó a tiempo, así que la orden pudo fallar por otra causa. El % real suele ser aún menor; en sentido contrario, subcuenta quiebres no registrados. Úsese para gatillar revisión, no como cifra exacta de responsabilidad.'+
+  (D.reclasificados.length?' Quiebres reclasificados por cambio de código: '+D.reclasificados.length+'.':'');
+
+// ── reclasificados ──
+if(D.reclasificados.length){
+  document.getElementById('cardReclas').style.display='';
+  let r='<thead><tr><th>Sem</th><th>SKU quebrado</th><th>Descripción</th><th>Código sucesor con stock</th></tr></thead><tbody>';
+  D.reclasificados.forEach(x=>{r+='<tr><td>S'+x.sem+'</td><td>'+x.sku+'</td><td style="text-align:left">'+
+    x.desc+'</td><td>'+x.sucesor+'</td></tr>';});
+  document.getElementById('tblReclas').innerHTML=r+'</tbody>';
+}
+</script>
+</body></html>
