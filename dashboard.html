@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Abastecimiento — Semana 28 · 2026</title>
-<meta property="og:title" content="Dashboard Abastecimiento — Semana 28 · 2026">
+<title>Dashboard Abastecimiento — Semana 29 · 2026</title>
+<meta property="og:title" content="Dashboard Abastecimiento — Semana 29 · 2026">
 <meta property="og:description" content="Supply Chain · KPIs de inventario, mermas, capital inmovilizado, desviación de forecast y bloqueado">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
@@ -255,6 +255,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="tab" onclick="showTab(7)">🔒 Stock bloqueado</div>
   <div class="tab" onclick="showTab(9)">📦 Terceros e Insumos</div>
   <div class="tab" onclick="showTab(12)">⚠️ Quiebres</div>
+  <div class="tab" onclick="showTab(14)">📊 NDS</div>
   <div class="tab" onclick="showTab(13)">✅ Plan Semanal</div>
 </div>
 
@@ -665,6 +666,11 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <iframe id="ps-frame" data-src="plan_semanal.html" style="width:100%;height:86vh;border:0;border-radius:10px;background:#0f1117"></iframe>
 </div>
 
+<!-- NDS · Nivel de Servicio (vista autocontenida generada por generar_nds_html.py · iframe lazy-load) -->
+<div id="t14" class="pg">
+  <iframe id="nds-frame" data-src="nds.html" title="NDS · Nivel de Servicio de Abastecimiento" style="width:100%;height:2400px;border:0;border-radius:10px;background:#f9f9f7"></iframe>
+</div>
+
 <!-- DRAWER -->
 <div class="dw-wrap" id="dww">
   <div class="dw-ov" onclick="closeDw()"></div>
@@ -1069,6 +1075,8 @@ function showTab(i){
   if(i===10){ covLoadPPA().then(function(){ try{ buildCoberturas(); }catch(e){ console.error('Cob build:',e); } }); }
   if(i===13){var pf=document.getElementById('ps-frame');
     if(pf&&!pf.src){pf.src=pf.getAttribute('data-src')+'?v='+Date.now();}}
+  if(i===14){var nf=document.getElementById('nds-frame');
+    if(nf&&!nf.src){nf.src=nf.getAttribute('data-src')+'?v='+Date.now();}}
 }
 // Subsecciones de "Quiebres" (Día / SEM / Histórico) — iframes aislados, lazy load
 function showQSub(name){
