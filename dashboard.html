@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Abastecimiento — Semana {{SEM}} · {{YEAR}}</title>
-<meta property="og:title" content="Dashboard Abastecimiento — Semana {{SEM}} · {{YEAR}}">
+<title>Dashboard Abastecimiento — Semana 29 · 2026</title>
+<meta property="og:title" content="Dashboard Abastecimiento — Semana 29 · 2026">
 <meta property="og:description" content="Supply Chain · KPIs de inventario, mermas, capital inmovilizado, desviación de forecast y bloqueado">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
@@ -282,6 +282,11 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .plk-ico{font-size:.7rem;color:#8aa0c8;width:12px;display:inline-block;text-align:center}
 .plk-body{margin-top:6px}
 .plk-pill .pbtn{margin-left:auto;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer}
+.plk-pill.new-pill{border:1px solid #2478c9}
+.lppa-lg{display:inline-flex;align-items:center;gap:5px;margin-right:14px}
+.lppa-dot{width:9px;height:9px;border-radius:2px;display:inline-block}
+#llegppa-table td{white-space:nowrap}
+#llegppa-table .vbtn.active{background:#2478c930;border-color:#2478c9;color:#5fb1ea}
 </style>
 <div id="t1" class="pg">
   <div class="pkr" id="pkpis"></div>
@@ -329,6 +334,22 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="fr"><input type="text" class="si" id="ppaps" placeholder="Buscar por SKU o descripción..." oninput="sPPAP(this.value)" style="width:320px"></div>
   <div class="tw" style="margin-bottom:6px;max-height:74vh;overflow:auto"><table id="ppap-table"><thead id="ppapth"></thead><tbody id="ppaptb"></tbody></table></div>
   <div class="pag" id="ppappag"></div>
+  </div>
+
+  <div class="plk-pill new-pill" onclick="togPlk('llegppa')"><span class="plk-ico" id="ico-llegppa">▸</span>Llegadas Bolsas PPA — plan de entregas semanal <span id="llegppa-info" style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:4px"></span> <button class="pbtn" onclick="event.stopPropagation();expLlegPPA()" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9">📥 Excel</button></div>
+  <div class="plk-body" id="body-llegppa" style="display:none">
+  <div id="llegppa-alert" style="display:none"></div>
+  <div style="background:rgba(36,122,201,.07);border:1px solid rgba(36,122,201,.28);border-radius:7px;padding:7px 11px;margin-bottom:8px;font-size:.66rem;color:#9fc2e0">
+    Plan de llegadas de bolsas PPA. <b style="color:#5fb1ea">Llegadas</b> = calendario <b>fijo manual</b> del proveedor (Matías) — SAP/ME2M no trae fecha de entrega por OC. <b style="color:#5fb1ea">Demanda</b>, <b style="color:#5fb1ea">Stock</b> y <b style="color:#5fb1ea">OC</b> = en vivo (Plan PPA + MOBIDIC), sumando código 2025 + 2026 por bolsa. <b style="color:#5fb1ea">Stock Proyectado</b> = stock actual + Σ llegadas − Σ demanda al cierre de cada semana; <span style="color:var(--q)">negativo</span> = quiebre. <b style="color:#5fb1ea">Cobertura</b> = semanas de demanda futura cubiertas por el stock proyectado (rojo 0 → verde 8+). Filas en rojo = SKU con demanda pero sin ninguna llegada planificada.
+  </div>
+  <div class="fr" style="align-items:center">
+    <button class="sb active" id="lppa-vb-lleg" onclick="lppaView('lleg')">📦 Llegadas</button>
+    <button class="sb" id="lppa-vb-cov" onclick="lppaView('cov')">📊 Cobertura semanal</button>
+    <button class="sb" id="lppa-vb-sp" onclick="lppaView('sp')">📈 Stock Proyectado semanal</button>
+    <input type="text" class="si" id="llegppas" placeholder="Buscar por SKU o descripción..." oninput="sLlegPPA(this.value)" style="width:300px;margin-left:auto">
+  </div>
+  <div class="tw" style="margin-bottom:6px;max-height:74vh;overflow:auto"><table id="llegppa-table"><thead id="llegppath"></thead><tbody id="llegppatb"></tbody></table></div>
+  <div id="llegppa-legend" style="font-size:.65rem;color:var(--muted);display:flex;gap:0;flex-wrap:wrap;align-items:center"></div>
   </div>
 
   <div class="plk-pill" onclick="togPlk('luxo')"><span class="plk-ico" id="ico-luxo">▸</span>Plan Luxo por SKU — explosión de materia prima vs stock <span id="luxo-info" style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:4px"></span> <button class="pbtn" onclick="event.stopPropagation();expLUXO()" style="background:#1D9E7530;color:#3fd0a0;border:1px solid #1D9E75">📥 Excel</button></div>
@@ -1294,6 +1315,7 @@ function updPlan(){
   if(typeof rndPLT==='function') rndPLT();
   if(typeof rndPPAP==='function') rndPPAP();
   if(typeof rndLUXO==='function') rndLUXO();
+  if(typeof rndLlegPPA==='function') rndLlegPPA();
 }
 
 function fpA(arr){
@@ -1745,6 +1767,98 @@ function gPPPAP(p){PPAPF.p=p;rndPPAP();}
 function gPLUXO(p){LUXOF.p=p;rndLUXO();}
 function expPPAP(){_expPlan(_cfgPPAP());}
 function expLUXO(){_expPlan(_cfgLUXO());}
+
+// ── Llegadas Bolsas PPA (calendario manual + demanda/stock/OC en vivo). Ver PARAMETRO.MD B.7.6 ──
+var LLEG_PPA=null;
+var LLEGF={s:'',view:'lleg'};
+function lppaView(v){LLEGF.view=v;rndLlegPPA();}
+function sLlegPPA(v){LLEGF.s=v;rndLlegPPA();}
+function lppaFilter(){
+  if(!LLEG_PPA||!LLEG_PPA.rows) return [];
+  var lst=LLEG_PPA.rows.slice();
+  var q=(LLEGF.s||'').toLowerCase().trim();
+  if(q) lst=lst.filter(function(r){return (''+r.cod).indexOf(q)>=0||(r.nom||'').toLowerCase().indexOf(q)>=0||(''+(r.cod25||'')).indexOf(q)>=0||(''+(r.cod26||'')).indexOf(q)>=0;});
+  return lst;
+}
+// Heat-map de cobertura: hue = min(n,8)/8*120 (rojo 0 → verde 8+); mismo color validado en el mockup.
+function lppaCovStyle(v){
+  if(v===null||v===undefined) return 'background:#1b2032;color:#4a536e';
+  var hue=Math.min(v,8)/8*120, light=(v<=4?38:34), txt=(v<=2?'#fff':'#0b0d14');
+  return 'background:hsl('+hue+',62%,'+light+'%);color:'+txt;
+}
+function rndLlegPPA(){
+  var th=el('llegppath'),tb=el('llegppatb'),info=el('llegppa-info'),leg=el('llegppa-legend'),al=el('llegppa-alert');
+  if(!th||!tb) return;
+  ['lleg','cov','sp'].forEach(function(v){var b=el('lppa-vb-'+v);if(b)b.classList.toggle('active',LLEGF.view===v);});
+  if(!LLEG_PPA||!LLEG_PPA.rows){ if(info)info.textContent='(sin plan de llegadas cargado)'; th.innerHTML='';tb.innerHTML='';if(leg)leg.innerHTML='';if(al)al.style.display='none';return; }
+  var D=LLEG_PPA, W=D.weeks, cap=D.cob_cap||8, sem=D.sem, oc=D.oc_check||{};
+  if(al){
+    if(oc.alert){
+      al.style.display='';
+      var dtxt=(oc.diff_pct>=999?'(SAP sin OC coincidente con el plan)':((oc.diff_pct>0?'+':'')+oc.diff_pct+'%'));
+      al.innerHTML='<div style="background:rgba(226,75,74,.1);border:1px solid var(--q);border-radius:7px;padding:8px 12px;margin-bottom:8px;font-size:.68rem;color:#f0a5a5">⚠ <b>Chequeo de integridad:</b> OC en tránsito (SAP) = <b>'+f0(oc.oc_sap_total)+'</b> un. vs. Llegadas planificadas restantes (plan Matías, S'+sem+'→fin) = <b>'+f0(oc.lleg_rest_total)+'</b> un. — difieren '+dtxt+'. Revisar si el plan de Matías sigue vigente.</div>';
+    } else { al.style.display='none'; }
+  }
+  var lst=lppaFilter(), v=LLEGF.view, h1, body, legend='';
+  var wkTh=W.map(function(w){return '<th style="text-align:right'+(w===sem?';color:#f0d09f':'')+'">'+w+(w===sem?'•':'')+'</th>';}).join('');
+  var nameCell=function(r){return '<td title="'+(r.nom||'').replace(/"/g,'&quot;')+'" style="color:#a4b4ce;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(r.nom||'')+'</td>';};
+  var codCell=function(r){return '<td style="font-family:monospace;font-weight:700;color:#c0caf5">'+r.cod+'</td>';};
+  if(v==='lleg'){
+    h1='<tr><th>Cod.</th><th>Nombre bolsa</th><th style="text-align:right">Stock</th><th style="text-align:right">Total llegadas</th><th style="text-align:right">OC en tránsito (SAP)</th><th style="text-align:right" title="OC en tránsito (SAP) − Total llegadas planificadas. Positivo = SAP tiene más OC de lo que el plan de Matías contempla para ese SKU (posible causa del desvío de la alerta).">Dif. OC−Llegadas</th><th style="text-align:right">Demanda</th><th style="text-align:right">Sobrante</th>'+wkTh+'</tr>';
+    body=lst.map(function(r){
+      var sob=r.sobrante, sobCol=(sob<0?'var(--q)':(sob>0?'var(--n)':'var(--muted)'));
+      var dif=(r.oc||0)-(r.total_arr||0), difBig=Math.abs(dif)>=20000, difCol=(dif>0?'var(--q)':(dif<0?'var(--n)':'var(--muted)'));
+      var cells=W.map(function(w){var q=r.arr[''+w];return '<td style="text-align:right;color:#8892b0">'+(q?f0(q):'')+'</td>';}).join('');
+      return '<tr'+(r.sin_lleg?' style="background:rgba(226,75,74,.08)"':(difBig?' style="background:rgba(232,123,42,.07)"':''))+'>'+codCell(r)+nameCell(r)+
+        '<td style="text-align:right">'+f0(r.stock)+'</td>'+
+        '<td style="text-align:right;font-weight:700;color:#e2e8f0">'+f0(r.total_arr)+'</td>'+
+        '<td style="text-align:right">'+f0(r.oc)+'</td>'+
+        '<td style="text-align:right;font-weight:'+(difBig?'800':'400')+';color:'+difCol+'">'+(dif>0?'+':'')+f0(dif)+'</td>'+
+        '<td style="text-align:right">'+f0(r.dem_tot)+'</td>'+
+        '<td style="text-align:right;font-weight:700;color:'+sobCol+'">'+f0(sob)+'</td>'+cells+'</tr>';
+    }).join('');
+    legend='<span style="color:var(--muted)">Filas en rojo = SKU con demanda pero sin ninguna llegada planificada (quiebre). Filas en naranjo = diferencia OC−Llegadas ≥ 20.000 un. (revisar si corresponde a una OC a eliminar). "•" = semana en curso.</span>';
+  } else if(v==='cov'){
+    h1='<tr><th>Cod.</th><th>Nombre bolsa</th>'+wkTh+'</tr>';
+    body=lst.map(function(r){
+      var cells=W.map(function(w){var cv=r.cov[''+w];var txt=(cv===null||cv===undefined)?'-':(cv>=cap?cap+'+':cv);return '<td style="text-align:center;font-weight:700;'+lppaCovStyle(cv)+'">'+txt+'</td>';}).join('');
+      return '<tr>'+codCell(r)+nameCell(r)+cells+'</tr>';
+    }).join('');
+    legend='<span class="lppa-lg"><span class="lppa-dot" style="background:hsl(0,62%,38%)"></span>0 sem (quiebre)</span><span class="lppa-lg"><span class="lppa-dot" style="background:hsl(45,62%,38%)"></span>3 sem</span><span class="lppa-lg"><span class="lppa-dot" style="background:hsl(90,62%,34%)"></span>6 sem</span><span class="lppa-lg"><span class="lppa-dot" style="background:hsl(120,62%,34%)"></span>'+cap+'+ sem</span><span class="lppa-lg"><span class="lppa-dot" style="background:#1b2032;border:1px solid #4a536e"></span>Sin demanda futura ( - )</span>';
+  } else {
+    h1='<tr><th>Cod.</th><th>Nombre bolsa</th>'+wkTh+'</tr>';
+    body=lst.map(function(r){
+      var cells=W.map(function(w){var fv=r.fin[''+w];var neg=fv<0;return '<td style="text-align:right;'+(neg?'color:var(--q);font-weight:700':'color:#8892b0')+'">'+f0(fv)+'</td>';}).join('');
+      return '<tr>'+codCell(r)+nameCell(r)+cells+'</tr>';
+    }).join('');
+    if(lst.length){
+      var totc=W.map(function(w){var s=0;lst.forEach(function(r){s+=r.fin[''+w]||0;});return '<td style="text-align:right;font-weight:800;color:#c0caf5">'+f0(s)+'</td>';}).join('');
+      body+='<tr style="background:#1c2238"><td colspan="2" style="font-weight:800;color:#c0caf5">TOTAL</td>'+totc+'</tr>';
+    }
+    legend='<span class="lppa-lg"><span class="lppa-dot" style="background:var(--q)"></span>Stock proyectado negativo (quiebre)</span>';
+  }
+  var fixedCols=(v==='lleg'?8:2);
+  th.innerHTML=h1; tb.innerHTML=body||'<tr><td colspan="'+(W.length+fixedCols)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
+  if(leg) leg.innerHTML=legend;
+  var tot=lst.length;
+  if(info) info.innerHTML='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+' · S'+W[0]+'–S'+W[W.length-1]+(D.fuente?' · '+D.fuente:'');
+}
+function expLlegPPA(){
+  if(!LLEG_PPA||!LLEG_PPA.rows){alert('Sin plan de llegadas cargado');return;}
+  var D=LLEG_PPA,W=D.weeks,cap=D.cob_cap||8,lst=lppaFilter();
+  try{
+    var wb=XLSX.utils.book_new();
+    var h1=['Cod','Cod2025','Cod2026','Nombre','Stock','Total llegadas','OC en transito (SAP)','Dif. OC-Llegadas','Demanda','Sobrante'].concat(W.map(function(w){return 'S'+w;}));
+    var a1=[h1].concat(lst.map(function(r){return [r.cod,r.cod25||'',r.cod26||'',r.nom,r.stock,r.total_arr,r.oc,(r.oc||0)-(r.total_arr||0),r.dem_tot,r.sobrante].concat(W.map(function(w){return r.arr[''+w]||'';}));}));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(a1),'Llegadas');
+    var h2=['Cod','Nombre'].concat(W.map(function(w){return 'S'+w;}));
+    var a2=[h2].concat(lst.map(function(r){return [r.cod,r.nom].concat(W.map(function(w){var cv=r.cov[''+w];return (cv===null||cv===undefined)?'-':(cv>=cap?cap+'+':cv);}));}));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(a2),'Cobertura');
+    var a3=[h2].concat(lst.map(function(r){return [r.cod,r.nom].concat(W.map(function(w){return r.fin[''+w];}));}));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(a3),'Stock Proyectado');
+    XLSX.writeFile(wb,'llegadas_bolsas_ppa_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  }catch(e){alert('Error exportando: '+e.message);}
+}
 
 // ── Órdenes de Compra (ME2M) ──
 var OCMF={s:'',p:1};var OCM_PER=50;
@@ -3530,7 +3644,7 @@ fetch('data.json?v='+Date.now())
     R=_D.R;SD=_D.SD;PA=_D.PA;PC=_D.PC;PS=_D.PS;G=_D.G;GR=_D.GR;GD=_D.GD;
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
-    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;PPAP=_D.PPAP||null;LUXO=_D.LUXO||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;
+    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;PPAP=_D.PPAP||null;LUXO=_D.LUXO||null;LLEG_PPA=_D.LLEG_PPA||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;
     window._vendorMap=null;window._pltCobMap=null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
@@ -3547,7 +3661,7 @@ fetch('data.json?v='+Date.now())
     var _ppaCb = document.getElementById('gPPA'); if(_ppaCb) _ppaCb.checked = gExcludePPA;
     loadPPA().then(function(){ if(ppaActive()) _rebuildAll(); });
 
-    buildResumen();rndEstado();buildGer();updPlan();rndPLT();rndFCW();rndOCM();rndPPAP();rndLUXO();updMKpis();updMCharts(TA);bldTop10();buildKpiAv();
+    buildResumen();rndEstado();buildGer();updPlan();rndPLT();rndFCW();rndOCM();rndPPAP();rndLUXO();rndLlegPPA();updMKpis();updMCharts(TA);bldTop10();buildKpiAv();
     mcUpdLockUI(); mcRenderCausa(); mcRenderResumen();
     // Hidrata clasificaciones desde backend (si configurado) y re-renderiza
     mcBackendLoad().then(function(loaded){
