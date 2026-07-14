@@ -1439,10 +1439,25 @@ function _buildVendorMap(){
     var date=r[6]||'';
     var vendor=r[7]||'';
     if(!sku||!vendor) return;
-    if(!m[sku]||date>m[sku].date) m[sku]={vendor:vendor,date:date};
+    // OCM idx: 7=Proveedor/Centro suministrador · 12=Precio neto · 13=Moneda
+    if(!m[sku]||date>m[sku].date) m[sku]={vendor:vendor,date:date,price:r[12]||0,mon:r[13]||''};
   });
-  var out={};Object.keys(m).forEach(function(k){out[k]=m[k].vendor;});
+  var out={};Object.keys(m).forEach(function(k){
+    // Limpia el código SAP inicial (dígitos + espacios) y deja solo el nombre del proveedor.
+    var name=String(m[k].vendor).replace(/^\s*\d+\s+/,'').trim();
+    out[k]={vendor:name, price:m[k].price, mon:m[k].mon};
+  });
   return out;
+}
+// Precio de la última OC. CLP → $ entero (miles). Moneda extranjera (EUR/USD) → símbolo + decimales
+// reales (un precio EUR de 0,67 no puede mostrarse como "$1": sería engañoso).
+function _fmtOCPrice(vi){
+  if(!vi || !vi.price) return '<span style="color:#3a4566">—</span>';
+  var p=vi.price, mon=(vi.mon||'CLP');
+  if(mon==='CLP' || mon===''){ return '$'+f0(p); }
+  var sym = (mon==='EUR')?'€':((mon==='USD')?'US$':'');
+  var num = p.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return '<span title="Moneda de la OC: '+mon+'">'+(sym?sym+num:num+' '+mon)+'</span>';
 }
 function _buildPltCobMap(){
   var m={};
@@ -1485,7 +1500,8 @@ function rndPLT(){
             ['OC tránsito','Órdenes de compra en tránsito',9,false],
             ['Cob. 12w c/tránsito','(stock+OC) / prom FC 12w (sem)',41,true],
             ['$Stock','Valor stock actual',42,false],['$Tránsito','Valor OC en tránsito',43,false],
-            ['Últ. Proveedor','Proveedor de la última OC generada para el SKU',44,false]];
+            ['Últ. Proveedor','Proveedor de la última OC generada para el SKU',44,false],
+            ['Precio últ. OC','Precio neto (CLP) de la última OC generada para el SKU',-1,false]];
   var r1='<tr>';
   froz.forEach(function(c,i){r1+='<th rowspan="2" title="'+c[1]+'" style="'+pltFzH(i)+'">'+c[0]+'</th>';});
   mid.forEach(function(c){r1+='<th rowspan="2" title="'+c[1]+'" style="text-align:right;position:sticky;top:0;z-index:6;background:#232840">'+c[0]+'</th>';});
@@ -1545,11 +1561,13 @@ function rndPLT(){
     h+=pltCovCell(r[41]);
     h+='<td style="text-align:right">$'+f0(r[42]||0)+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">$'+f0(r[43]||0)+'</td>';
-    var vend=vendorMap[r[0]]||'';
+    var vinfo=vendorMap[r[0]]||null;
+    var vend=vinfo?vinfo.vendor:'';
     h+='<td style="color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px" title="'+vend.replace(/"/g,'&quot;')+'">'+(vend||'<span style="color:#3a4566">—</span>')+'</td>';
+    h+='<td style="text-align:right;color:var(--muted)">'+_fmtOCPrice(vinfo)+'</td>';
     h+='</tr>';
     return h;
-  }).join('')||'<tr><td colspan="'+(10+nC+nF+11)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
+  }).join('')||'<tr><td colspan="'+(10+nC+nF+12)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
   var ordTxt='';
   if(PLTF.sortCol!==null){var nm={38:'Cob. FC 4w',40:'Cob. FC 12w',41:'Cob. 12w c/tránsito'}[PLTF.sortCol]||'';ordTxt=' · orden: '+nm+(PLTF.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
   var info='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(PLTF.s?' · búsqueda: "'+PLTF.s+'"':'')+ordTxt;
@@ -1569,10 +1587,10 @@ function expPLT(){
   var header=['SKU','Descripción','UNM','Comprador','Stock total','StockCD','Quilicura','Bloqueado','Huechuraba','OC tránsito']
     .concat(cw.map(function(w){return 'Cons S'+w;}))
     .concat(fw.map(function(w){return 'FC S'+w;}))
-    .concat(['ΣFC 4w','ΣReal 4w','Desv %','Cob FC 4w','ΣFC 12w','Cob FC 12w','Cob 12w c/transito','$Stock','$Transito','Ult. Proveedor']);
+    .concat(['ΣFC 4w','ΣReal 4w','Desv %','Cob FC 4w','ΣFC 12w','Cob FC 12w','Cob 12w c/transito','$Stock','$Transito','Ult. Proveedor','Precio ult. OC']);
   var vm=window._vendorMap||(window._vendorMap=_buildVendorMap());
   var lst=pltFilter();
-  var aoa=[header].concat(lst.map(function(r){var row=r.slice();row.push(vm[r[0]]||'');return row;}));
+  var aoa=[header].concat(lst.map(function(r){var vi=vm[r[0]]||null;var row=r.slice();row.push(vi?vi.vendor:'');row.push(vi&&vi.price?vi.price:'');return row;}));
   try{
     var ws=XLSX.utils.aoa_to_sheet(aoa);
     var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Planificacion');
@@ -1710,7 +1728,8 @@ function rndPlanPill(cfg){
     h+=pltCovCell(r[B+6]);
     h+='<td style="text-align:right">$'+f0(r[B+7]||0)+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">$'+f0(r[B+8]||0)+'</td>';
-    var vend=vendorMap[r[0]]||'';
+    var vinfo=vendorMap[r[0]]||null;
+    var vend=vinfo?vinfo.vendor:'';
     h+='<td style="color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px" title="'+vend.replace(/"/g,'&quot;')+'">'+(vend||'<span style="color:#3a4566">—</span>')+'</td>';
     h+='</tr>';
     return h;
@@ -1747,7 +1766,7 @@ function _expPlan(cfg){
     var sq=(r[B+10]==null?'':r[B+10]);
     var ex=[sq,r[B+0],r[B+1],r[B+2],r[B+3],r[B+4],r[B+5],r[9]];
     if(cfg.showSaldo) ex=ex.concat([r[B+11],r[B+12]]);
-    ex=ex.concat([r[B+6],r[B+7],r[B+8],vm[r[0]]||'']);
+    ex=ex.concat([r[B+6],r[B+7],r[B+8],(vm[r[0]]?vm[r[0]].vendor:'')]);
     return base.concat(ex);
   }));
   try{
@@ -3027,6 +3046,22 @@ function spark12(arr){
   var tw = n*(w+gap);
   return '<svg width="'+tw.toFixed(0)+'" height="'+h+'" style="vertical-align:middle" role="img">'+bars+'</svg>';
 }
+// Momentum del consumo real: prom. últimas 4 sem vs 4 sem previas (usa h12). Propio del SKU.
+function momentum4(h12){
+  if(!h12 || h12.length<8) return null;
+  var last4 = h12.slice(-4).reduce(function(a,b){return a+(b||0);},0)/4;
+  var prev4 = h12.slice(-8,-4).reduce(function(a,b){return a+(b||0);},0)/4;
+  if(prev4<=0){ return last4>0 ? {kind:'new'} : null; }          // base previa nula → demanda nueva/reactivada
+  return {kind:'num', pct:(last4-prev4)/prev4*100, last4:last4, prev4:prev4};
+}
+function fmtMom(m){
+  if(!m) return '<span style="color:var(--muted)">—</span>';
+  if(m.kind==='new') return '<span style="color:#e0833a" title="Sin consumo en las 4 sem previas — demanda nueva o reactivada">▲ nuevo</span>';
+  var p=m.pct, col = p>0.5 ? '#e0833a' : (p<-0.5 ? '#2fb3a3' : 'var(--muted)');
+  var txt = (p>300) ? '▲ >300%' : ((p>0?'+':'')+p.toLocaleString('es-CL',{maximumFractionDigits:0})+'%');
+  var tip = 'Momentum consumo real: últimas 4 sem ('+Math.round(m.last4).toLocaleString('es-CL')+') vs 4 sem previas ('+Math.round(m.prev4).toLocaleString('es-CL')+')';
+  return '<span style="color:'+col+'" title="'+tip+'">'+txt+'</span>';
+}
 function tiToggleHist(ev, sku){
   ev.stopPropagation();
   var tr = ev.currentTarget.closest('tr');
@@ -3531,7 +3566,7 @@ function ticCalc(skus){
       return arr.slice(0,n4).reduce(function(x,y){return x+y;},0)/n4;
     })() : null;
     buckets[k].val += val; buckets[k].cnt += 1;
-    buckets[k].items.push({sku:s.sku, desc:s.desc, comp:s.comp, stock:stock, val:val, cob:c, c4_real:s.c4r||0, fcproj4:fcproj4});
+    buckets[k].items.push({sku:s.sku, desc:s.desc, comp:s.comp, stock:stock, val:val, cob:c, c4_real:s.c4r||0, fcproj4:fcproj4, h12:s.h12});
   });
   var tot = TIC_ORDER.reduce(function(a,k){return a+buckets[k].val;},0);
   return {buckets:buckets, tot:tot};
@@ -3653,12 +3688,7 @@ function ticToggleDetail(bucket, items, tbody){
     var cc = (CC[s.comp]||'#8892b0');
     var c4r = (s.c4_real==null) ? '<span style="color:var(--muted)">—</span>' : f0(s.c4_real);
     var fcp = (s.fcproj4==null) ? '<span style="color:var(--muted)">—</span>' : f0(s.fcproj4);
-    var dPct = '<span style="color:var(--muted)">—</span>';
-    if(s.fcproj4!=null && s.c4_real>0){
-      var d = (s.fcproj4 - s.c4_real) / s.c4_real * 100;
-      var col = d>0 ? '#e0833a' : (d<0 ? '#2fb3a3' : 'var(--muted)');
-      dPct = '<span style="color:'+col+'">'+(d>0?'+':'')+d.toLocaleString('es-CL',{maximumFractionDigits:0})+'%</span>';
-    }
+    var mom = fmtMom(momentum4(s.h12));
     return '<tr>'
       + '<td style="font-family:monospace;font-size:.65rem">'+s.sku+'</td>'
       + '<td>'+(s.desc||'')+'</td>'
@@ -3666,8 +3696,9 @@ function ticToggleDetail(bucket, items, tbody){
       + '<td style="text-align:right">'+f0(s.stock)+'</td>'
       + '<td style="text-align:right">$ '+f0(s.val)+'</td>'
       + '<td style="text-align:right">'+c4r+'</td>'
+      + '<td style="text-align:center;cursor:pointer" onclick="tiToggleHist(event,\''+s.sku+'\')" title="Clic para ver el consumo por semana">'+spark12(s.h12)+'</td>'
+      + '<td style="text-align:right">'+mom+'</td>'
       + '<td style="text-align:right">'+fcp+'</td>'
-      + '<td style="text-align:right">'+dPct+'</td>'
       + '<td style="text-align:right">'+covFmtCob(s.cob)+'</td>'
       + '</tr>';
   }).join('');
@@ -3678,8 +3709,9 @@ function ticToggleDetail(bucket, items, tbody){
     + '<th>SKU</th><th>Descripción</th><th>Comprador</th>'
     + '<th style="text-align:right">Stock</th><th style="text-align:right">Valor Stock</th>'
     + '<th style="text-align:right" title="Consumo real prom. semanal · últimas 4 sem completas (excl. semana en curso)">Cons. 4w real</th>'
+    + '<th style="text-align:center" title="Consumo real por semana · últimas 12 sem (clic para ver números)">Tendencia 12w</th>'
+    + '<th style="text-align:right" title="Momentum del consumo real: prom. últimas 4 sem vs 4 sem previas · + = demanda subiendo">Δ% mom 4w</th>'
     + '<th style="text-align:right" title="FC promedio semanal proyectado · próx. 4 sem (estacionalidad A.4.4)">FC prom 4w</th>'
-    + '<th style="text-align:right" title="Diferencia % del FC proyectado vs consumo real · + = FC sube sobre el pasado">Δ% FC vs real</th>'
     + '<th style="text-align:right">Cobertura (sem)</th>'
     + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
