@@ -648,6 +648,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
     <th style="text-align:right">Stock total</th><th style="text-align:right">Valor ($)</th>
     <th style="text-align:right" title="Rotación anual">Rot.</th><th style="text-align:right">Días inv.</th>
     <th style="text-align:right" title="Cons. promedio últimas 4 sem">Cons. 4w</th>
+    <th style="text-align:center" title="Consumo real por semana · últimas 12 sem (clic para ver números)">Tendencia 12w</th>
     <th style="text-align:right" title="OC en tránsito">OC trán.</th>
   </tr></thead><tbody id="ti-tb"></tbody></table></div>
   <div style="display:flex;gap:14px;font-size:.65rem;color:var(--muted);margin-top:6px;flex-wrap:wrap">
@@ -2940,7 +2941,7 @@ function opBloqDw(comp){
 // ── TERCEROS E INSUMOS ────────────────────────────────────────────────────
 var _tiCharts = {don:null, par:null};
 function buildTI(){
-  if(!TI || !TI.skus){ el('ti-tb').innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:18px">Sin datos de Terceros e Insumos</td></tr>'; return; }
+  if(!TI || !TI.skus){ el('ti-tb').innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:18px">Sin datos de Terceros e Insumos</td></tr>'; return; }
   // KPIs
   var f0 = function(n){return Math.round(n).toLocaleString('es-CL');};
   var k = el('ti-kpis');
@@ -3011,6 +3012,46 @@ function buildTI(){
   buildTIFC();    // sección FC proyectado por estacionalidad (A.4.4 / B.11.1)
 }
 
+// ── Sparkline consumo real 12 sem (Detalle SKU · B.11) ──
+function spark12(arr){
+  if(!arr || !arr.length) return '<span style="color:var(--muted)">—</span>';
+  var max = Math.max.apply(null, arr);
+  if(!(max>0)) return '<span style="color:var(--muted)">—</span>';
+  var w=4, gap=1.5, h=18, n=arr.length;
+  var bars = arr.map(function(v,i){
+    var bh = Math.max(1, Math.round((v>0?v:0)/max*h));
+    var x = i*(w+gap);
+    var col = (i===n-1) ? '#63b3ed' : '#3d4a68';   // última semana resaltada
+    return '<rect x="'+x.toFixed(1)+'" y="'+(h-bh)+'" width="'+w+'" height="'+bh+'" fill="'+col+'"/>';
+  }).join('');
+  var tw = n*(w+gap);
+  return '<svg width="'+tw.toFixed(0)+'" height="'+h+'" style="vertical-align:middle" role="img">'+bars+'</svg>';
+}
+function tiToggleHist(ev, sku){
+  ev.stopPropagation();
+  var tr = ev.currentTarget.closest('tr');
+  var nxt = tr.nextElementSibling;
+  if(nxt && nxt.classList.contains('ti-histrow')){ nxt.remove(); return; }
+  var s = TI.skus.filter(function(x){return x.sku===sku;})[0];
+  if(!s || !s.h12){ return; }
+  var fInt = function(n){return Math.round(n).toLocaleString('es-CL');};
+  var wk = TI.win12 || [];
+  var cells = s.h12.map(function(v,i){
+    var lbl = (wk[i]!=null) ? ('S'+wk[i]) : ('t'+(i+1));
+    var last = (i===s.h12.length-1);
+    return '<div style="text-align:center;min-width:38px">'
+      + '<div style="font-size:.55rem;color:var(--muted)">'+lbl+'</div>'
+      + '<div style="font-size:.68rem;color:'+(last?'#63b3ed':'#c0caf5')+'">'+(v>0?fInt(v):'·')+'</div></div>';
+  }).join('');
+  var htr = document.createElement('tr');
+  htr.className = 'ti-histrow';
+  htr.innerHTML = '<td colspan="11" style="background:#1a1f33;padding:8px 12px">'
+    + '<div style="font-size:.6rem;color:var(--muted);margin-bottom:5px">'
+    +   'Consumo real por semana · <b style="color:#c0caf5">'+(s.desc||s.sku)+'</b> · últimas 12 sem completas</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">'+cells+'</div></td>';
+  tr.parentNode.insertBefore(htr, tr.nextSibling);
+}
+
 function rndTI(){
   if(!TI || !TI.skus) return;
   var f0 = function(n){return Math.round(n).toLocaleString('es-CL');};
@@ -3043,6 +3084,7 @@ function rndTI(){
       '<td style="text-align:right">'+rotPill(s.rot,s.c4r)+'</td>'+
       '<td style="text-align:right">'+(s.dias!=null?f0(s.dias):'—')+'</td>'+
       '<td style="text-align:right">'+srcDot(s.fc)+(s.c4r>0?f2(s.c4r):'—')+'</td>'+
+      '<td style="text-align:center;cursor:pointer" onclick="tiToggleHist(event,\''+s.sku+'\')" title="Clic para ver el consumo por semana">'+spark12(s.h12)+'</td>'+
       '<td style="text-align:right">'+(s.oc>0?f2(s.oc):'—')+'</td>'+
     '</tr>';
   }).join('');
@@ -3483,16 +3525,13 @@ function ticCalc(skus){
     var k = ticBucket(c);
     if(k==='Sin consumo' && stock<=0) return;
     var val = s.valor||0;
-    // consumo efectivo para mostrar en el drawer: FC avg o real según modo activo
-    var effCons = (function(){
-      if(ticUseFCProj && TI && TI.fc && TI.fc.mult){
-        var arr=_tifcArr(s), n4=TI.fc.n4||4;
-        return arr.slice(0,n4).reduce(function(x,y){return x+y;},0)/n4;
-      }
-      return s.c4r||0;
-    })();
+    // FC promedio semanal proyectado próx. 4 sem (estacionalidad) — siempre disponible p/ drawer
+    var fcproj4 = (TI && TI.fc && TI.fc.mult) ? (function(){
+      var arr=_tifcArr(s), n4=TI.fc.n4||4;
+      return arr.slice(0,n4).reduce(function(x,y){return x+y;},0)/n4;
+    })() : null;
     buckets[k].val += val; buckets[k].cnt += 1;
-    buckets[k].items.push({sku:s.sku, desc:s.desc, comp:s.comp, stock:stock, val:val, cob:c, c4_real:effCons});
+    buckets[k].items.push({sku:s.sku, desc:s.desc, comp:s.comp, stock:stock, val:val, cob:c, c4_real:s.c4r||0, fcproj4:fcproj4});
   });
   var tot = TIC_ORDER.reduce(function(a,k){return a+buckets[k].val;},0);
   return {buckets:buckets, tot:tot};
@@ -3613,6 +3652,13 @@ function ticToggleDetail(bucket, items, tbody){
   var rows = sorted.map(function(s){
     var cc = (CC[s.comp]||'#8892b0');
     var c4r = (s.c4_real==null) ? '<span style="color:var(--muted)">—</span>' : f0(s.c4_real);
+    var fcp = (s.fcproj4==null) ? '<span style="color:var(--muted)">—</span>' : f0(s.fcproj4);
+    var dPct = '<span style="color:var(--muted)">—</span>';
+    if(s.fcproj4!=null && s.c4_real>0){
+      var d = (s.fcproj4 - s.c4_real) / s.c4_real * 100;
+      var col = d>0 ? '#e0833a' : (d<0 ? '#2fb3a3' : 'var(--muted)');
+      dPct = '<span style="color:'+col+'">'+(d>0?'+':'')+d.toLocaleString('es-CL',{maximumFractionDigits:0})+'%</span>';
+    }
     return '<tr>'
       + '<td style="font-family:monospace;font-size:.65rem">'+s.sku+'</td>'
       + '<td>'+(s.desc||'')+'</td>'
@@ -3620,6 +3666,8 @@ function ticToggleDetail(bucket, items, tbody){
       + '<td style="text-align:right">'+f0(s.stock)+'</td>'
       + '<td style="text-align:right">$ '+f0(s.val)+'</td>'
       + '<td style="text-align:right">'+c4r+'</td>'
+      + '<td style="text-align:right">'+fcp+'</td>'
+      + '<td style="text-align:right">'+dPct+'</td>'
       + '<td style="text-align:right">'+covFmtCob(s.cob)+'</td>'
       + '</tr>';
   }).join('');
@@ -3629,7 +3677,9 @@ function ticToggleDetail(bucket, items, tbody){
     + '<div class="tw"><table><thead><tr>'
     + '<th>SKU</th><th>Descripción</th><th>Comprador</th>'
     + '<th style="text-align:right">Stock</th><th style="text-align:right">Valor Stock</th>'
-    + '<th style="text-align:right">'+(ticUseFCProj?'FC avg 4w proy':'Cons. 4w real')+'</th>'
+    + '<th style="text-align:right" title="Consumo real prom. semanal · últimas 4 sem completas (excl. semana en curso)">Cons. 4w real</th>'
+    + '<th style="text-align:right" title="FC promedio semanal proyectado · próx. 4 sem (estacionalidad A.4.4)">FC prom 4w</th>'
+    + '<th style="text-align:right" title="Diferencia % del FC proyectado vs consumo real · + = FC sube sobre el pasado">Δ% FC vs real</th>'
     + '<th style="text-align:right">Cobertura (sem)</th>'
     + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
