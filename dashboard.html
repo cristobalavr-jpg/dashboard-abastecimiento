@@ -257,6 +257,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="tab" onclick="showTab(12)">⚠️ Quiebres</div>
   <div class="tab" onclick="showTab(14)">📊 NDS</div>
   <div class="tab" onclick="showTab(13)">✅ Plan Semanal</div>
+  <div class="tab" onclick="showTab(15)">🎄 PPA</div>
 </div>
 
 <div id="t0" class="pg active"><div class="cards-grid" id="rcards"></div>
@@ -693,6 +694,12 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <iframe id="nds-frame" data-src="nds.html" title="NDS · Nivel de Servicio de Abastecimiento" style="width:100%;height:2400px;border:0;border-radius:10px;background:#0f1117"></iframe>
 </div>
 
+<!-- PPA · Pan de Pascua -->
+<div id="t15" class="pg">
+  <div style="font-size:.72rem;color:var(--muted);background:#161b2b;border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:14px">🎄 <b style="color:#e2e8f0">Abastecimiento Pan de Pascua (PPA)</b> — cobertura de materias primas y envases contra la <b>demanda del Plan PPA</b> (explosión semanal, no FC ni consumo real, porque PPA es estacional). Arriba: indicadores de la campaña. Al medio: distribución de cobertura de <b>todos los SKU que se usan en PPA</b> y luego de los <b>exclusivos</b>. Abajo: stock proyectado semanal de las bolsas (producto terminado). Independiente del filtro global de comprador.</div>
+  <div id="ppa-host"></div>
+</div>
+
 <!-- DRAWER -->
 <div class="dw-wrap" id="dww">
   <div class="dw-ov" onclick="closeDw()"></div>
@@ -1099,6 +1106,8 @@ function showTab(i){
     if(pf&&!pf.src){pf.src=pf.getAttribute('data-src')+'?v='+Date.now();}}
   if(i===14){var nf=document.getElementById('nds-frame');
     if(nf&&!nf.src){nf.src=nf.getAttribute('data-src')+'?v='+Date.now();}}
+  // Lazy render de PPA (t15) — SKUS y LLEG_PPA ya vienen en data.json; sólo falta el plan
+  if(i===15){ ppaLoadPlan().then(function(){ try{ buildPPA(); }catch(e){ console.error('PPA build:',e); } }); }
 }
 // Subsecciones de "Quiebres" (Día / SEM / Histórico) — iframes aislados, lazy load
 function showQSub(name){
@@ -3489,6 +3498,172 @@ function covToggleDetail(gid, bucket, items, tbody){
 }
 // (loadPPA() global ya se encarga; mantenemos el alias por compatibilidad con showTab)
 function covLoadPPA(){ return loadPPA(); }
+
+// ── PPA · Pan de Pascua (t15) ────────────────────────────────────────────────
+// Cobertura = stock / demanda promedio semanal del Plan PPA (próx. 12 sem), NO FC ni
+// consumo real, porque PPA es estacional. Ver PARAMETRO.MD B.12. Reutiliza los helpers
+// de Coberturas (covBucket, COV_ORDER/COLOR/LABEL, covToggleDetail, covFmt*).
+var PLAN_PPA=null, PPA_PLAN_LOADED=false, _ppaSkuIdx=null;
+function ppaLoadPlan(){
+  if(PPA_PLAN_LOADED) return Promise.resolve();
+  return fetch('plan_ppa.json?v='+Date.now())
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(p){ PLAN_PPA=p; PPA_PLAN_LOADED=true; })
+    .catch(function(){ PLAN_PPA=null; PPA_PLAN_LOADED=true; });
+}
+// Semana en curso: la del plan de llegadas (viva) → fallback SEM global → primera del plan
+function ppaCurWeek(){
+  if(LLEG_PPA && LLEG_PPA.sem) return +LLEG_PPA.sem;
+  if(typeof SEM!=='undefined' && SEM){ var m=String(SEM).match(/(\d+)\s*$/); if(m) return +m[1]; }
+  return (PLAN_PPA && PLAN_PPA.weeks && PLAN_PPA.weeks[0]) || 26;
+}
+function ppaSkuIdx(){
+  if(_ppaSkuIdx) return _ppaSkuIdx;
+  _ppaSkuIdx={}; (SKUS||[]).forEach(function(s){ _ppaSkuIdx[String(s.sku)]=s; });
+  return _ppaSkuIdx;
+}
+// Demanda promedio semanal de las próximas N sem del plan (denominador de cobertura)
+function ppaDemProm(code, sem, N){
+  var e=PLAN_PPA && PLAN_PPA.dem[code]; if(!e) return null;
+  var d=e.d||{}, weeks=(PLAN_PPA.weeks||[]).filter(function(w){return w>=sem && w<sem+N;});
+  if(!weeks.length) return null;
+  var sum=weeks.reduce(function(a,w){return a+(d[String(w)]||0);},0);
+  return sum>0 ? sum/weeks.length : null;
+}
+// Demanda total restante de la temporada (para el KPI de avance vs plan)
+function ppaDemRest(code, sem){
+  var e=PLAN_PPA && PLAN_PPA.dem[code]; if(!e) return 0;
+  var d=e.d||{};
+  return (PLAN_PPA.weeks||[]).filter(function(w){return w>=sem;}).reduce(function(a,w){return a+(d[String(w)]||0);},0);
+}
+function ppaItems(codes){
+  var idx=ppaSkuIdx(), sem=ppaCurWeek(), out=[];
+  (codes||[]).forEach(function(code){
+    var c=String(code), s=idx[c]; if(!s) return; // sin data de stock → se omite
+    var demProm=ppaDemProm(c, sem, 12);
+    var cob=(demProm && demProm>0) ? (s.stock||0)/demProm : null;
+    var pe=PLAN_PPA && PLAN_PPA.dem[c];
+    out.push({sku:c, desc:s.desc||(pe?pe.nom:''), comp:s.comp||'—', stock:s.stock||0, val:s.val||0,
+      oc:s.oc||0, pu:s.pu||0, c4_real:s.c4_real||0, cob:cob, demProm:demProm});
+  });
+  return out;
+}
+function ppaBucketize(items){
+  var buckets={}; COV_ORDER.forEach(function(k){buckets[k]={val:0,cnt:0,items:[]};});
+  items.forEach(function(it){
+    var k=covBucket(it.cob);
+    if(k==='Sin Plan'){ if(it.stock<=0) return; if(it.c4_real>0) k='Sin Plan c/Consumo'; }
+    buckets[k].val+=it.val; buckets[k].cnt+=1; buckets[k].items.push(it);
+  });
+  var tot=COV_ORDER.reduce(function(a,k){return a+buckets[k].val;},0);
+  return {buckets:buckets, tot:tot};
+}
+function ppaRenderSection(host, gid, title, sub, items){
+  var calc=ppaBucketize(items), buckets=calc.buckets, tot=calc.tot;
+  var sec=document.createElement('div'); sec.className='cov-sec';
+  sec.innerHTML=''
+    + '<div class="cov-tit">'+title+'</div>'
+    + '<div class="cov-sub">'+sub+' · '+items.length+' SKUs · Stock valorizado: <b style="color:#fff">'+covFmtMM(tot)+'</b></div>'
+    + '<div class="cov-row" style="grid-template-columns:1.15fr 1.05fr">'
+    +   '<div class="cb"><div class="ct">Distribución por cobertura</div>'
+    +     '<div style="overflow-x:auto"><table><thead><tr><th>Cobertura</th><th>Valor Stock</th><th>% Total</th><th>SKUs</th></tr></thead>'
+    +     '<tbody id="cov-tb-'+gid+'"></tbody></table></div></div>'
+    +   '<div class="cb"><div class="ct">Cobertura de Stock Valorizado</div>'
+    +     '<div class="cw" style="height:240px"><canvas id="cov-ch-'+gid+'"></canvas></div></div>'
+    + '</div>'
+    + '<div class="cov-detail" id="cov-dt-'+gid+'"></div>';
+  host.appendChild(sec);
+  var tb=document.getElementById('cov-tb-'+gid), totCnt=0;
+  COV_ORDER.forEach(function(k){
+    var b=buckets[k]; totCnt+=b.cnt;
+    var pct=tot>0 ? b.val/tot*100 : 0;
+    var tr=document.createElement('tr'); tr.setAttribute('data-bucket', k);
+    tr.innerHTML='<td><span class="cov-pill" style="background:'+COV_COLOR[k]+'"></span>'+COV_LABEL[k]+'</td>'
+      + '<td>$ '+f0(b.val)+'</td><td>'+covFmtPct(pct)+'</td><td>'+b.cnt+'</td>';
+    tr.onclick=(function(g,bk,its){ return function(){ covToggleDetail(g, bk, its, tb); }; })(gid, k, b.items);
+    tb.appendChild(tr);
+  });
+  var trT=document.createElement('tr'); trT.className='cov-tot';
+  trT.innerHTML='<td>Total general</td><td>$ '+f0(tot)+'</td><td>100,0%</td><td>'+totCnt+'</td>';
+  tb.appendChild(trT);
+  var ctx=document.getElementById('cov-ch-'+gid).getContext('2d');
+  var key='_covCh_'+gid; if(window[key]) window[key].destroy();
+  window[key]=new Chart(ctx,{type:'bar',data:{labels:COV_ORDER,datasets:[{label:'Valor Stock',
+      data:COV_ORDER.map(function(k){return buckets[k].val;}),
+      backgroundColor:COV_ORDER.map(function(k){return COV_COLOR[k]+'cc';}),
+      borderColor:COV_ORDER.map(function(k){return COV_COLOR[k];}), borderWidth:1.2, borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:function(x){var v=x.parsed.y,p=tot>0?v/tot*100:0;return ' '+covFmtMM(v)+' ('+covFmtPct(p)+')';}}}},
+      scales:{x:{ticks:{color:'#8892b0',font:{size:10}},grid:{display:false}},
+        y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+(v/1e6).toFixed(0)+'M';}},grid:{color:'#2d3452'}}}}});
+}
+function ppaRenderBolsas(host){
+  if(!host) return;
+  if(!LLEG_PPA || !LLEG_PPA.rows){ host.innerHTML='<div class="cov-sec"><div class="cov-tit">Abastecimiento de bolsas PPA</div><div style="color:var(--muted);padding:10px">Sin plan de llegadas cargado.</div></div>'; return; }
+  var D=LLEG_PPA, W=D.weeks||[], sem=D.sem;
+  var wkTh=W.map(function(w){return '<th style="text-align:right'+(w===sem?';color:#f0d09f':'')+'">'+w+(w===sem?'•':'')+'</th>';}).join('');
+  var body=D.rows.map(function(r){
+    var cells=W.map(function(w){var fv=(r.fin&&r.fin[String(w)])||0,neg=fv<0;return '<td style="text-align:right;'+(neg?'color:var(--q);font-weight:700':'color:#8892b0')+'">'+f0(fv)+'</td>';}).join('');
+    return '<tr><td style="font-family:monospace;font-weight:700;color:#c0caf5">'+r.cod+'</td>'
+      + '<td title="'+(r.nom||'').replace(/"/g,'&quot;')+'" style="color:#a4b4ce;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(r.nom||'')+'</td>'+cells+'</tr>';
+  }).join('');
+  var totc=W.map(function(w){var s=0;D.rows.forEach(function(r){s+=(r.fin&&r.fin[String(w)])||0;});return '<td style="text-align:right;font-weight:800;color:#c0caf5">'+f0(s)+'</td>';}).join('');
+  body+='<tr style="background:#1c2238"><td colspan="2" style="font-weight:800;color:#c0caf5">TOTAL</td>'+totc+'</tr>';
+  host.innerHTML='<div class="cov-sec"><div class="cov-tit">Abastecimiento de bolsas PPA — Stock Proyectado Semanal</div>'
+    + '<div class="cov-sub">Reflejo de la vista "Stock Proyectado semanal" de Llegadas Bolsas PPA (Planificadores). Stock inicial + llegadas planificadas − demanda, semana a semana. Rojo = proyección negativa (quiebre).'+(D.fuente?' · '+D.fuente:'')+'</div>'
+    + '<div class="tw" style="overflow-x:auto"><table style="font-size:.7rem"><thead><tr><th>Cód.</th><th>Nombre bolsa</th>'+wkTh+'</tr></thead><tbody>'+body+'</tbody></table></div>'
+    + '<div style="font-size:.62rem;color:var(--muted);margin-top:6px"><span style="background:var(--q);display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:4px"></span>Stock proyectado negativo (quiebre). "•" = semana en curso.</div></div>';
+}
+function buildPPA(){
+  var host=el('ppa-host'); if(!host) return;
+  if(!PLAN_PPA){ host.innerHTML='<div style="color:var(--muted);padding:14px">No se pudo cargar el Plan PPA (<code>plan_ppa.json</code>). Corre <code>python Dashboard/generar_plan_ppa.py</code> y recarga.</div>'; return; }
+  if(!Array.isArray(SKUS)){ host.innerHTML='<div style="color:var(--muted);padding:14px">Sin SKUs cargados.</div>'; return; }
+  _ppaSkuIdx=null; // reconstruye índice por si SKUS cambió
+  var sem=ppaCurWeek();
+  var itemsA=ppaItems(PLAN_PPA.universeA||[]);
+  var itemsB=ppaItems(PLAN_PPA.universeB||[]);
+  var setB={}; (PLAN_PPA.universeB||[]).forEach(function(c){setB[String(c)]=1;});
+  // KPIs sobre universo A (todos los que se usan en PPA)
+  var valA=itemsA.reduce(function(a,it){return a+it.val;},0);
+  var valExcl=itemsA.filter(function(it){return setB[it.sku];}).reduce(function(a,it){return a+it.val;},0);
+  var valShared=valA-valExcl;
+  var qCnt=0,qVal=0,rCnt=0;
+  itemsA.forEach(function(it){ if(it.cob==null) return; if(it.cob<2){qCnt++;qVal+=it.val;} else if(it.cob<5){rCnt++;} });
+  var num=0,den=0;
+  itemsA.forEach(function(it){
+    var rest=ppaDemRest(it.sku, sem); if(rest<=0) return;
+    var restVal=rest*(it.pu||0); if(restVal<=0) return;
+    num+=Math.min(it.stock+it.oc, rest)*(it.pu||0); den+=restVal;
+  });
+  var avance=den>0 ? num/den*100 : null;
+  var bolsasQ=0, bolsasTot=0;
+  if(LLEG_PPA && LLEG_PPA.rows){
+    bolsasTot=LLEG_PPA.rows.length;
+    LLEG_PPA.rows.forEach(function(r){
+      var neg=(LLEG_PPA.weeks||[]).some(function(w){return (r.fin&&r.fin[String(w)]<0);});
+      if(neg) bolsasQ++;
+    });
+  }
+  var kc=function(color,val,label,sub){
+    return '<div style="background:#1a1f2e;border:1px solid #2d3452;border-left:3px solid '+color+';border-radius:10px;padding:14px 16px">'
+      + '<div style="font-size:1.55rem;font-weight:900;color:'+color+';line-height:1">'+val+'</div>'
+      + '<div style="font-size:.72rem;font-weight:700;color:#e2e8f0;margin-top:4px">'+label+'</div>'
+      + '<div style="font-size:.62rem;color:var(--muted);margin-top:4px">'+sub+'</div></div>';
+  };
+  host.innerHTML=''
+    + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px;margin-bottom:16px">'
+    +   kc('#378ADD','$'+fMM(valA),'Stock valorizado PPA','Exclusivos $'+fMM(valExcl)+' · Compartidos $'+fMM(valShared))
+    +   kc('#E24B4A',f0(qCnt),'SKU en sub-cobertura (&lt;2 sem)','$'+fMM(qVal)+' en riesgo · '+rCnt+' SKU entre 2 y 5 sem')
+    +   kc('#639922',(avance==null?'—':avance.toFixed(0)+'%'),'Avance abastec. vs plan','(Stock+OC)/demanda temporada S'+sem+'→52, valorizada')
+    +   kc('#E8C52A',f0(bolsasQ),'Bolsas PPA en quiebre','de '+bolsasTot+' bolsas · stock proyectado negativo')
+    + '</div>'
+    + '<div id="ppa-secs"></div>'
+    + '<div id="ppa-bolsas"></div>';
+  var secHost=el('ppa-secs');
+  ppaRenderSection(secHost,'ppaA','Todos los SKU que se usan en PPA','Universo del Plan PPA — exclusivos + compartidos con ALI/PAN · cobertura vs demanda del plan (próx. 12 sem)',itemsA);
+  ppaRenderSection(secHost,'ppaB','SKU exclusivos de PPA','Sólo materiales de uso exclusivo de Pan de Pascua (SKU PPA.xlsx)',itemsB);
+  ppaRenderBolsas(el('ppa-bolsas'));
+}
 
 // ── COBERTURA POR CONSUMO REAL · Terceros e Insumos (t9) ─ ver PARAMETRO.MD B.11 ─
 // Reutiliza CSS cov-* y helpers covFmtMM/covFmtPct/covFmtCob/covSemaforo/f0/CC de B.10.
