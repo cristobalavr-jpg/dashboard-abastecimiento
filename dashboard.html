@@ -164,6 +164,13 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .mc-dd.readonly{background:#1a1f2e;color:var(--muted);cursor:not-allowed;border-style:dashed}
 .mc-dd[data-saved="1"]{border-color:var(--n);background:rgba(99,153,34,.07)}
 .mc-dd[data-nc="Sí"]{border-color:var(--s);background:rgba(55,138,221,.10)}
+/* Comentario comprador · tabla Detalle < 2 Sem (Terceros e Insumos · B.11) */
+.tic-com-cell{min-width:200px;max-width:280px}
+.tic-com-inp{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid var(--border);border-radius:5px;color:#e2e8f0;font-size:.66rem;padding:4px 7px;font-family:inherit}
+.tic-com-inp::placeholder{color:#5b647e}
+.tic-com-inp:focus{outline:none;border-color:#6366f1;background:#12151f}
+.tic-com-inp:not(:placeholder-shown){border-color:var(--n);background:rgba(99,153,34,.06)}
+.tic-com-meta{display:block;margin-top:2px;font-size:.55rem;color:var(--muted);line-height:1.2}
 .mc-badge{font-size:.6rem;padding:1px 5px;border-radius:4px}
 .mc-badge.ok{background:rgba(99,153,34,.2);color:var(--n)}
 .mc-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:none;align-items:center;justify-content:center}
@@ -3927,6 +3934,108 @@ function ticMacros(buckets, tot){
   ];
 }
 
+// ── Comentarios del comprador · tabla Detalle < 2 Sem (B.11.2) ──────────────
+// Backend compartido (Apps Script) + cache local. El comentario vive mientras el
+// SKU esté en el bucket < 2 sem: al recuperar cobertura (≥ 2 sem) se poda solo.
+function _htmlEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+// ⬇️ Pegar la URL /exec del Web App tras desplegar apps_script_comentarios_ti.gs.
+//    Vacío = modo solo-local (cada navegador ve sus propios comentarios).
+var TIC_COM_BACKEND_URL = '';
+var TIC_COM_PIN = '1234';           // el backend revalida este PIN (mismo esquema que Mermas/Quiebres)
+var TIC_COM_LS = 'tic_com_v1';
+var TIC_COM_OK = false;
+var TICOM = (function(){ try{ return JSON.parse(localStorage.getItem(TIC_COM_LS)||'{}'); }catch(e){ return {}; } })();
+function ticComSaveLS(){ try{ localStorage.setItem(TIC_COM_LS, JSON.stringify(TICOM)); }catch(e){} }
+function ticComBackendLoad(){
+  if(!TIC_COM_BACKEND_URL) return Promise.resolve(false);
+  return fetch(TIC_COM_BACKEND_URL+'?v='+Date.now(), {method:'GET'})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(j && j.ok && j.com){
+        TICOM = {};
+        Object.keys(j.com).forEach(function(sku){
+          var c = j.com[sku];
+          TICOM[sku] = { texto:c.texto||'', usuario:c.usuario||'', ts:c.ts||'' };
+        });
+        ticComSaveLS(); TIC_COM_OK = true; return true;
+      }
+      return false;
+    })
+    .catch(function(e){ console.warn('[tic-com] GET fail', e); return false; });
+}
+function ticComBackendSave(sku, texto, usuario){
+  if(!TIC_COM_BACKEND_URL) return Promise.resolve({ok:false, offline:true});
+  var body = JSON.stringify({pin:TIC_COM_PIN, action:'save', sku:String(sku), texto:texto||'', usuario:usuario||''});
+  return fetch(TIC_COM_BACKEND_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:body})
+    .then(function(r){ return r.json(); })
+    .catch(function(e){ console.warn('[tic-com] POST fail', e); return {ok:false, error:String(e)}; });
+}
+function ticComBackendPrune(staleSkus){
+  if(!TIC_COM_BACKEND_URL || !staleSkus.length) return Promise.resolve({ok:true, skipped:true});
+  var body = JSON.stringify({pin:TIC_COM_PIN, action:'prune', skus:staleSkus});
+  return fetch(TIC_COM_BACKEND_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:body})
+    .then(function(r){ return r.json(); })
+    .catch(function(e){ console.warn('[tic-com] prune fail', e); return {ok:false, error:String(e)}; });
+}
+// Universo canónico de SKUs con cobertura real < 2 sem (todos los grupos, incl. importados).
+// Es la definición estable desde data.json de "estar en la tabla"; NO depende del filtro de vista.
+function ticCanonBelow2(){
+  var set = {};
+  if(TI && TI.skus){
+    TI.skus.forEach(function(s){
+      var c = ticCobReal(s);
+      if(c!=null && c<2) set[String(s.sku)] = 1;
+    });
+  }
+  return set;
+}
+// Poda: elimina comentarios de SKUs que ya salieron del bucket < 2 sem (recuperaron cobertura).
+function ticComReconcile(){
+  if(!TI || !TI.skus || !TI.skus.length) return;   // sin universo TI no se poda (evita borrar todo)
+  var canon = ticCanonBelow2();
+  var stale = Object.keys(TICOM).filter(function(sku){ return !canon[sku]; });
+  if(!stale.length) return;
+  stale.forEach(function(sku){ delete TICOM[sku]; });
+  ticComSaveLS();
+  ticComBackendPrune(stale);   // fire-and-forget (housekeeping del Sheet)
+}
+// Rehidrata los inputs ya renderizados cuando los comentarios llegan del backend tarde.
+function ticComHydrateOpen(){
+  var inps = document.querySelectorAll('.tic-com-inp');
+  for(var i=0;i<inps.length;i++){
+    var inp = inps[i];
+    if(document.activeElement===inp) continue;   // no pisar lo que se está escribiendo
+    var sku = inp.getAttribute('data-sku');
+    var rec = TICOM[sku];
+    inp.value = (rec && rec.texto) ? rec.texto : '';
+    var meta = inp.parentNode.querySelector('.tic-com-meta');
+    if(meta) meta.textContent = (rec && rec.texto) ? ('✓ '+(rec.usuario||'—')+(rec.ts?(' · '+rec.ts):'')) : '';
+  }
+}
+// Alta/edición/borrado de un comentario (se dispara en change/Enter/blur).
+function ticComOnChg(inp){
+  var sku = inp.getAttribute('data-sku');
+  var txt = (inp.value||'').trim();
+  var prev = (TICOM[sku] && TICOM[sku].texto) || '';
+  if(txt === prev) return;
+  var usuario = (typeof MC_USUARIO!=='undefined' && MC_USUARIO) ? MC_USUARIO : '';
+  var ts = new Date().toISOString().slice(0,16).replace('T',' ');
+  if(txt){ TICOM[sku] = {texto:txt, usuario:usuario, ts:ts}; } else { delete TICOM[sku]; }
+  ticComSaveLS();
+  var meta = inp.parentNode.querySelector('.tic-com-meta');
+  if(meta) meta.textContent = txt ? '⏳ guardando…' : '';
+  ticComBackendSave(sku, txt, usuario).then(function(res){
+    if(!meta) return;
+    if(res && res.offline){ meta.textContent = txt ? ('guardado local · '+(usuario||'—')) : ''; return; }
+    if(res && res.ok){
+      if(res.ts && TICOM[sku]){ TICOM[sku].ts = res.ts; ticComSaveLS(); }
+      meta.textContent = txt ? ('✓ '+(usuario||'—')+(TICOM[sku]&&TICOM[sku].ts?(' · '+TICOM[sku].ts):'')) : '';
+    } else {
+      meta.textContent = '⚠ error al guardar (queda local)';
+    }
+  });
+}
+
 function buildTICob(){
   var host = document.getElementById('tic-host');
   if(!host) return;
@@ -4013,6 +4122,7 @@ function buildTICob(){
 
 function ticToggleDetail(bucket, items, tbody){
   var det = document.getElementById('tic-dt');
+  var isSub2 = (bucket==='<2');   // columna Comentario solo en la tabla < 2 Sem
   var trs = tbody.querySelectorAll('tr'); trs.forEach(function(t){t.classList.remove('cov-active');});
   if(det.getAttribute('data-bucket')===bucket && det.classList.contains('open')){
     det.classList.remove('open'); det.setAttribute('data-bucket',''); return;
@@ -4032,6 +4142,16 @@ function ticToggleDetail(bucket, items, tbody){
     var c4r = (s.c4_real==null) ? '<span style="color:var(--muted)">—</span>' : f0(s.c4_real);
     var fcp = (s.fcproj4==null) ? '<span style="color:var(--muted)">—</span>' : f0(s.fcproj4);
     var mom = fmtMom(momentum4(s.h12));
+    var comCell = '';
+    if(isSub2){
+      var rec = TICOM[String(s.sku)];
+      var comVal = (rec && rec.texto) ? _htmlEsc(rec.texto) : '';
+      var comMeta = (rec && rec.texto) ? ('✓ '+_htmlEsc(rec.usuario||'—')+(rec.ts?(' · '+_htmlEsc(rec.ts)):'')) : '';
+      comCell = '<td class="tic-com-cell">'
+        + '<input type="text" class="tic-com-inp" data-sku="'+_htmlEsc(String(s.sku))+'" value="'+comVal+'" placeholder="Agregar comentario…" '
+        + 'onchange="ticComOnChg(this)" onkeydown="if(event.key===\'Enter\'){this.blur();}">'
+        + '<span class="tic-com-meta">'+comMeta+'</span></td>';
+    }
     return '<tr>'
       + '<td style="font-family:monospace;font-size:.65rem">'+s.sku+'</td>'
       + '<td>'+(s.desc||'')+'</td>'
@@ -4043,6 +4163,7 @@ function ticToggleDetail(bucket, items, tbody){
       + '<td style="text-align:right">'+mom+'</td>'
       + '<td style="text-align:right">'+fcp+'</td>'
       + '<td style="text-align:right">'+covFmtCob(s.cob)+'</td>'
+      + comCell
       + '</tr>';
   }).join('');
   det.innerHTML = ''
@@ -4056,6 +4177,7 @@ function ticToggleDetail(bucket, items, tbody){
     + '<th style="text-align:right" title="Momentum del consumo real: prom. últimas 4 sem vs 4 sem previas · + = demanda subiendo">Δ% mom 4w</th>'
     + '<th style="text-align:right" title="FC promedio semanal proyectado · próx. 4 sem (estacionalidad A.4.4)">FC prom 4w</th>'
     + '<th style="text-align:right">Cobertura (sem)</th>'
+    + (isSub2 ? '<th class="tic-com-cell" title="Nota del comprador sobre este SKU. Se borra sola cuando el SKU recupera cobertura (≥ 2 sem) y sale de esta tabla.">Comentario</th>' : '')
     + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 
@@ -4093,6 +4215,8 @@ fetch('data.json?v='+Date.now())
       mcUpdLockUI();
       if(loaded){ updMKpis(); mcRenderCausa(); mcRenderResumen(); bldTop10(); }
     });
+    // Comentarios TI (< 2 sem): carga backend → poda SKUs recuperados → rehidrata inputs abiertos
+    ticComBackendLoad().then(function(){ ticComReconcile(); ticComHydrateOpen(); });
 
     var ov=document.getElementById('ld-overlay');
     if(ov) ov.remove();
