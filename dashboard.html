@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Abastecimiento — Semana 29 · 2026</title>
-<meta property="og:title" content="Dashboard Abastecimiento — Semana 29 · 2026">
+<title>Dashboard Abastecimiento — Semana 30 · 2026</title>
+<meta property="og:title" content="Dashboard Abastecimiento — Semana 30 · 2026">
 <meta property="og:description" content="Supply Chain · KPIs de inventario, mermas, capital inmovilizado, desviación de forecast y bloqueado">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
@@ -21,7 +21,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f1117;color:#e2e8f
 .tab{padding:10px 16px;cursor:pointer;font-size:.76rem;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
 .tab.active{color:#fff;border-bottom-color:#6366f1}
 .tab:hover{color:#c0caf5}
-.pg{display:none;padding:16px 24px;max-width:1600px;margin:0 auto}
+.pg{display:none;padding:16px 24px;max-width:1600px;margin:0 auto;overflow-x:hidden}
 .pg.active{display:block}
 .qsub-nav{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
 .qsub{background:#232840;color:#a4b4ce;border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:.8rem;font-weight:600;cursor:pointer;transition:.15s}
@@ -44,7 +44,8 @@ tbody td{padding:6px 9px;vertical-align:middle;color:#e2e8f0}
 .cr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .cb{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px}
 .ct{font-size:.74rem;font-weight:700;color:#c0caf5;margin-bottom:10px}
-.cw{position:relative;height:220px}
+.cw{position:relative;height:220px;width:100%;overflow:hidden}
+.cw canvas{max-width:100%!important}
 .gk{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:14px}
 /* Inventario por categoría (INVCAT, B.12) */
 #ictbl{width:100%;border-collapse:collapse}
@@ -3765,6 +3766,50 @@ function ppaDetRender(){
     + th('Déficit $','deficit') + th('Sobre-abast $','exceso') + th('Sem. quiebre','qbWeek')
     + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
+// Cobertura del plan semana a semana: asignación CRONOLÓGICA del inventario (cada semana consume
+// primero; el sobrante pasa a la siguiente). Devuelve, por semana con demanda, el % value-weighted
+// cubierto con Stock+OC (asume OC a tiempo) y con Solo Stock (piso físico). Ver B.16.
+function ppaWeeklyCoverage(items, sem){
+  var weeks=(PLAN_PPA.weeks||[]).filter(function(w){return w>=sem;});
+  var acc=weeks.map(function(w){return {w:w, covOC:0, covS:0, dem:0};});
+  items.forEach(function(it){
+    var e=PLAN_PPA.dem[it.sku]; if(!e) return;
+    var d=e.d||{}, pu=it.pu||0, aOC=(it.stock||0)+(it.oc||0), aS=(it.stock||0);
+    for(var i=0;i<weeks.length;i++){
+      var need=d[String(weeks[i])]||0; if(need<=0) continue;
+      var cOC=Math.min(aOC,need); aOC-=cOC;
+      var cS=Math.min(aS,need); aS-=cS;
+      acc[i].covOC+=cOC*pu; acc[i].covS+=cS*pu; acc[i].dem+=need*pu;
+    }
+  });
+  return acc.filter(function(r){return r.dem>0;}).map(function(r){
+    return {w:r.w, dem:r.dem, pctOC:r.covOC/r.dem*100, pctS:r.covS/r.dem*100};});
+}
+function ppaRenderWeekly(host, items, sem){
+  if(!host) return;
+  var data=ppaWeeklyCoverage(items, sem);
+  var sec=document.createElement('div'); sec.className='cov-sec';
+  sec.innerHTML=''
+    + '<div class="cov-tit">Cobertura del plan semana a semana</div>'
+    + '<div class="cov-sub">% de la demanda de MP de cada semana del plan que alcanza a cubrirse, asignando el inventario <b>cronológicamente</b> (cada semana consume primero; el sobrante pasa a la siguiente). <b style="color:#639922">Con Stock+OC</b> asume que las OC llegan a tiempo · <b style="color:#378ADD">Solo Stock</b> = piso con lo físico en bodega hoy. Value-weighted sobre todo el universo del programa.</div>'
+    + '<div class="cw" style="height:300px"><canvas id="ppa-wk-ch"></canvas></div>';
+  host.appendChild(sec);
+  if(!data.length){ host.querySelector('.cw').innerHTML='<div style="color:var(--muted);padding:14px">Sin demanda futura en el plan.</div>'; return; }
+  var ctx=document.getElementById('ppa-wk-ch').getContext('2d');
+  if(window._ppaWkCh) window._ppaWkCh.destroy();
+  window._ppaWkCh=new Chart(ctx,{type:'line',data:{labels:data.map(function(r){return 'S'+r.w;}),
+    datasets:[
+      {label:'Con Stock+OC',data:data.map(function(r){return +r.pctOC.toFixed(1);}),borderColor:'#639922',backgroundColor:'#63992222',tension:.3,pointRadius:2,borderWidth:2,fill:true},
+      {label:'Solo Stock',data:data.map(function(r){return +r.pctS.toFixed(1);}),borderColor:'#378ADD',backgroundColor:'#378ADD15',tension:.3,pointRadius:2,borderWidth:2,fill:true}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#e2e8f0',font:{size:11},padding:10}},
+        tooltip:{callbacks:{
+          label:function(x){return ' '+x.dataset.label+': '+x.parsed.y.toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';},
+          afterBody:function(a){var i=a[0].dataIndex;return 'Demanda MP de la semana: $'+fMM(data[i].dem);}}}},
+      scales:{x:{ticks:{color:'#8892b0',font:{size:10}},grid:{display:false}},
+        y:{min:0,max:100,ticks:{color:'#8892b0',font:{size:10},callback:function(v){return v+'%';}},grid:{color:'#2d3452'}}}}});
+}
 function ppaRenderBolsas(host){
   if(!host) return;
   if(!LLEG_PPA || !LLEG_PPA.rows){ host.innerHTML='<div class="cov-sec"><div class="cov-tit">Abastecimiento de bolsas PPA</div><div style="color:var(--muted);padding:10px">Sin plan de llegadas cargado.</div></div>'; return; }
@@ -3795,16 +3840,17 @@ function buildPPA(){
   var valA=itemsA.reduce(function(a,it){return a+it.val;},0);
   var valExcl=itemsA.filter(function(it){return setB[it.sku];}).reduce(function(a,it){return a+it.val;},0);
   var valShared=valA-valExcl;
-  var num=0,den=0, defTot=0,excTot=0, defCnt=0,excCnt=0, qbImm=0, qbEarliest=null;
+  var num=0,den=0, covStock=0, excExclTot=0,excExclCnt=0, exclCnt=0;
   itemsA.forEach(function(it){
-    var qb=ppaStockoutWeek(it.sku, it.stock||0, sem);   // #4 timing (solo stock, sin OC)
-    if(qb!=null){ if(qb<=sem+4) qbImm++; if(qbEarliest==null||qb<qbEarliest) qbEarliest=qb; }
+    if(setB[it.sku]) exclCnt++;
     var rest=ppaDemRest(it.sku, sem); if(rest<=0) return;
     var restVal=rest*(it.pu||0); if(restVal<=0) return;
     var avail=(it.stock||0)+(it.oc||0);
-    num+=Math.min(avail, rest)*(it.pu||0); den+=restVal;
-    var dv=Math.max(0, rest-avail)*(it.pu||0), ev=Math.max(0, avail-rest)*(it.pu||0);  // #1 déficit / #2 exceso
-    if(dv>0){defTot+=dv; defCnt++;} if(ev>0){excTot+=ev; excCnt++;}
+    num+=Math.min(avail, rest)*(it.pu||0);
+    covStock+=Math.min(it.stock||0, rest)*(it.pu||0);
+    den+=restVal;
+    var ev=Math.max(0, avail-rest)*(it.pu||0);  // sobre-abast
+    if(ev>0 && setB[it.sku]){excExclTot+=ev; excExclCnt++;}  // sólo exclusivos = merma real (no reutilizable)
   });
   var avance=den>0 ? num/den*100 : null;
   var bolsasQ=0, bolsasTot=0;
@@ -3816,23 +3862,72 @@ function buildPPA(){
     });
   }
   var kc=function(color,val,label,sub){
-    return '<div style="background:#1a1f2e;border:1px solid #2d3452;border-left:3px solid '+color+';border-radius:10px;padding:14px 16px">'
-      + '<div style="font-size:1.55rem;font-weight:900;color:'+color+';line-height:1">'+val+'</div>'
-      + '<div style="font-size:.72rem;font-weight:700;color:#e2e8f0;margin-top:4px">'+label+'</div>'
-      + '<div style="font-size:.62rem;color:var(--muted);margin-top:4px">'+sub+'</div></div>';
+    return '<div style="flex:0 1 142px;min-width:132px;background:#1a1f2e;border:1px solid #2d3452;border-left:3px solid '+color+';border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;justify-content:center">'
+      + '<div style="font-size:1.22rem;font-weight:900;color:'+color+';line-height:1">'+val+'</div>'
+      + '<div style="font-size:.65rem;font-weight:700;color:#e2e8f0;margin-top:4px;line-height:1.2">'+label+'</div>'
+      + '<div style="font-size:.56rem;color:var(--muted);margin-top:3px;line-height:1.3">'+sub+'</div></div>';
   };
+  // ── Overview (anillos + embudo) — misma fila que las tarjetas ──
+  var gaugesPanel='', funnelPanel='';
+  if(den>0){
+    var covOConly=num-covStock, defFun=den-num, C=301.593;
+    var ring=function(p,color,big,label){var off=C*(1-Math.max(0,Math.min(1,p)));
+      return '<div style="text-align:center">'
+        + '<svg width="74" height="74" viewBox="0 0 112 112" style="transform:rotate(-90deg)">'
+        +   '<circle cx="56" cy="56" r="48" fill="none" stroke="#232840" stroke-width="13"/>'
+        +   '<circle cx="56" cy="56" r="48" fill="none" stroke="'+color+'" stroke-width="13" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+off+'"/>'
+        +   '<text x="56" y="52" transform="rotate(90 56 56)" fill="#fff" font-size="24" font-weight="800" text-anchor="middle" dominant-baseline="middle">'+big+'</text>'
+        + '</svg><div style="font-size:.56rem;color:var(--muted);line-height:1.2">'+label+'</div></div>';
+    };
+    var pcf=function(v){return v/den*100;};
+    var seg=function(v,color,lbl){var p=pcf(v);
+      var inner = (p>=13)
+        ? '<span style="font-weight:800;font-size:.74rem;line-height:1.05;white-space:nowrap">$'+fMM(v)+'</span><span style="font-size:.56rem;opacity:.9;line-height:1.1">'+p.toFixed(0)+'%</span>'
+        : (p>=5 ? '<span style="font-weight:800;font-size:.66rem">'+p.toFixed(0)+'%</span>' : '');
+      return '<div title="'+lbl+': $'+fMM(v)+' ('+p.toFixed(0)+'%)" style="flex:0 0 '+p+'%;background:'+color+';display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;min-width:0;overflow:hidden;text-align:center">'+inner+'</div>';};
+    var lg=function(color,name,v){var p=pcf(v);return '<span style="white-space:nowrap"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:'+color+';margin-right:5px;vertical-align:middle"></span>'+name+' <b style="color:#e2e8f0">$'+fMM(v)+'</b> <span style="color:var(--muted)">'+p.toFixed(0)+'%</span></span>';};
+    gaugesPanel=''
+      + '<div class="cb" style="flex:1 1 208px;min-width:208px;padding:9px 12px;display:flex;flex-direction:column;justify-content:center">'
+      +   '<div class="ct" style="margin-bottom:3px">Avance del abastecimiento</div>'
+      +   '<div style="display:flex;gap:14px;justify-content:center;align-items:center">'
+      +     ring(covStock/den,'#378ADD',Math.round(covStock/den*100)+'%','Cubierto<br>solo stock')
+      +     ring(avance/100,'#639922',Math.round(avance)+'%','Avance<br>(Stock+OC)')
+      +   '</div>'
+      +   '<div style="font-size:.54rem;color:var(--muted);text-align:center;margin-top:2px">La brecha = dependencia de OC</div>'
+      + '</div>';
+    // etiqueta de monto ARRIBA del segmento cuando es muy angosto para mostrarlo adentro
+    var segTop=function(v,color){var p=pcf(v);return '<div style="flex:0 0 '+p+'%;min-width:0;position:relative">'+((p>0 && p<13) ? '<span style="position:absolute;left:0;bottom:0;white-space:nowrap;font-weight:700;font-size:.6rem;color:'+color+'">$'+fMM(v)+'&nbsp;▾</span>' : '')+'</div>';};
+    var anyNarrow=[covStock,covOConly,defFun].some(function(v){return pcf(v)>0 && pcf(v)<13;});
+    funnelPanel=''
+      + '<div class="cb" style="flex:1 1 auto;min-width:360px;padding:9px 14px;display:flex;flex-direction:column;justify-content:center">'
+      +   '<div class="ct" style="margin-bottom:5px">Embudo de abastecimiento <span style="font-weight:400;color:var(--muted);font-size:.6rem">· Demanda del programa $'+fMM(den)+' (S'+sem+'→52, valorizada)</span></div>'
+      +   (anyNarrow ? '<div style="display:flex;height:16px">'+segTop(covStock,'#9fc0ea')+segTop(covOConly,'#9fc0ea')+segTop(defFun,'#9fc0ea')+'</div>' : '')
+      +   '<div style="display:flex;height:46px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">'
+      +     seg(covStock,'#378ADD','Stock en bodega')
+      +     seg(covOConly,'#2f6f3f','OC en tránsito')
+      +     seg(defFun,'#E24B4A','Déficit')
+      +   '</div>'
+      +   '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:9px;font-size:.63rem;color:var(--muted)">'
+      +     lg('#378ADD','Stock en bodega',covStock)
+      +     lg('#2f6f3f','OC en tránsito',covOConly)
+      +     lg('#E24B4A','Déficit · comprar',defFun)
+      +   '</div>'
+      + '</div>';
+  }
   host.innerHTML=''
-    + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px;margin-bottom:16px">'
-    +   kc('#378ADD','$'+fMM(valA),'Stock valorizado PPA','Exclusivos $'+fMM(valExcl)+' · Compartidos $'+fMM(valShared))
-    +   kc('#639922',(avance==null?'—':avance.toFixed(0)+'%'),'Avance abastec. vs plan','(Stock+OC)/demanda restante S'+sem+'→52, valorizada')
-    +   kc('#E24B4A','$'+fMM(defTot),'Déficit de compra','lo que falta comprar p/cubrir el programa · '+defCnt+' SKU')
-    +   kc('#E87B2A','$'+fMM(excTot),'Sobre-abastecimiento','stock+OC por sobre la demanda · riesgo merma/capital · '+excCnt+' SKU')
-    +   kc('#E8C52A',f0(qbImm),'Quiebre proyectado ≤4 sem','solo stock en bodega'+(qbEarliest!=null?' · 1º en S'+qbEarliest:''))
-    +   kc('#a855f7',f0(bolsasQ),'Bolsas PPA en quiebre','de '+bolsasTot+' bolsas · stock proyectado negativo')
+    + '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin-bottom:16px">'
+    +   kc('#378ADD','$'+fMM(valA),'Stock valorizado PPA','Todo el programa · '+itemsA.length+' SKU')
+    +   kc('#38bdf8','$'+fMM(valExcl),'Stock valorizado Exclusivos PPA','Uso exclusivo · '+exclCnt+' SKU · no reutilizable')
+    +   kc('#E87B2A','$'+fMM(excExclTot),'Sobre-abastec. exclusivos PPA','riesgo merma real · '+excExclCnt+' SKU')
+    +   kc('#a855f7',f0(bolsasQ),'Bolsas PPA en quiebre','de '+bolsasTot+' bolsas')
+    +   gaugesPanel
+    +   funnelPanel
     + '</div>'
+    + '<div id="ppa-weekly"></div>'
     + '<div id="ppa-program"></div>'
     + '<div id="ppa-secs"></div>'
     + '<div id="ppa-bolsas"></div>';
+  ppaRenderWeekly(el('ppa-weekly'), itemsA, sem);
   ppaRenderProgram(el('ppa-program'), itemsA, sem);
   var secHost=el('ppa-secs');
   ppaRenderSection(secHost,'ppaA','Todos los SKU que se usan en PPA','Universo del Plan PPA — exclusivos + compartidos con ALI/PAN · cobertura vs demanda del plan (próx. 12 sem)',itemsA);
