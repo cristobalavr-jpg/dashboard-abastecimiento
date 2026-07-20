@@ -338,7 +338,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="plk-pill" onclick="togPlk('ppap')"><span class="plk-ico" id="ico-ppap">▸</span>Plan PPA por SKU — explosión de materia prima vs stock <span id="ppap-info" style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:4px"></span> <button class="pbtn" onclick="event.stopPropagation();expPPAP()" style="background:#B5762930;color:#d99a4e;border:1px solid #B57629">📥 Excel</button></div>
   <div class="plk-body" id="body-ppap" style="display:none">
   <div style="background:rgba(181,118,41,.07);border:1px solid rgba(181,118,41,.28);border-radius:7px;padding:7px 11px;margin-bottom:8px;font-size:.66rem;color:#d3b48c">
-    Universo = SKUs del <b id="ppap-plan-lbl">Plan PPA</b>. El <b>FC proyectado</b> es la explosión de materia prima por semana hasta el cierre de año. <b style="color:#e0a869">Semana Quiebre</b> = 1ª semana en que el <b>Stock Total</b> (sin OC) no cubre el FC PPA acumulado desde la semana en curso. <b style="color:#e0a869">Saldo Final</b> = Stock Total + OC tránsito − ΣFC PPA restante (semana en curso → cierre de año); <span style="color:var(--q)">negativo</span> = déficit a comprar, <span style="color:var(--mT)">positivo</span> = sobrante proyectado. <b style="color:#e0a869">Valor Saldo Final</b> = saldo × costo unitario. Columnas con <span style="opacity:.6">⇅</span> ordenan al hacer clic. Respeta el filtro global de comprador.
+    Universo = SKUs de la hoja <b>Ex.PPA</b> del <b id="ppap-plan-lbl">Consolidado Explosiones FC</b>. El <b>FC proyectado</b> es el volumen semanal de la hoja <b>SumExpl</b> (FC oficial consolidado): en SKU compartidos con otras líneas incluye <b>toda</b> la demanda, no solo la porción PPA. <b style="color:#e0a869">Semana Quiebre</b> = 1ª semana en que el <b>Stock Total</b> (sin OC) no cubre el FC PPA acumulado desde la semana en curso. <b style="color:#e0a869">Saldo Final</b> = Stock Total + OC tránsito − ΣFC PPA restante (semana en curso → cierre de año); <span style="color:var(--q)">negativo</span> = déficit a comprar, <span style="color:var(--mT)">positivo</span> = sobrante proyectado. <b style="color:#e0a869">Valor Saldo Final</b> = saldo × costo unitario. Columnas con <span style="opacity:.6">⇅</span> ordenan al hacer clic. Respeta el filtro global de comprador.
   </div>
   <div class="fr"><input type="text" class="si" id="ppaps" placeholder="Buscar por SKU o descripción..." oninput="sPPAP(this.value)" style="width:320px"></div>
   <div class="tw" style="margin-bottom:6px;max-height:74vh;overflow:auto"><table id="ppap-table"><thead id="ppapth"></thead><tbody id="ppaptb"></tbody></table></div>
@@ -364,7 +364,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="plk-pill" onclick="togPlk('luxo')"><span class="plk-ico" id="ico-luxo">▸</span>Plan Luxo por SKU — explosión de materia prima vs stock <span id="luxo-info" style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:4px"></span> <button class="pbtn" onclick="event.stopPropagation();expLUXO()" style="background:#1D9E7530;color:#3fd0a0;border:1px solid #1D9E75">📥 Excel</button></div>
   <div class="plk-body" id="body-luxo" style="display:none">
   <div style="background:rgba(29,158,117,.07);border:1px solid rgba(29,158,117,.28);border-radius:7px;padding:7px 11px;margin-bottom:8px;font-size:.66rem;color:#9fd8c4">
-    Universo = SKUs del <b id="luxo-plan-lbl">Plan Luxo</b>. El <b>FC proyectado</b> es la explosión de materia prima por semana hasta el cierre del plan. <b style="color:#4fd6a8">Semana Quiebre</b> = 1ª semana en que el <b>Stock Total</b> (sin OC) no cubre el FC acumulado desde la semana en curso; color por urgencia (rojo ≤4 sem). Columnas con <span style="opacity:.6">⇅</span> ordenan al hacer clic. Respeta el filtro global de comprador.
+    Universo = SKUs de la hoja <b>Ex.Luxo</b> del <b id="luxo-plan-lbl">Consolidado Explosiones FC</b>. El <b>FC proyectado</b> es el volumen semanal de la hoja <b>SumExpl</b> (FC oficial consolidado): en SKU compartidos con otras líneas incluye <b>toda</b> la demanda, no solo la porción Luxo. <b style="color:#4fd6a8">Semana Quiebre</b> = 1ª semana en que el <b>Stock Total</b> (sin OC) no cubre el FC acumulado desde la semana en curso; color por urgencia (rojo ≤4 sem). Columnas con <span style="opacity:.6">⇅</span> ordenan al hacer clic. Respeta el filtro global de comprador.
   </div>
   <div class="fr"><input type="text" class="si" id="luxos" placeholder="Buscar por SKU o descripción..." oninput="sLUXO(this.value)" style="width:320px"></div>
   <div class="tw" style="margin-bottom:6px;max-height:74vh;overflow:auto"><table id="luxo-table"><thead id="luxoth"></thead><tbody id="luxotb"></tbody></table></div>
@@ -3525,6 +3525,12 @@ function ppaCurWeek(){
   if(typeof SEM!=='undefined' && SEM){ var m=String(SEM).match(/(\d+)\s*$/); if(m) return +m[1]; }
   return (PLAN_PPA && PLAN_PPA.weeks && PLAN_PPA.weeks[0]) || 26;
 }
+// Última semana con FC oficial (hoja SumExpl, ver PARAMETRO.md A.4.5). El horizonte
+// dejó de ser fijo en S52: se hereda del archivo, así que las etiquetas lo leen de la data.
+function ppaLastWeek(){
+  var w = PLAN_PPA && PLAN_PPA.weeks;
+  return (w && w.length) ? w[w.length-1] : 52;
+}
 function ppaSkuIdx(){
   if(_ppaSkuIdx) return _ppaSkuIdx;
   _ppaSkuIdx={}; (SKUS||[]).forEach(function(s){ _ppaSkuIdx[String(s.sku)]=s; });
@@ -3680,7 +3686,7 @@ function ppaRenderProgram(host, items, sem){
   var sec=document.createElement('div'); sec.className='cov-sec';
   sec.innerHTML=''
     + '<div class="cov-tit">Cobertura del programa por categoría</div>'
-    + '<div class="cov-sub">% de la <b>demanda restante del programa</b> (S'+sem+'→S52, valorizada) que queda cubierta por lo disponible. <b style="color:#639922">Stock+OC</b> = bodega más lo que viene en tránsito · <b style="color:#378ADD">Solo Stock</b> = lo que ya tienes físicamente. <b style="color:#f0a5a5">Déficit</b> = lo que aún falta comprar ($). <b>1ª sem. quiebre</b> = primera semana en que se agota consumiendo <i>solo el stock en bodega</i> contra la rampa del plan (sin OC). Value-weighted. Click en una categoría para ver sus SKUs.</div>'
+    + '<div class="cov-sub">% de la <b>demanda restante del programa</b> (S'+sem+'→S'+ppaLastWeek()+', valorizada) que queda cubierta por lo disponible. <b style="color:#639922">Stock+OC</b> = bodega más lo que viene en tránsito · <b style="color:#378ADD">Solo Stock</b> = lo que ya tienes físicamente. <b style="color:#f0a5a5">Déficit</b> = lo que aún falta comprar ($). <b>1ª sem. quiebre</b> = primera semana en que se agota consumiendo <i>solo el stock en bodega</i> contra la rampa del plan (sin OC). Value-weighted. Click en una categoría para ver sus SKUs.</div>'
     + '<div class="cov-row" style="grid-template-columns:1.55fr 1fr">'
     +   '<div class="cb"><div class="ct">Detalle por categoría</div><div style="overflow-x:auto"><table>'
     +     '<thead><tr><th>Categoría</th><th>SKUs</th><th>Demanda prog.</th><th>% Abast. Stock+OC</th><th>% Abast. solo Stock</th><th title="Lo que aún falta comprar para cubrir el programa">Déficit compra</th><th title="Primera semana de quiebre consumiendo solo el stock en bodega (sin OC)">1ª sem. quiebre</th></tr></thead>'
@@ -3900,7 +3906,7 @@ function buildPPA(){
     var anyNarrow=[covStock,covOConly,defFun].some(function(v){return pcf(v)>0 && pcf(v)<13;});
     funnelPanel=''
       + '<div class="cb" style="flex:1 1 auto;min-width:360px;padding:9px 14px;display:flex;flex-direction:column;justify-content:center">'
-      +   '<div class="ct" style="margin-bottom:5px">Embudo de abastecimiento <span style="font-weight:400;color:var(--muted);font-size:.6rem">· Demanda del programa $'+fMM(den)+' (S'+sem+'→52, valorizada)</span></div>'
+      +   '<div class="ct" style="margin-bottom:5px">Embudo de abastecimiento <span style="font-weight:400;color:var(--muted);font-size:.6rem">· Demanda del programa $'+fMM(den)+' (S'+sem+'→S'+ppaLastWeek()+', valorizada)</span></div>'
       +   (anyNarrow ? '<div style="display:flex;height:16px">'+segTop(covStock,'#9fc0ea')+segTop(covOConly,'#9fc0ea')+segTop(defFun,'#9fc0ea')+'</div>' : '')
       +   '<div style="display:flex;height:46px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">'
       +     seg(covStock,'#378ADD','Stock en bodega')
@@ -3930,8 +3936,8 @@ function buildPPA(){
   ppaRenderWeekly(el('ppa-weekly'), itemsA, sem);
   ppaRenderProgram(el('ppa-program'), itemsA, sem);
   var secHost=el('ppa-secs');
-  ppaRenderSection(secHost,'ppaA','Todos los SKU que se usan en PPA','Universo del Plan PPA — exclusivos + compartidos con ALI/PAN · cobertura vs demanda del plan (próx. 12 sem)',itemsA);
-  ppaRenderSection(secHost,'ppaB','SKU exclusivos de PPA','Sólo materiales de uso exclusivo de Pan de Pascua (SKU PPA.xlsx)',itemsB);
+  ppaRenderSection(secHost,'ppaA','Todos los SKU que se usan en PPA','Universo = hoja Ex.PPA — exclusivos + compartidos con ALI/PAN · cobertura vs FC oficial SumExpl (próx. 12 sem); en compartidos el FC incluye toda la demanda, no solo PPA',itemsA);
+  ppaRenderSection(secHost,'ppaB','SKU exclusivos de PPA','Sólo materiales de uso exclusivo de Pan de Pascua (SKU PPA.xlsx ∩ Ex.PPA)',itemsB);
   ppaRenderBolsas(el('ppa-bolsas'));
 }
 
