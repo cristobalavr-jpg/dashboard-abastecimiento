@@ -349,12 +349,14 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="plk-body" id="body-llegppa" style="display:none">
   <div id="llegppa-alert" style="display:none"></div>
   <div style="background:rgba(36,122,201,.07);border:1px solid rgba(36,122,201,.28);border-radius:7px;padding:7px 11px;margin-bottom:8px;font-size:.66rem;color:#9fc2e0">
-    Plan de llegadas de bolsas PPA. <b style="color:#5fb1ea">Llegadas</b> = calendario <b>fijo manual</b> del proveedor (Matías) — SAP/ME2M no trae fecha de entrega por OC. <b style="color:#5fb1ea">Demanda</b>, <b style="color:#5fb1ea">Stock</b> y <b style="color:#5fb1ea">OC</b> = en vivo (Plan PPA + MOBIDIC), sumando código 2025 + 2026 por bolsa. <b style="color:#5fb1ea">Stock Proyectado</b> = stock actual + Σ llegadas − Σ demanda al cierre de cada semana; <span style="color:var(--q)">negativo</span> = quiebre. <b style="color:#5fb1ea">Cobertura</b> = semanas de demanda futura cubiertas por el stock proyectado (rojo 0 → verde 8+). Filas en rojo = SKU con demanda pero sin ninguna llegada planificada.
+    Plan de llegadas de bolsas PPA. <b style="color:#5fb1ea">Llegadas</b> = calendario <b>fijo manual</b> del proveedor (Matías) — SAP/ME2M no trae fecha de entrega por OC. <b style="color:#5fb1ea">Demanda</b>, <b style="color:#5fb1ea">Stock</b> y <b style="color:#5fb1ea">OC</b> = en vivo (Plan PPA + MOBIDIC), sumando código 2025 + 2026 por bolsa. <b style="color:#5fb1ea">Stock Proyectado</b> = stock actual + Σ llegadas − Σ demanda al cierre de cada semana; <span style="color:var(--q)">negativo</span> = quiebre. <b style="color:#5fb1ea">Cobertura</b> = semanas de demanda futura cubiertas por el stock proyectado (rojo 0 → verde 8+). Filas en rojo = SKU con demanda pero sin ninguna llegada planificada. <b style="color:#7fc0f0">✎ Editable:</b> haz clic en cualquier celda semanal de la pestaña Llegadas para simular otra cantidad — Cobertura y Stock Proyectado se recalculan al instante. Es una <b>simulación local</b> (no se guarda; el refresco diario vuelve al plan de Matías). Usa <b>↩ Restaurar plan</b> para descartar los cambios.
   </div>
   <div class="fr" style="align-items:center">
     <button class="sb active" id="lppa-vb-lleg" onclick="lppaView('lleg')">📦 Llegadas</button>
     <button class="sb" id="lppa-vb-cov" onclick="lppaView('cov')">📊 Cobertura semanal</button>
     <button class="sb" id="lppa-vb-sp" onclick="lppaView('sp')">📈 Stock Proyectado semanal</button>
+    <span id="lppa-simbadge" style="display:none;align-items:center;gap:5px;background:rgba(36,122,201,.15);border:1px solid #2478c9;border-radius:5px;padding:3px 9px;font-size:.64rem;color:#7fc0f0;font-weight:600"></span>
+    <button class="sb" id="lppa-reset" onclick="lppaReset()" style="display:none;background:#3a2020;border-color:#7a3a3a;color:#f0a5a5">↩ Restaurar plan</button>
     <input type="text" class="si" id="llegppas" placeholder="Buscar por SKU o descripción..." oninput="sLlegPPA(this.value)" style="width:300px;margin-left:auto">
   </div>
   <div class="tw" style="margin-bottom:6px;max-height:74vh;overflow:auto"><table id="llegppa-table"><thead id="llegppath"></thead><tbody id="llegppatb"></tbody></table></div>
@@ -1807,8 +1809,51 @@ function expLUXO(){_expPlan(_cfgLUXO());}
 
 // ── Llegadas Bolsas PPA (calendario manual + demanda/stock/OC en vivo). Ver PARAMETRO.MD B.7.6 ──
 var LLEG_PPA=null;
-var LLEGF={s:'',view:'lleg'};
+var LLEGF={s:'',view:'lleg',ovr:{}};   // ovr[cod][wStr]=cantidad editada a mano (simulación local, no persiste)
 function lppaView(v){LLEGF.view=v;rndLlegPPA();}
+// Recalcula por fila el stock proyectado (fin) y la cobertura (cov) usando las llegadas EFECTIVAS
+// (plan de Matías + ediciones manuales en LLEGF.ovr). Mismo algoritmo que actualizar_dashboard.py B.7.6.
+function lppaEff(r){
+  var W=LLEG_PPA.weeks, cap=LLEG_PPA.cob_cap||8, ovrRow=LLEGF.ovr[r.cod]||{};
+  var arr={}, dem={};
+  W.forEach(function(w){var k=''+w;
+    arr[k]=(ovrRow[k]!==undefined?ovrRow[k]:(+(r.arr&&r.arr[k])||0));
+    dem[k]=+(r.dem&&r.dem[k])||0;});
+  var fin={}, run=+r.stock||0;
+  W.forEach(function(w){var k=''+w; run+=(arr[k]||0)-(dem[k]||0); fin[k]=run;});
+  var cov={};
+  for(var i=0;i<W.length;i++){var k=''+W[i], futSum=0, j;
+    for(j=i+1;j<W.length;j++) futSum+=dem[''+W[j]]||0;
+    if(futSum<=0){cov[k]=null;continue;}
+    var st=fin[k], acum=0, cc=0;
+    for(j=i+1;j<W.length;j++){acum+=dem[''+W[j]]||0; if(st>=acum-1e-6) cc=j-i; else break;}
+    cov[k]=Math.min(cc,cap);}
+  var total_arr=0,dem_tot=0;
+  W.forEach(function(w){total_arr+=arr[''+w]||0; dem_tot+=dem[''+w]||0;});
+  var sobrante=W.length?fin[''+W[W.length-1]]:(+r.stock||0);
+  return {arr:arr,dem:dem,fin:fin,cov:cov,total_arr:total_arr,dem_tot:dem_tot,sobrante:sobrante,ovrRow:ovrRow};
+}
+function lppaEditCount(){var n=0; for(var c in LLEGF.ovr) n+=Object.keys(LLEGF.ovr[c]).length; return n;}
+function lppaReset(){LLEGF.ovr={};rndLlegPPA();}
+// Enter confirma (blur), Escape descarta la edición de la celda (sin tocar el valor).
+var LPPA_CANCEL=false;
+function lppaKey(e){
+  if(e.key==='Enter'){e.preventDefault();e.target.blur();}
+  else if(e.key==='Escape'){e.preventDefault();LPPA_CANCEL=true;e.target.blur();}
+}
+// Persiste la edición de una celda de llegada en LLEGF.ovr y re-renderiza (recalcula cobertura + stock proy.).
+function lppaEdit(td){
+  if(LPPA_CANCEL){LPPA_CANCEL=false;rndLlegPPA();return;}
+  var cod=td.getAttribute('data-cod'), w=td.getAttribute('data-w');
+  var val=parseInt((td.textContent||'').replace(/[^\d]/g,''),10);
+  if(!isFinite(val)||val<0) val=0;
+  var row=LLEG_PPA.rows.filter(function(r){return ''+r.cod===''+cod;})[0];
+  var orig=row?(+(row.arr&&row.arr[w])||0):0;
+  if(!LLEGF.ovr[cod]) LLEGF.ovr[cod]={};
+  if(val===orig){delete LLEGF.ovr[cod][w]; if(!Object.keys(LLEGF.ovr[cod]).length) delete LLEGF.ovr[cod];}
+  else LLEGF.ovr[cod][w]=val;
+  rndLlegPPA();
+}
 function sLlegPPA(v){LLEGF.s=v;rndLlegPPA();}
 function lppaFilter(){
   if(!LLEG_PPA||!LLEG_PPA.rows) return [];
@@ -1843,33 +1888,41 @@ function rndLlegPPA(){
   if(v==='lleg'){
     h1='<tr><th>Cod.</th><th>Nombre bolsa</th><th style="text-align:right">Stock</th><th style="text-align:right">Total llegadas</th><th style="text-align:right">OC en tránsito (SAP)</th><th style="text-align:right" title="OC en tránsito (SAP) − Total llegadas planificadas. Positivo = SAP tiene más OC de lo que el plan de Matías contempla para ese SKU (posible causa del desvío de la alerta).">Dif. OC−Llegadas</th><th style="text-align:right">Demanda</th><th style="text-align:right">Sobrante</th>'+wkTh+'</tr>';
     body=lst.map(function(r){
-      var sob=r.sobrante, sobCol=(sob<0?'var(--q)':(sob>0?'var(--n)':'var(--muted)'));
-      var dif=(r.oc||0)-(r.total_arr||0), difBig=Math.abs(dif)>=20000, difCol=(dif>0?'var(--q)':(dif<0?'var(--n)':'var(--muted)'));
-      var cells=W.map(function(w){var q=r.arr[''+w];return '<td style="text-align:right;color:#8892b0">'+(q?f0(q):'')+'</td>';}).join('');
-      return '<tr'+(r.sin_lleg?' style="background:rgba(226,75,74,.08)"':(difBig?' style="background:rgba(232,123,42,.07)"':''))+'>'+codCell(r)+nameCell(r)+
+      var ef=lppaEff(r);
+      var sob=ef.sobrante, sobCol=(sob<0?'var(--q)':(sob>0?'var(--n)':'var(--muted)'));
+      var dif=(r.oc||0)-ef.total_arr, difBig=Math.abs(dif)>=20000, difCol=(dif>0?'var(--q)':(dif<0?'var(--n)':'var(--muted)'));
+      var sinLleg=(ef.dem_tot>0&&ef.total_arr===0);
+      var cells=W.map(function(w){var k=''+w, q=ef.arr[k]||0, edt=(ef.ovrRow[k]!==undefined);
+        return '<td contenteditable="true" data-cod="'+r.cod+'" data-w="'+k+'" onkeydown="lppaKey(event)" onblur="lppaEdit(this)" '+
+          'title="Editar llegada — recalcula cobertura y stock proyectado (simulación local)" '+
+          'style="text-align:right;cursor:text;outline:none;'+(edt?'background:rgba(36,122,201,.20);color:#cfe4f7;font-weight:700':'color:#8892b0')+'">'+(q?f0(q):'')+'</td>';}).join('');
+      return '<tr'+(sinLleg?' style="background:rgba(226,75,74,.08)"':(difBig?' style="background:rgba(232,123,42,.07)"':''))+'>'+codCell(r)+nameCell(r)+
         '<td style="text-align:right">'+f0(r.stock)+'</td>'+
-        '<td style="text-align:right;font-weight:700;color:#e2e8f0">'+f0(r.total_arr)+'</td>'+
+        '<td style="text-align:right;font-weight:700;color:#e2e8f0">'+f0(ef.total_arr)+'</td>'+
         '<td style="text-align:right">'+f0(r.oc)+'</td>'+
         '<td style="text-align:right;font-weight:'+(difBig?'800':'400')+';color:'+difCol+'">'+(dif>0?'+':'')+f0(dif)+'</td>'+
-        '<td style="text-align:right">'+f0(r.dem_tot)+'</td>'+
+        '<td style="text-align:right">'+f0(ef.dem_tot)+'</td>'+
         '<td style="text-align:right;font-weight:700;color:'+sobCol+'">'+f0(sob)+'</td>'+cells+'</tr>';
     }).join('');
-    legend='<span style="color:var(--muted)">Filas en rojo = SKU con demanda pero sin ninguna llegada planificada (quiebre). Filas en naranjo = diferencia OC−Llegadas ≥ 20.000 un. (revisar si corresponde a una OC a eliminar). "•" = semana en curso.</span>';
+    legend='<span style="color:var(--muted)">Filas en rojo = SKU con demanda pero sin ninguna llegada planificada (quiebre). Filas en naranjo = diferencia OC−Llegadas ≥ 20.000 un. (revisar si corresponde a una OC a eliminar). "•" = semana en curso. <b style="color:#7fc0f0">✎ Celdas semanales editables</b> — el cambio recalcula cobertura y stock proyectado (simulación local, no se guarda).</span>';
   } else if(v==='cov'){
     h1='<tr><th>Cod.</th><th>Nombre bolsa</th>'+wkTh+'</tr>';
     body=lst.map(function(r){
-      var cells=W.map(function(w){var cv=r.cov[''+w];var txt=(cv===null||cv===undefined)?'-':(cv>=cap?cap+'+':cv);return '<td style="text-align:center;font-weight:700;'+lppaCovStyle(cv)+'">'+txt+'</td>';}).join('');
+      var ef=lppaEff(r);
+      var cells=W.map(function(w){var cv=ef.cov[''+w];var txt=(cv===null||cv===undefined)?'-':(cv>=cap?cap+'+':cv);return '<td style="text-align:center;font-weight:700;'+lppaCovStyle(cv)+'">'+txt+'</td>';}).join('');
       return '<tr>'+codCell(r)+nameCell(r)+cells+'</tr>';
     }).join('');
     legend='<span class="lppa-lg"><span class="lppa-dot" style="background:hsl(0,62%,38%)"></span>0 sem (quiebre)</span><span class="lppa-lg"><span class="lppa-dot" style="background:hsl(45,62%,38%)"></span>3 sem</span><span class="lppa-lg"><span class="lppa-dot" style="background:hsl(90,62%,34%)"></span>6 sem</span><span class="lppa-lg"><span class="lppa-dot" style="background:hsl(120,62%,34%)"></span>'+cap+'+ sem</span><span class="lppa-lg"><span class="lppa-dot" style="background:#1b2032;border:1px solid #4a536e"></span>Sin demanda futura ( - )</span>';
   } else {
     h1='<tr><th>Cod.</th><th>Nombre bolsa</th>'+wkTh+'</tr>';
-    body=lst.map(function(r){
-      var cells=W.map(function(w){var fv=r.fin[''+w];var neg=fv<0;return '<td style="text-align:right;'+(neg?'color:var(--q);font-weight:700':'color:#8892b0')+'">'+f0(fv)+'</td>';}).join('');
+    var efs=lst.map(lppaEff);
+    body=lst.map(function(r,ri){
+      var ef=efs[ri];
+      var cells=W.map(function(w){var fv=ef.fin[''+w];var neg=fv<0;return '<td style="text-align:right;'+(neg?'color:var(--q);font-weight:700':'color:#8892b0')+'">'+f0(fv)+'</td>';}).join('');
       return '<tr>'+codCell(r)+nameCell(r)+cells+'</tr>';
     }).join('');
     if(lst.length){
-      var totc=W.map(function(w){var s=0;lst.forEach(function(r){s+=r.fin[''+w]||0;});return '<td style="text-align:right;font-weight:800;color:#c0caf5">'+f0(s)+'</td>';}).join('');
+      var totc=W.map(function(w){var s=0;efs.forEach(function(ef){s+=ef.fin[''+w]||0;});return '<td style="text-align:right;font-weight:800;color:#c0caf5">'+f0(s)+'</td>';}).join('');
       body+='<tr style="background:#1c2238"><td colspan="2" style="font-weight:800;color:#c0caf5">TOTAL</td>'+totc+'</tr>';
     }
     legend='<span class="lppa-lg"><span class="lppa-dot" style="background:var(--q)"></span>Stock proyectado negativo (quiebre)</span>';
@@ -1879,6 +1932,11 @@ function rndLlegPPA(){
   if(leg) leg.innerHTML=legend;
   var tot=lst.length;
   if(info) info.innerHTML='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+' · S'+W[0]+'–S'+W[W.length-1]+(D.fuente?' · '+D.fuente:'');
+  // Estado de simulación: badge + botón restaurar visibles solo si hay ediciones manuales.
+  var nEdt=lppaEditCount(), badge=el('lppa-simbadge'), rst=el('lppa-reset');
+  if(badge) badge.style.display=nEdt?'inline-flex':'none';
+  if(badge&&nEdt) badge.innerHTML='✎ Simulación · '+nEdt+' cambio'+(nEdt===1?'':'s')+' sin guardar';
+  if(rst) rst.style.display=nEdt?'':'none';
 }
 function expLlegPPA(){
   if(!LLEG_PPA||!LLEG_PPA.rows){alert('Sin plan de llegadas cargado');return;}
@@ -1886,12 +1944,13 @@ function expLlegPPA(){
   try{
     var wb=XLSX.utils.book_new();
     var h1=['Cod','Cod2025','Cod2026','Nombre','Stock','Total llegadas','OC en transito (SAP)','Dif. OC-Llegadas','Demanda','Sobrante'].concat(W.map(function(w){return 'S'+w;}));
-    var a1=[h1].concat(lst.map(function(r){return [r.cod,r.cod25||'',r.cod26||'',r.nom,r.stock,r.total_arr,r.oc,(r.oc||0)-(r.total_arr||0),r.dem_tot,r.sobrante].concat(W.map(function(w){return r.arr[''+w]||'';}));}));
+    var EF={}; lst.forEach(function(r){EF[r.cod]=lppaEff(r);});   // export refleja la simulación (llegadas efectivas)
+    var a1=[h1].concat(lst.map(function(r){var ef=EF[r.cod];return [r.cod,r.cod25||'',r.cod26||'',r.nom,r.stock,ef.total_arr,r.oc,(r.oc||0)-ef.total_arr,ef.dem_tot,ef.sobrante].concat(W.map(function(w){return ef.arr[''+w]||'';}));}));
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(a1),'Llegadas');
     var h2=['Cod','Nombre'].concat(W.map(function(w){return 'S'+w;}));
-    var a2=[h2].concat(lst.map(function(r){return [r.cod,r.nom].concat(W.map(function(w){var cv=r.cov[''+w];return (cv===null||cv===undefined)?'-':(cv>=cap?cap+'+':cv);}));}));
+    var a2=[h2].concat(lst.map(function(r){var ef=EF[r.cod];return [r.cod,r.nom].concat(W.map(function(w){var cv=ef.cov[''+w];return (cv===null||cv===undefined)?'-':(cv>=cap?cap+'+':cv);}));}));
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(a2),'Cobertura');
-    var a3=[h2].concat(lst.map(function(r){return [r.cod,r.nom].concat(W.map(function(w){return r.fin[''+w];}));}));
+    var a3=[h2].concat(lst.map(function(r){var ef=EF[r.cod];return [r.cod,r.nom].concat(W.map(function(w){return ef.fin[''+w];}));}));
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(a3),'Stock Proyectado');
     XLSX.writeFile(wb,'llegadas_bolsas_ppa_'+new Date().toISOString().slice(0,10)+'.xlsx');
   }catch(e){alert('Error exportando: '+e.message);}
