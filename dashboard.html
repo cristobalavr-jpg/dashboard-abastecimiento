@@ -335,6 +335,19 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="pag" id="ocmpag"></div>
   </div>
 
+  <div class="plk-pill new-pill" onclick="togPlk('conan')"><span class="plk-ico" id="ico-conan">▸</span>Consumos Anuales SKU <span id="conan-info" style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:4px"></span> <button class="pbtn" onclick="event.stopPropagation();expCONAN()" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9">📥 Excel</button></div>
+  <div class="plk-body" id="body-conan" style="display:none">
+  <div style="background:rgba(36,122,201,.07);border:1px solid rgba(36,122,201,.28);border-radius:7px;padding:7px 11px;margin-bottom:8px;font-size:.66rem;color:#9fc2e0">
+    Ventana móvil de <b>12 meses</b> de consumo por SKU (universo <b>ZMPR + ZEMP</b>). Meses pasados = <b style="color:#9fb4e0">consumo real</b> (MB51, clases 201/261/262/641, centros 4010/4020). Meses futuros = <b style="color:#d3b78f">FC proyectado</b> (SumExpl). El <b style="color:#f0d09f">mes en curso</b> muestra ambos (real acumulado + FC). <b>Total año</b> = Σ Real + Σ FC. <b>Últ. Proveedor / Últ. Precio</b> = de la última OC generada (ME2M).
+  </div>
+  <div class="fr" style="align-items:center;gap:10px">
+    <input type="text" class="si" id="conans" placeholder="Buscar por SKU, descripción o grupo..." oninput="sCONAN(this.value)" style="width:340px">
+    <span id="conan-leg" style="font-size:.62rem;color:var(--muted)"></span>
+  </div>
+  <div class="tw" style="margin-bottom:6px;max-height:74vh;overflow:auto"><table id="conan-table"><thead id="conanth"></thead><tbody id="conantb"></tbody><tfoot id="conantf"></tfoot></table></div>
+  <div class="pag" id="conanpag"></div>
+  </div>
+
   <div class="plk-pill" onclick="togPlk('ppap')"><span class="plk-ico" id="ico-ppap">▸</span>Plan PPA por SKU — explosión de materia prima vs stock <span id="ppap-info" style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:4px"></span> <button class="pbtn" onclick="event.stopPropagation();expPPAP()" style="background:#B5762930;color:#d99a4e;border:1px solid #B57629">📥 Excel</button></div>
   <div class="plk-body" id="body-ppap" style="display:none">
   <div style="background:rgba(181,118,41,.07);border:1px solid rgba(181,118,41,.28);border-radius:7px;padding:7px 11px;margin-bottom:8px;font-size:.66rem;color:#d3b48c">
@@ -733,7 +746,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 
 
 // ── GLOBAL DATA NAMESPACE ───────────────────────────────────────────────────
-var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT,INVCAT,HIST_INV;
+var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT,INVCAT,HIST_INV,CONAN;
 var gCompFilter='';  // filtro global de comprador
 // Filtro global PPA (Pan de Pascua). Por defecto ON — replica el contrato histórico de B.9 reporte diario.
 var PPA_SET = new Set();
@@ -1477,6 +1490,139 @@ function _fmtOCPrice(vi){
   var sym = (mon==='EUR')?'€':((mon==='USD')?'US$':'');
   var num = p.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2});
   return '<span title="Moneda de la OC: '+mon+'">'+(sym?sym+num:num+' '+mon)+'</span>';
+}
+// ═══════════════ Consumos Anuales SKU (CONAN) — pastilla Planificadores ═══════════════
+var CONANF={s:'',p:1};var CONAN_PER=25;
+function conanMk(mo){return mo.y+'-'+String(mo.m).padStart(2,'0');}
+function conanFilter(){
+  if(!CONAN||!CONAN.rows) return [];
+  var q=(CONANF.s||'').toLowerCase().trim();
+  if(!q) return CONAN.rows;
+  return CONAN.rows.filter(function(r){
+    return String(r.sku).toLowerCase().indexOf(q)>=0 || (r.desc||'').toLowerCase().indexOf(q)>=0 || (r.grupo||'').toLowerCase().indexOf(q)>=0;
+  });
+}
+function rndCONAN(){
+  var th=el('conanth'),tb=el('conantb'),tf=el('conantf');
+  if(!th||!tb) return;
+  if(!CONAN||!CONAN.rows){ if(el('conan-info'))el('conan-info').textContent='(sin datos)'; th.innerHTML='';tb.innerHTML='';if(tf)tf.innerHTML='';return; }
+  var M=CONAN.meses, HH=33;
+  // Encabezado
+  var r1='<tr>';
+  r1+='<th rowspan="2" style="text-align:left;position:sticky;top:0;left:0;z-index:8;background:#232840;min-width:74px">SKU</th>';
+  r1+='<th rowspan="2" style="text-align:left;position:sticky;top:0;left:74px;z-index:8;background:#232840;min-width:220px">Descripción</th>';
+  r1+='<th rowspan="2" style="position:sticky;top:0;z-index:6;background:#232840">UNM</th>';
+  M.forEach(function(mo){
+    if(mo.type==='curr'){
+      r1+='<th colspan="2" title="Mes en curso: real acumulado + FC" style="text-align:center;position:sticky;top:0;z-index:6;background:#2a2416;color:#f0d09f;border-left:2px solid #2d3452;border-right:2px solid #2d3452">'+mo.full+' · EN CURSO</th>';
+    }else{
+      var bg=mo.type==='real'?'#1c2438':'#241f16', co=mo.type==='real'?'#9fb4e0':'#d3b78f';
+      r1+='<th rowspan="2" title="'+mo.full+' — '+(mo.type==='real'?'consumo real':'FC proyectado')+'" style="text-align:right;position:sticky;top:0;z-index:6;background:'+bg+';color:'+co+'">'+mo.label+'</th>';
+    }
+  });
+  r1+='<th rowspan="2" style="text-align:right;position:sticky;top:0;z-index:6;background:#232840;color:#a8c0f0;border-left:2px solid #2d3452" title="Suma consumo real de la ventana">Σ Real</th>';
+  r1+='<th rowspan="2" style="text-align:right;position:sticky;top:0;z-index:6;background:#232840;color:#e3c79b" title="Suma FC de la ventana">Σ FC</th>';
+  r1+='<th rowspan="2" style="text-align:right;position:sticky;top:0;z-index:6;background:#232840;color:#e6ebf5;border-left:2px solid #2d3452" title="Total año = Σ Real + Σ FC">Total año</th>';
+  r1+='<th rowspan="2" style="text-align:left;position:sticky;top:0;z-index:6;background:#232840;min-width:150px" title="Proveedor de la última OC generada">Últ. Proveedor</th>';
+  r1+='<th rowspan="2" style="text-align:right;position:sticky;top:0;z-index:6;background:#232840" title="Precio de la última OC">Últ. Precio</th>';
+  r1+='</tr>';
+  var r2='<tr>';
+  M.forEach(function(mo){
+    if(mo.type==='curr'){
+      r2+='<th title="Real acumulado del mes" style="text-align:right;font-size:.62rem;position:sticky;top:'+HH+'px;z-index:5;background:#26304a;color:#a8c0f0;border-left:2px solid #2d3452">Real</th>';
+      r2+='<th title="FC del mes en curso" style="text-align:right;font-size:.62rem;position:sticky;top:'+HH+'px;z-index:5;background:#2a2416;color:#f0d09f;border-right:2px solid #2d3452">FC</th>';
+    }
+  });
+  r2+='</tr>';
+  th.innerHTML=r1+r2;
+  // Filas
+  var lst=conanFilter();
+  var tot=lst.length, pages=Math.max(1,Math.ceil(tot/CONAN_PER));
+  CONANF.p=Math.min(CONANF.p,pages);
+  var sl=lst.slice((CONANF.p-1)*CONAN_PER,CONANF.p*CONAN_PER);
+  var dash='<span style="color:#3a4566">—</span>';
+  tb.innerHTML=sl.map(function(r){
+    var h='<tr>';
+    h+='<td style="font-family:monospace;font-size:.68rem;color:var(--muted);position:sticky;left:0;z-index:3;background:#171b28">'+r.sku+'</td>';
+    h+='<td title="'+(r.desc||'').replace(/"/g,'&quot;')+' · '+(r.grupo||'').replace(/"/g,'&quot;')+'" style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:sticky;left:74px;z-index:3;background:#171b28">'+(r.desc||'')+'</td>';
+    h+='<td style="color:var(--muted)">'+(r.um||'')+'</td>';
+    var sR=0,sF=0;
+    M.forEach(function(mo){
+      var v=r.vals[conanMk(mo)]||{};
+      if(mo.type==='real'){
+        h+='<td style="text-align:right;background:rgba(99,131,200,.06)">'+(v.r!=null?f0(v.r):dash)+'</td>';
+        if(v.r!=null)sR+=v.r;
+      }else if(mo.type==='curr'){
+        h+='<td style="text-align:right;background:rgba(99,131,200,.14);border-left:2px solid #2d3452">'+(v.r!=null?f0(v.r):dash)+'</td>';
+        h+='<td style="text-align:right;background:rgba(220,180,120,.16);color:#f0d09f;border-right:2px solid #2d3452">'+(v.f!=null?f0(v.f):dash)+'</td>';
+        if(v.r!=null)sR+=v.r; if(v.f!=null)sF+=v.f;
+      }else{
+        h+='<td style="text-align:right;background:rgba(200,168,127,.06)">'+(v.f!=null?f0(v.f):dash)+'</td>';
+        if(v.f!=null)sF+=v.f;
+      }
+    });
+    h+='<td style="text-align:right;font-weight:700;color:#a8c0f0;border-left:2px solid #2d3452">'+f0(sR)+'</td>';
+    h+='<td style="text-align:right;font-weight:700;color:#e3c79b">'+f0(sF)+'</td>';
+    h+='<td style="text-align:right;font-weight:700;border-left:2px solid #2d3452">'+f0(sR+sF)+'</td>';
+    h+='<td style="color:var(--muted);max-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+(r.prov||'').replace(/"/g,'&quot;')+'">'+(r.prov||dash)+'</td>';
+    h+='<td style="text-align:right;color:var(--muted)">'+_fmtOCPrice({price:r.pu_oc,mon:r.mon})+'</td>';
+    h+='</tr>';
+    return h;
+  }).join('')||'<tr><td colspan="'+(M.length+8)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
+  // Footer: sumatoria anual (del filtro actual)
+  if(tf){
+    var col={},gR=0,gF=0; M.forEach(function(mo){col[conanMk(mo)]={r:0,f:0};});
+    lst.forEach(function(r){M.forEach(function(mo){var v=r.vals[conanMk(mo)]||{};if(v.r){col[conanMk(mo)].r+=v.r;gR+=v.r;}if(v.f){col[conanMk(mo)].f+=v.f;gF+=v.f;}});});
+    var fh='<tr style="font-weight:700;background:#20263a">';
+    fh+='<td style="position:sticky;left:0;z-index:3;background:#20263a"></td>';
+    fh+='<td style="position:sticky;left:74px;z-index:3;background:#20263a;color:var(--muted)">TOTAL ('+tot+' MP)</td>';
+    fh+='<td style="background:#20263a"></td>';
+    M.forEach(function(mo){var c=col[conanMk(mo)];
+      if(mo.type==='real'){fh+='<td style="text-align:right;color:#a8c0f0;background:#20263a">'+f0(c.r)+'</td>';}
+      else if(mo.type==='curr'){fh+='<td style="text-align:right;color:#a8c0f0;background:#20263a;border-left:2px solid #2d3452">'+f0(c.r)+'</td><td style="text-align:right;color:#f0d09f;background:#20263a;border-right:2px solid #2d3452">'+f0(c.f)+'</td>';}
+      else{fh+='<td style="text-align:right;color:#e3c79b;background:#20263a">'+f0(c.f)+'</td>';}
+    });
+    fh+='<td style="text-align:right;color:#a8c0f0;background:#20263a;border-left:2px solid #2d3452">'+f0(gR)+'</td>';
+    fh+='<td style="text-align:right;color:#e3c79b;background:#20263a">'+f0(gF)+'</td>';
+    fh+='<td style="text-align:right;background:#20263a;border-left:2px solid #2d3452">'+f0(gR+gF)+'</td>';
+    fh+='<td style="background:#20263a"></td><td style="background:#20263a"></td></tr>';
+    tf.innerHTML=fh;
+  }
+  var win=M.length?(M[0].label+' → '+M[M.length-1].label):'';
+  if(el('conan-info')) el('conan-info').innerHTML='<strong>'+tot+'</strong> MP · '+win+(CONANF.s?' · "'+CONANF.s+'"':'');
+  if(el('conan-leg')) el('conan-leg').innerHTML='🔵 real (pasado) · 🟠 FC (futuro) · mes en curso muestra ambos · FC: '+(CONAN.fc_fuente||'')+' · datos '+(CONAN.generado||'');
+  var div=el('conanpag');
+  if(div){
+    if(pages<=1){div.innerHTML='<span class="pi">'+tot+' MP</span>';}
+    else{var hh='',shp=[1,pages];for(var k=Math.max(1,CONANF.p-1);k<=Math.min(pages,CONANF.p+1);k++)if(shp.indexOf(k)<0)shp.push(k);shp.sort(function(a,b){return a-b;});var prev=0;shp.forEach(function(i){if(prev&&i-prev>1)hh+='<span style="color:var(--muted);padding:0 2px">…</span>';hh+='<button class="pb'+(i===CONANF.p?' active':'')+'" onclick="gPCONAN('+i+')">'+i+'</button>';prev=i;});hh+='<span class="pi">'+((CONANF.p-1)*CONAN_PER+1)+'–'+Math.min(CONANF.p*CONAN_PER,tot)+' de '+tot+'</span>';div.innerHTML=hh;}
+  }
+}
+function sCONAN(v){CONANF.s=v;CONANF.p=1;rndCONAN();}
+function gPCONAN(p){CONANF.p=p;rndCONAN();}
+function expCONAN(){
+  if(!CONAN||!CONAN.rows){alert('Sin datos de Consumos Anuales');return;}
+  var M=CONAN.meses;
+  var hdr=['SKU','Descripción','Grupo','UNM'];
+  M.forEach(function(mo){if(mo.type==='curr'){hdr.push(mo.label+' Real (MTD)');hdr.push(mo.label+' FC');}else hdr.push(mo.label+(mo.type==='real'?' Real':' FC'));});
+  hdr.push('Total Real');hdr.push('Total FC');hdr.push('Total año');hdr.push('Últ. Proveedor');hdr.push('Últ. Precio');hdr.push('Moneda');
+  var lst=conanFilter();
+  var aoa=[hdr].concat(lst.map(function(r){
+    var row=[r.sku,r.desc,r.grupo,r.um],sR=0,sF=0;
+    M.forEach(function(mo){var v=r.vals[conanMk(mo)]||{};
+      if(mo.type==='curr'){row.push(v.r||null);row.push(v.f||null);if(v.r)sR+=v.r;if(v.f)sF+=v.f;}
+      else if(mo.type==='real'){row.push(v.r||null);if(v.r)sR+=v.r;}
+      else{row.push(v.f||null);if(v.f)sF+=v.f;}
+    });
+    row.push(sR);row.push(sF);row.push(sR+sF);row.push(r.prov||'');row.push(r.pu_oc||null);row.push(r.mon||'');return row;
+  }));
+  var totRow=['TOTAL','('+lst.length+' MP)','',''],gR=0,gF=0;
+  M.forEach(function(mo){var sr=0,sf=0;lst.forEach(function(r){var v=r.vals[conanMk(mo)]||{};if(v.r)sr+=v.r;if(v.f)sf+=v.f;});
+    if(mo.type==='curr'){totRow.push(sr);totRow.push(sf);gR+=sr;gF+=sf;}else if(mo.type==='real'){totRow.push(sr);gR+=sr;}else{totRow.push(sf);gF+=sf;}});
+  totRow.push(gR);totRow.push(gF);totRow.push(gR+gF);totRow.push('');totRow.push('');totRow.push('');aoa.push(totRow);
+  try{
+    var ws=XLSX.utils.aoa_to_sheet(aoa);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Consumos Anuales SKU');
+    XLSX.writeFile(wb,'consumos_anuales_sku_'+(CONAN.generado||new Date().toISOString().slice(0,10))+'.xlsx');
+  }catch(e){alert('Error exportando: '+e.message);}
 }
 function _buildPltCobMap(){
   var m={};
@@ -4476,7 +4622,7 @@ fetch('data.json?v='+Date.now())
     R=_D.R;SD=_D.SD;PA=_D.PA;PC=_D.PC;PS=_D.PS;G=_D.G;GR=_D.GR;GD=_D.GD;
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
-    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;PPAP=_D.PPAP||null;LUXO=_D.LUXO||null;LLEG_PPA=_D.LLEG_PPA||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;
+    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;PPAP=_D.PPAP||null;LUXO=_D.LUXO||null;LLEG_PPA=_D.LLEG_PPA||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;CONAN=_D.CONSUMO_ANUAL||null;
     window._vendorMap=null;window._pltCobMap=null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
@@ -4493,7 +4639,7 @@ fetch('data.json?v='+Date.now())
     var _ppaCb = document.getElementById('gPPA'); if(_ppaCb) _ppaCb.checked = gExcludePPA;
     loadPPA().then(function(){ if(ppaActive()) _rebuildAll(); });
 
-    buildResumen();rndEstado();buildGer();updPlan();rndPLT();rndFCW();rndOCM();rndPPAP();rndLUXO();rndLlegPPA();updMKpis();updMCharts(TA);bldTop10();buildKpiAv();
+    buildResumen();rndEstado();buildGer();updPlan();rndPLT();rndFCW();rndOCM();rndPPAP();rndLUXO();rndLlegPPA();rndCONAN();updMKpis();updMCharts(TA);bldTop10();buildKpiAv();
     mcUpdLockUI(); mcRenderCausa(); mcRenderResumen();
     // Hidrata clasificaciones desde backend (si configurado) y re-renderiza
     mcBackendLoad().then(function(loaded){
