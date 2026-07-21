@@ -3772,6 +3772,113 @@ function ppaDetRender(){
     + th('Déficit $','deficit') + th('Sobre-abast $','exceso') + th('Sem. quiebre','qbWeek')
     + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
+// ── Panel de detalle al hacer clic en la tarjeta "Sobre-abastec. exclusivos PPA" ──
+function ppaToggleExcl(){
+  var det=document.getElementById('ppa-excl-dt'); if(!det) return;
+  if(det.classList.contains('open')){ det.classList.remove('open'); det.innerHTML=''; return; }
+  var other=document.getElementById('ppa-bolsaq-dt'); if(other){ other.classList.remove('open'); other.innerHTML=''; }  // solo un panel abierto a la vez
+  window._ppaExclSort=window._ppaExclSort||{col:'ev',dir:-1};  // default: sobre-abast $ desc
+  det.classList.add('open'); ppaExclRender();
+  det.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function ppaExclSort(col){
+  var s=window._ppaExclSort||{col:'ev',dir:-1};
+  if(s.col===col){ s.dir=-s.dir; } else { s.col=col; s.dir=1; }
+  window._ppaExclSort=s; ppaExclRender();
+}
+function ppaExclRender(){
+  var det=document.getElementById('ppa-excl-dt'); if(!det) return;
+  var items=(window._ppaExclDet||[]).slice(), s=window._ppaExclSort||{col:'ev',dir:-1};
+  items.sort(function(a,b){ var va=a[s.col],vb=b[s.col];
+    if(typeof va==='string'){ return va.localeCompare(vb)*s.dir; }
+    return (va<vb?-1:(va>vb?1:0))*s.dir; });
+  var tot=items.reduce(function(a,x){return a+x.ev;},0);
+  var totRev=items.reduce(function(a,x){return a+(x.oc>0?x.ev:0);},0);
+  var rows=items.map(function(x){
+    var cc=(typeof CC!=='undefined' && CC[x.comp])||'#8892b0';
+    return '<tr>'
+      + '<td style="font-family:monospace;font-size:.65rem">'+x.sku+'</td>'
+      + '<td>'+(x.desc||'')+'</td>'
+      + '<td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+cc+';margin-right:5px;vertical-align:middle"></span>'+(x.comp||'—')+'</td>'
+      + '<td style="text-align:right;color:var(--muted)">'+(x.und||'')+'</td>'
+      + '<td style="text-align:right">'+f0(x.stock)+'</td>'
+      + '<td style="text-align:right">'+f0(x.oc)+'</td>'
+      + '<td style="text-align:right">'+f0(x.rest)+'</td>'
+      + '<td style="text-align:right;color:#f0c98a;font-weight:700">'+f0(x.over_u)+'</td>'
+      + '<td style="text-align:right;color:var(--muted)">$ '+f0(x.pu)+'</td>'
+      + '<td style="text-align:right;color:#f0c98a;font-weight:800">$ '+f0(x.ev)+'</td>'
+      + '<td style="text-align:center">'+(x.oc>0?'<span style="color:#639922;font-weight:700">Sí · en OC</span>':'<span style="color:#8892b0">No · en bodega</span>')+'</td>'
+      + '</tr>';
+  }).join('');
+  var th=function(label,col,align){
+    var arr=(s.col===col)?(s.dir<0?' <span style="color:#6ea8ff">▼</span>':' <span style="color:#6ea8ff">▲</span>'):' <span style="color:#4a536e;font-size:.55rem">↕</span>';
+    return '<th style="text-align:'+(align||'right')+';cursor:pointer;user-select:none" onclick="ppaExclSort(\''+col+'\')" title="Ordenar por '+label+'">'+label+arr+'</th>';
+  };
+  det.innerHTML=''
+    + '<h4><span>Sobre-abastecimiento · exclusivos PPA · '+items.length+' SKU · '+covFmtMM(tot)+' <span style="color:#639922">('+covFmtMM(totRev)+' reversible)</span></span>'
+    + '<span style="display:flex;gap:8px;align-items:center">'
+    +   '<button onclick="expXls(\'ppa-excl-tb\',\'sobreabast_exclusivos_ppa\')" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button>'
+    +   '<button class="cov-cl" onclick="ppaToggleExcl()">✕ Cerrar</button>'
+    + '</span></h4>'
+    + '<div style="font-size:.62rem;color:var(--muted);margin:2px 0 8px">Sobre-stock = (Stock + OC) − Demanda restante del plan (S'+ppaCurWeek()+'→S'+ppaLastWeek()+'), valorizado a precio unitario. Sólo insumos de uso <b>exclusivo PPA</b> → el excedente no se reutiliza en otros productos (merma real). <b style="color:#639922">Reversible</b> = aún en OC en tránsito: se puede recortar o reprogramar antes de que llegue.</div>'
+    + '<div class="tw"><table><thead><tr>'
+    + '<th>SKU</th><th>Descripción</th><th>Comprador</th><th style="text-align:right">Und</th>'
+    + th('Stock','stock') + th('OC tránsito','oc') + th('Demanda rest.','rest')
+    + th('Sobre-stock (u)','over_u') + th('Precio $','pu') + th('Sobre-abast $','ev')
+    + '<th style="text-align:center">Reversible</th>'
+    + '</tr></thead><tbody id="ppa-excl-tb">'+rows+'</tbody></table></div>';
+}
+// ── Panel de detalle al hacer clic en la tarjeta "Bolsas PPA en quiebre" ──
+function ppaToggleBolsaQ(){
+  var det=document.getElementById('ppa-bolsaq-dt'); if(!det) return;
+  if(det.classList.contains('open')){ det.classList.remove('open'); det.innerHTML=''; return; }
+  var other=document.getElementById('ppa-excl-dt'); if(other){ other.classList.remove('open'); other.innerHTML=''; }  // solo un panel abierto a la vez
+  window._ppaBolsaQSort=window._ppaBolsaQSort||{col:'firstQ',dir:1};  // default: quiebre más próximo primero
+  det.classList.add('open'); ppaBolsaQRender();
+  det.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function ppaBolsaQSort(col){
+  var s=window._ppaBolsaQSort||{col:'firstQ',dir:1};
+  if(s.col===col){ s.dir=-s.dir; } else { s.col=col; s.dir=1; }
+  window._ppaBolsaQSort=s; ppaBolsaQRender();
+}
+function ppaBolsaQRender(){
+  var det=document.getElementById('ppa-bolsaq-dt'); if(!det) return;
+  var items=(window._ppaBolsaQDet||[]).slice(), s=window._ppaBolsaQSort||{col:'firstQ',dir:1};
+  items.sort(function(a,b){ var va=a[s.col],vb=b[s.col];
+    if(typeof va==='string'){ return va.localeCompare(vb)*s.dir; }
+    return (va<vb?-1:(va>vb?1:0))*s.dir; });
+  var sem=ppaCurWeek();
+  var qcol=function(w){ return (w<=sem+4)?'var(--q)':(w<=sem+10?'#E8C52A':'#8892b0'); };
+  var rows=items.map(function(x){
+    return '<tr>'
+      + '<td style="font-family:monospace;font-weight:700;color:#c0caf5">'+x.cod+'</td>'
+      + '<td>'+(x.nom||'')+'</td>'
+      + '<td style="text-align:right">'+f0(x.stock)+'</td>'
+      + '<td style="text-align:right">'+f0(x.oc)+'</td>'
+      + '<td style="text-align:right;font-weight:700;color:'+qcol(x.firstQ)+'">S'+x.firstQ+'</td>'
+      + '<td style="text-align:right">'+x.nNeg+'</td>'
+      + '<td style="text-align:right;color:var(--q);font-weight:700">-'+f0(-x.worst)+' <span style="color:var(--muted);font-weight:400">(S'+x.worstW+')</span></td>'
+      + '</tr>';
+  }).join('');
+  var th=function(label,col,align){
+    var arr=(s.col===col)?(s.dir<0?' <span style="color:#6ea8ff">▼</span>':' <span style="color:#6ea8ff">▲</span>'):' <span style="color:#4a536e;font-size:.55rem">↕</span>';
+    return '<th style="text-align:'+(align||'right')+';cursor:pointer;user-select:none" onclick="ppaBolsaQSort(\''+col+'\')" title="Ordenar por '+label+'">'+label+arr+'</th>';
+  };
+  var urg=items.filter(function(x){return x.firstQ<=sem+4;}).length;
+  det.innerHTML=''
+    + '<h4><span>Bolsas PPA en quiebre proyectado · '+items.length+' bolsas'+(urg?' · <span style="color:var(--q)">'+urg+' en ≤4 sem</span>':'')+'</span>'
+    + '<span style="display:flex;gap:8px;align-items:center">'
+    +   '<button onclick="expXls(\'ppa-bolsaq-tb\',\'bolsas_ppa_quiebre\')" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button>'
+    +   '<button class="cov-cl" onclick="ppaToggleBolsaQ()">✕ Cerrar</button>'
+    + '</span></h4>'
+    + '<div style="font-size:.62rem;color:var(--muted);margin:2px 0 8px">Bolsa (producto terminado) cuyo <b>stock proyectado semanal</b> (stock inicial + llegadas planificadas − demanda) cae por <b>debajo de 0</b> en algún punto del horizonte (S'+sem+'→S'+ppaLastWeek()+'). <b>1er quiebre</b> = primera semana negativa (color por urgencia: <span style="color:var(--q)">≤4 sem</span> / <span style="color:#E8C52A">≤10 sem</span>). <b>Déficit máx</b> = punto más negativo de la proyección y su semana. Refleja la vista "Stock Proyectado semanal" de Llegadas Bolsas PPA.'+(LLEG_PPA&&LLEG_PPA.fuente?' · '+LLEG_PPA.fuente:'')+'</div>'
+    + '<div class="tw"><table><thead><tr>'
+    + '<th>Código</th><th>Nombre bolsa</th>'
+    + th('Stock hoy','stock') + th('OC tránsito','oc') + th('1er quiebre','firstQ')
+    + th('Sem. en quiebre','nNeg') + th('Déficit máx (u)','worst')
+    + '</tr></thead><tbody id="ppa-bolsaq-tb">'+rows+'</tbody></table></div>';
+}
 // Cobertura del plan semana a semana: asignación CRONOLÓGICA del inventario (cada semana consume
 // primero; el sobrante pasa a la siguiente). Devuelve, por semana con demanda, el % value-weighted
 // cubierto con Stock+OC (asume OC a tiempo) y con Solo Stock (piso físico). Ver B.16.
@@ -3847,6 +3954,7 @@ function buildPPA(){
   var valExcl=itemsA.filter(function(it){return setB[it.sku];}).reduce(function(a,it){return a+it.val;},0);
   var valShared=valA-valExcl;
   var num=0,den=0, covStock=0, excExclTot=0,excExclCnt=0, exclCnt=0;
+  var exclDet=[];  // detalle de SKU exclusivos con sobre-stock (para el panel clic en la tarjeta)
   itemsA.forEach(function(it){
     if(setB[it.sku]) exclCnt++;
     var rest=ppaDemRest(it.sku, sem); if(rest<=0) return;
@@ -3855,22 +3963,37 @@ function buildPPA(){
     num+=Math.min(avail, rest)*(it.pu||0);
     covStock+=Math.min(it.stock||0, rest)*(it.pu||0);
     den+=restVal;
-    var ev=Math.max(0, avail-rest)*(it.pu||0);  // sobre-abast
-    if(ev>0 && setB[it.sku]){excExclTot+=ev; excExclCnt++;}  // sólo exclusivos = merma real (no reutilizable)
+    var overU=Math.max(0, avail-rest);
+    var ev=overU*(it.pu||0);  // sobre-abast
+    if(ev>0 && setB[it.sku]){  // sólo exclusivos = merma real (no reutilizable)
+      excExclTot+=ev; excExclCnt++;
+      exclDet.push({sku:it.sku, desc:it.desc, comp:it.comp, und:it.und||'',
+        stock:it.stock||0, oc:it.oc||0, rest:rest, over_u:overU, pu:it.pu||0, ev:ev});
+    }
   });
+  window._ppaExclDet=exclDet;
   var avance=den>0 ? num/den*100 : null;
-  var bolsasQ=0, bolsasTot=0;
+  var bolsasQ=0, bolsasTot=0, bolsaQDet=[];  // detalle de bolsas en quiebre (para el panel clic)
   if(LLEG_PPA && LLEG_PPA.rows){
     bolsasTot=LLEG_PPA.rows.length;
+    var Wb=LLEG_PPA.weeks||[];
     LLEG_PPA.rows.forEach(function(r){
-      var neg=(LLEG_PPA.weeks||[]).some(function(w){return (r.fin&&r.fin[String(w)]<0);});
-      if(neg) bolsasQ++;
+      var negW=Wb.filter(function(w){return r.fin && r.fin[String(w)]<0;});
+      if(!negW.length) return;
+      bolsasQ++;
+      var worst=Infinity, worstW=null;
+      Wb.forEach(function(w){ var v=(r.fin&&r.fin[String(w)]); if(v!=null && v<worst){worst=v; worstW=w;} });
+      bolsaQDet.push({cod:r.cod, nom:r.nom||'', stock:r.stock||0, oc:r.oc||0,
+        firstQ:negW[0], nNeg:negW.length, worst:worst, worstW:worstW});
     });
   }
-  var kc=function(color,val,label,sub){
-    return '<div style="flex:0 1 142px;min-width:132px;background:#1a1f2e;border:1px solid #2d3452;border-left:3px solid '+color+';border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;justify-content:center">'
+  window._ppaBolsaQDet=bolsaQDet;
+  var kc=function(color,val,label,sub,click){
+    var clk=click?';cursor:pointer':'';
+    var oc=click?' onclick="'+click+'" title="Click para ver el detalle de SKUs"':'';
+    return '<div'+oc+' style="flex:0 1 142px;min-width:132px;background:#1a1f2e;border:1px solid #2d3452;border-left:3px solid '+color+';border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;justify-content:center'+clk+'">'
       + '<div style="font-size:1.22rem;font-weight:900;color:'+color+';line-height:1">'+val+'</div>'
-      + '<div style="font-size:.65rem;font-weight:700;color:#e2e8f0;margin-top:4px;line-height:1.2">'+label+'</div>'
+      + '<div style="font-size:.65rem;font-weight:700;color:#e2e8f0;margin-top:4px;line-height:1.2">'+label+(click?' <span style="color:'+color+';font-size:.6rem">▸</span>':'')+'</div>'
       + '<div style="font-size:.56rem;color:var(--muted);margin-top:3px;line-height:1.3">'+sub+'</div></div>';
   };
   // ── Overview (anillos + embudo) — misma fila que las tarjetas ──
@@ -3924,11 +4047,13 @@ function buildPPA(){
     + '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin-bottom:16px">'
     +   kc('#378ADD','$'+fMM(valA),'Stock valorizado PPA','Todo el programa · '+itemsA.length+' SKU')
     +   kc('#38bdf8','$'+fMM(valExcl),'Stock valorizado Exclusivos PPA','Uso exclusivo · '+exclCnt+' SKU · no reutilizable')
-    +   kc('#E87B2A','$'+fMM(excExclTot),'Sobre-abastec. exclusivos PPA','riesgo merma real · '+excExclCnt+' SKU')
-    +   kc('#a855f7',f0(bolsasQ),'Bolsas PPA en quiebre','de '+bolsasTot+' bolsas')
+    +   kc('#E87B2A','$'+fMM(excExclTot),'Sobre-abastec. exclusivos PPA','riesgo merma real · '+excExclCnt+' SKU', excExclCnt>0?'ppaToggleExcl()':'')
+    +   kc('#a855f7',f0(bolsasQ),'Bolsas PPA en quiebre','de '+bolsasTot+' bolsas', bolsasQ>0?'ppaToggleBolsaQ()':'')
     +   gaugesPanel
     +   funnelPanel
     + '</div>'
+    + '<div class="cov-detail" id="ppa-excl-dt"></div>'
+    + '<div class="cov-detail" id="ppa-bolsaq-dt"></div>'
     + '<div id="ppa-weekly"></div>'
     + '<div id="ppa-program"></div>'
     + '<div id="ppa-secs"></div>'
