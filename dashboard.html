@@ -1881,7 +1881,7 @@ function rndPlanPill(cfg){
     h+='<td title="'+(r[1]||'').replace(/"/g,'&quot;')+'" style="'+planFzB(fz,1,';white-space:nowrap;overflow:hidden;text-overflow:ellipsis')+'">'+r[1]+'</td>';
     h+='<td style="color:var(--muted);'+planFzB(fz,2)+'">'+(r[2]||'')+'</td>';
     var _si=3;
-    if(cfg.showComp){var cmp=r[3]||'';h+='<td title="'+cmp.replace(/"/g,'&quot;')+'" style="'+planFzB(fz,3,';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#8aa0c8')+'">'+(cmp||'<span style="color:#3a4566">—</span>')+'</td>';_si=4;}
+    if(cfg.showComp){var cmp=r[3]||'';var ccol=(window.CC&&CC[cmp])||'#8892b0';var dot=cmp?'<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+ccol+';margin-right:5px;vertical-align:middle"></span>':'';h+='<td title="'+cmp.replace(/"/g,'&quot;')+'" style="'+planFzB(fz,3,';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#8aa0c8')+'">'+dot+(cmp||'<span style="color:#3a4566">—</span>')+'</td>';_si=4;}
     h+='<td style="text-align:right;font-weight:700;'+planFzB(fz,_si)+'">'+f0(r[4]||0)+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[5]||0)+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[6]||0)+'</td>';
