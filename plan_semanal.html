@@ -193,7 +193,12 @@ function estadoDe(t){
               exc_pendiente:!!base.exc_pendiente, exc_texto:base.exc_texto||'',
               comentario:base.comentario||'', usuario:base.usuario||'', ts:base.ts||'',
               intentos:base.intentos||0, nota_sup:base.nota_sup||''};
-  ACC_HOY.filter(a=>a.task_id===t.id).sort((a,b)=>a.ts<b.ts?-1:1).forEach(a=>{
+  // Sin re-ordenar por ts: ACC_HOY ya llega en orden cronológico (Sheet append-only,
+  // GET devuelve en orden de fila) + lo posteado en esta sesión se agrega al final.
+  // Un ts corrupto (Sheets auto-convierte a Date, ver apps_script_plan.gs) invertía
+  // el orden al ordenar por string y una validación reciente quedaba pisada por una
+  // excepción vieja. Bug real detectado 2026-07-23.
+  ACC_HOY.filter(a=>a.task_id===t.id).forEach(a=>{
     if(a.accion==='check'){st.chk=true;st.usuario=a.usuario;st.ts=a.ts;}
     else if(a.accion==='uncheck'){st.chk=false;}
     else if(a.accion==='comentario'){st.comentario=a.valor;st.usuario=a.usuario;}
@@ -205,6 +210,12 @@ function estadoDe(t){
 }
 function tareasDe(c){ return (D.tareas[c]||[]); }
 function vivas(c){ return tareasDe(c).filter(t=>!estadoDe(t).noaplica); }
+// Busca una tarea por id en TODOS los compradores (el supervisor valida excepciones
+// de cualquiera desde la pestaña que tenga abierta, no necesariamente la del dueño).
+function findTask(id){
+  for(const c of D.compradores){ const t=tareasDe(c).find(x=>x.id===id); if(t) return t; }
+  return null;
+}
 
 // ── Score espejo (misma fórmula que plan_semanal_core.calcular_score) ──
 function scoreOf(c){
@@ -227,13 +238,16 @@ function scoreOf(c){
 // ── Nube ──
 function postAccion(taskId, accion, valor, pin){
   if(!PS_BACKEND_URL){ notifOffline(); return Promise.resolve(false); }
+  // comprador = dueño REAL de la tarea (no la pestaña abierta): el supervisor
+  // valida excepciones de cualquier comprador desde donde esté parado.
+  const owner = (findTask(taskId)||{}).comp || SELC;
   const body = JSON.stringify({pin:pin||PS_PIN, action:'save_action',
-    data:{sem:D.sem, comprador:SELC, task_id:taskId, accion:accion,
+    data:{sem:D.sem, comprador:owner, task_id:taskId, accion:accion,
           valor:valor||'', usuario:USR}});
   return fetch(PS_BACKEND_URL,{method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'}, body:body})
     .then(r=>r.json()).then(j=>{
-      if(j.ok){ ACC_HOY.push({sem:D.sem,comprador:SELC,task_id:taskId,accion:accion,
+      if(j.ok){ ACC_HOY.push({sem:D.sem,comprador:owner,task_id:taskId,accion:accion,
         valor:valor||'',usuario:USR,ts:j.ts}); render(); }
       else{ alert('No se guardó: '+(j.error||'error')); }
       return j.ok; })
@@ -251,7 +265,7 @@ function notifOffline(){
 // ── Interacción ──
 function tg(id){
   if(!EDIT){ askEdit(); return; }
-  const t = tareasDe(SELC).find(x=>x.id===id); const st=estadoDe(t);
+  const t = findTask(id); const st=estadoDe(t);
   if(st.confirmada) return;
   postAccion(id, st.chk?'uncheck':'check');
 }
