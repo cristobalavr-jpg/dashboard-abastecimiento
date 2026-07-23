@@ -1777,10 +1777,11 @@ var PPAP=null, LUXO=null;
 var PPAPF={s:'',p:1,sortCol:null,sortDir:1};
 var LUXOF={s:'',p:1,sortCol:null,sortDir:1};
 var PLAN_PER=50;
-// Columnas congeladas (sin Comprador; Descripción ancha para más texto)
+// Columnas congeladas. Base = sin Comprador; _COMP inserta Comprador tras UNM (solo Luxo).
 var PLAN_FZ=[{w:66,left:0},{w:320,left:66},{w:46,left:386},{w:84,left:432}];
-function planFzH(i,extra){var f=PLAN_FZ[i];return 'position:sticky;top:0;left:'+f.left+'px;width:'+f.w+'px;min-width:'+f.w+'px;max-width:'+f.w+'px;z-index:8;background:#232840;vertical-align:middle'+(i===PLAN_FZ.length-1?';border-right:2px solid #3a4566':'')+(extra||'');}
-function planFzB(i,extra){var f=PLAN_FZ[i];return 'position:sticky;left:'+f.left+'px;width:'+f.w+'px;min-width:'+f.w+'px;max-width:'+f.w+'px;z-index:3;background:#111a2e'+(i===PLAN_FZ.length-1?';border-right:2px solid #3a4566':'')+(extra||'');}
+var PLAN_FZ_COMP=[{w:66,left:0},{w:320,left:66},{w:46,left:386},{w:110,left:432},{w:84,left:542}];
+function planFzH(fz,i,extra){var f=fz[i];return 'position:sticky;top:0;left:'+f.left+'px;width:'+f.w+'px;min-width:'+f.w+'px;max-width:'+f.w+'px;z-index:8;background:#232840;vertical-align:middle'+(i===fz.length-1?';border-right:2px solid #3a4566':'')+(extra||'');}
+function planFzB(fz,i,extra){var f=fz[i];return 'position:sticky;left:'+f.left+'px;width:'+f.w+'px;min-width:'+f.w+'px;max-width:'+f.w+'px;z-index:3;background:#111a2e'+(i===fz.length-1?';border-right:2px solid #3a4566':'')+(extra||'');}
 // Semana Quiebre: color por urgencia (semanas hasta el quiebre desde la sem en curso)
 function planSqCell(v,sem){
   if(v===null||v===undefined) return '<td style="text-align:center;color:#3a4566;border-left:2px solid #2d3452" title="No quiebra dentro del horizonte del plan">—</td>';
@@ -1794,8 +1795,8 @@ function planSaldoCell(v,dollar){
   return '<td style="text-align:right;font-weight:700;color:'+col+'" title="'+(v<0?'Déficit — hay que comprar':'Sobrante proyectado al cierre del plan')+'">'+(dollar?'$':'')+f0(v)+'</td>';
 }
 // Config por pastilla (PPA lleva Saldo Final / Valor Saldo Final; Luxo no)
-function _cfgPPAP(){return {D:PPAP,F:PPAPF,showSaldo:true, th:'ppapth',tb:'ppaptb',info:'ppap-info',pag:'ppappag',lbl:'ppap-plan-lbl', sortFn:'ppapSort',pageFn:'gPPPAP'};}
-function _cfgLUXO(){return {D:LUXO,F:LUXOF,showSaldo:false,th:'luxoth',tb:'luxotb',info:'luxo-info',pag:'luxopag',lbl:'luxo-plan-lbl', sortFn:'luxoSort',pageFn:'gPLUXO'};}
+function _cfgPPAP(){return {D:PPAP,F:PPAPF,showSaldo:true, showComp:false,th:'ppapth',tb:'ppaptb',info:'ppap-info',pag:'ppappag',lbl:'ppap-plan-lbl', sortFn:'ppapSort',pageFn:'gPPPAP'};}
+function _cfgLUXO(){return {D:LUXO,F:LUXOF,showSaldo:false,showComp:true, th:'luxoth',tb:'luxotb',info:'luxo-info',pag:'luxopag',lbl:'luxo-plan-lbl', sortFn:'luxoSort',pageFn:'gPLUXO'};}
 function planFilter(cfg){
   var D=cfg.D,F=cfg.F;
   if(!D||!D.rows) return [];
@@ -1820,7 +1821,10 @@ function rndPlanPill(cfg){
   var cw=D.cons_weeks||[], fw=D.fc_weeks||[], sem=D.sem;
   var nC=cw.length, nF=fw.length, FC0=10+nC, B=10+nC+nF; // offsets dinámicos
   if(el(cfg.lbl)) el(cfg.lbl).textContent=D.plan_label||'Plan';
-  var froz=[['SKU',''],['Descripción',''],['UNM',''],['Stock total','scd+sq+sh']];
+  var fz=cfg.showComp?PLAN_FZ_COMP:PLAN_FZ;
+  var froz=cfg.showComp
+    ? [['SKU',''],['Descripción',''],['UNM',''],['Comprador','Comprador asignado al SKU'],['Stock total','scd+sq+sh']]
+    : [['SKU',''],['Descripción',''],['UNM',''],['Stock total','scd+sq+sh']];
   var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01'],['Huechuraba','Centro 4020'],['OC tránsito','Órdenes de compra en tránsito']];
   var sentCols=[B+3,B+5,B+6]; // coberturas: sentinela ≥999 = "sin dato" (al final)
   var summ=[['Semana Quiebre','1ª semana en que el Stock Total (sin OC) no cubre el FC acumulado desde la semana en curso',B+10,true],
@@ -1840,7 +1844,7 @@ function rndPlanPill(cfg){
   summ.push(['$Tránsito','Valor OC en tránsito',B+8,false]);
   summ.push(['Últ. Proveedor','Proveedor de la última OC generada para el SKU',-1,false]);
   var r1='<tr>';
-  froz.forEach(function(c,i){r1+='<th rowspan="2" title="'+c[1]+'" style="'+planFzH(i)+'">'+c[0]+'</th>';});
+  froz.forEach(function(c,i){r1+='<th rowspan="2" title="'+c[1]+'" style="'+planFzH(fz,i)+'">'+c[0]+'</th>';});
   mid.forEach(function(c){r1+='<th rowspan="2" title="'+c[1]+'" style="text-align:right;position:sticky;top:0;z-index:6;background:#232840">'+c[0]+'</th>';});
   r1+='<th colspan="'+cw.length+'" style="text-align:center;position:sticky;top:0;z-index:6;background:#1c2438;border-left:2px solid #2d3452;border-right:2px solid #2d3452">Consumo real (sem)</th>';
   r1+='<th colspan="'+fw.length+'" title="FC del plan — semana en curso hasta el cierre del plan" style="text-align:center;position:sticky;top:0;z-index:6;background:#241f16;border-right:2px solid #2d3452">FC proyectado (sem) — S'+sem+'→S'+(fw.length?fw[fw.length-1]:sem)+'</th>';
@@ -1873,10 +1877,12 @@ function rndPlanPill(cfg){
   var sl=lst.slice((F.p-1)*PLAN_PER,F.p*PLAN_PER);
   tb.innerHTML=sl.map(function(r){
     var h='<tr>';
-    h+='<td style="font-family:monospace;font-size:.68rem;'+planFzB(0)+'">'+r[0]+'</td>';
-    h+='<td title="'+(r[1]||'').replace(/"/g,'&quot;')+'" style="'+planFzB(1,';white-space:nowrap;overflow:hidden;text-overflow:ellipsis')+'">'+r[1]+'</td>';
-    h+='<td style="color:var(--muted);'+planFzB(2)+'">'+(r[2]||'')+'</td>';
-    h+='<td style="text-align:right;font-weight:700;'+planFzB(3)+'">'+f0(r[4]||0)+'</td>';
+    h+='<td style="font-family:monospace;font-size:.68rem;'+planFzB(fz,0)+'">'+r[0]+'</td>';
+    h+='<td title="'+(r[1]||'').replace(/"/g,'&quot;')+'" style="'+planFzB(fz,1,';white-space:nowrap;overflow:hidden;text-overflow:ellipsis')+'">'+r[1]+'</td>';
+    h+='<td style="color:var(--muted);'+planFzB(fz,2)+'">'+(r[2]||'')+'</td>';
+    var _si=3;
+    if(cfg.showComp){var cmp=r[3]||'';h+='<td title="'+cmp.replace(/"/g,'&quot;')+'" style="'+planFzB(fz,3,';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#8aa0c8')+'">'+(cmp||'<span style="color:#3a4566">—</span>')+'</td>';_si=4;}
+    h+='<td style="text-align:right;font-weight:700;'+planFzB(fz,_si)+'">'+f0(r[4]||0)+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[5]||0)+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[6]||0)+'</td>';
     var blq=r[7]||0;h+='<td style="text-align:right;color:'+(blq>0?'#E8924A;font-weight:700':'var(--muted)')+'" title="Stock bloqueado BL01">'+(blq>0?f0(blq):'<span style="color:#3a4566">—</span>')+'</td>';
@@ -1901,7 +1907,7 @@ function rndPlanPill(cfg){
     h+='<td style="color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px" title="'+vend.replace(/"/g,'&quot;')+'">'+(vend||'<span style="color:#3a4566">—</span>')+'</td>';
     h+='</tr>';
     return h;
-  }).join('')||'<tr><td colspan="'+(9+nC+nF+(cfg.showSaldo?14:12))+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
+  }).join('')||'<tr><td colspan="'+(9+nC+nF+(cfg.showSaldo?14:12)+(cfg.showComp?1:0))+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
   var ordTxt='';
   if(F.sortCol!==null){var nm={};nm[B+10]='Semana Quiebre';nm[B+3]='Cob. FC 4w';nm[B+5]='Cob. FC 12w';nm[B+6]='Cob. 12w c/tránsito';nm[B+11]='Saldo Final';nm[B+12]='Valor Saldo Final';var nn=nm[F.sortCol]||'';ordTxt=' · orden: '+nn+(F.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
   var info='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+' del '+(D.plan_label||'plan')+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(F.s?' · búsqueda: "'+F.s+'"':'')+ordTxt;
@@ -1921,14 +1927,15 @@ function _expPlan(cfg){
   var summHdr=['Semana Quiebre','ΣFC 4w','ΣReal 4w','Desv %','Cob FC 4w','ΣFC 12w','Cob FC 12w','OC transito'];
   if(cfg.showSaldo) summHdr=summHdr.concat(['Saldo Final','Valor Saldo Final']);
   summHdr=summHdr.concat(['Cob 12w c/transito','$Stock','$Transito','Ult. Proveedor']);
-  var header=['SKU','Descripción','UNM','Stock total','StockCD','Quilicura','Bloqueado','Huechuraba','OC tránsito']
+  var header=['SKU','Descripción','UNM'].concat(cfg.showComp?['Comprador']:[])
+    .concat(['Stock total','StockCD','Quilicura','Bloqueado','Huechuraba','OC tránsito'])
     .concat(cw.map(function(w){return 'Cons S'+w;}))
     .concat(fw.map(function(w){return 'FC S'+w;}))
     .concat(summHdr);
   var vm=window._vendorMap||(window._vendorMap=_buildVendorMap());
   var lst=planFilter(cfg);
   var aoa=[header].concat(lst.map(function(r){
-    var base=[r[0],r[1],r[2],r[4],r[5],r[6],r[7],r[8],r[9]];   // sin Comprador (r[3])
+    var base=[r[0],r[1],r[2]].concat(cfg.showComp?[r[3]||'']:[]).concat([r[4],r[5],r[6],r[7],r[8],r[9]]);
     for(var i=0;i<nC;i++) base.push(r[10+i]);
     for(var j=0;j<nF;j++) base.push(r[FC0+j]);
     var sq=(r[B+10]==null?'':r[B+10]);
