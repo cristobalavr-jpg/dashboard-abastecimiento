@@ -749,7 +749,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 
 
 // ── GLOBAL DATA NAMESPACE ───────────────────────────────────────────────────
-var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT,INVCAT,HIST_INV,CONAN;
+var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT,INVCAT,HIST_INV,CONAN,COVPTI;
 var gCompFilter='';  // filtro global de comprador
 // Filtro global PPA (Pan de Pascua). Por defecto ON — replica el contrato histórico de B.9 reporte diario.
 var PPA_SET = new Set();
@@ -3679,6 +3679,8 @@ function buildCoberturas(){
       }
     });
   });
+  // Productos Terminados Importados (ZPT / PT MAQUILADOS) — al final de la sección (B.17)
+  try{ covRenderPTImp(host); }catch(e){ console.error('COV_PTIMP render:',e); }
 }
 function covToggleDetail(gid, bucket, items, tbody){
   var det = document.getElementById('cov-dt-'+gid);
@@ -3718,6 +3720,155 @@ function covToggleDetail(gid, bucket, items, tbody){
     + '<th style="text-align:right" title="Consumo real últimas 4 semanas">Cons. 4w real</th>'
     + '<th style="text-align:right">Cobertura (sem)</th>'
     + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+// ── PT Importado (ZPT / PT MAQUILADOS) al final de Coberturas (ver PARAMETRO.MD B.17) ──
+// Demanda = egreso del CD (MB51 601 despacho + 641 transferencias, neto 602/642, prom. 12 sem).
+// cob = stock / demanda semanal. SKU sin egreso (productos nuevos) → bucket 'Sin Despacho'.
+// Datos en COVPTI (COV_PTIMP de data.json). No depende del filtro de comprador (vista de categoría).
+var PTI_ORDER=['<2','2 a 5','5 a 10','10 a 20','20 a 50','50 a 100','Sobre 100','Sin Despacho'];
+var PTI_COLOR=Object.assign({'Sin Despacho':'#8892b0'}, COV_COLOR);
+var PTI_LABEL=Object.assign({'Sin Despacho':'Sin Despacho'}, COV_LABEL);
+function ptiBucket(it){ return (it.nuevo||it.cob==null) ? 'Sin Despacho' : covBucket(it.cob); }
+function covRenderPTImp(host){
+  if(!COVPTI || !COVPTI.items || !COVPTI.items.length) return;
+  var items=COVPTI.items.slice();
+  var buckets={}; PTI_ORDER.forEach(function(k){buckets[k]={val:0,cnt:0,items:[]};});
+  items.forEach(function(it){ var k=ptiBucket(it); buckets[k].val+=it.val||0; buckets[k].cnt+=1; buckets[k].items.push(it); });
+  var tot=PTI_ORDER.reduce(function(a,k){return a+buckets[k].val;},0);
+  // Macros (lead time largo → sub-cobertura bajo el umbral de 20 sem, igual que grupo Importados)
+  var subK=['<2','2 a 5','5 a 10','10 a 20'], norK=['20 a 50','50 a 100','Sobre 100'];
+  var pct=function(v){return tot>0?v/tot*100:0;};
+  var vsub=subK.reduce(function(a,k){return a+buckets[k].val;},0);
+  var vnor=norK.reduce(function(a,k){return a+buckets[k].val;},0);
+  var vsin=buckets['Sin Despacho'].val;
+  var macros=[
+    {label:'< 20 sem (sub-cobertura)', val:vsub, pct:pct(vsub), meta:80, sense:'up'},
+    {label:'20 — Sobre 100 sem',       val:vnor, pct:pct(vnor), meta:10, sense:'down'},
+    {label:'Sin Despacho (nuevos)',    val:vsin, pct:pct(vsin), meta:10, sense:'down'}
+  ];
+  var winTxt=(COVPTI.win&&COVPTI.win.length)?('S'+COVPTI.win[0]+'–S'+COVPTI.win[COVPTI.win.length-1]):'';
+  var sec=document.createElement('div'); sec.className='cov-sec';
+  sec.innerHTML=''
+    +'<div class="cov-tit">Productos Terminados Importados</div>'
+    +'<div class="cov-sub">Terminados ZPT / PT MAQUILADOS (misma categoría que «PT IMPORTADO» de Inventarios) · '
+    +items.length+' SKUs · Stock valorizado total: <b style="color:#fff">'+covFmtMM(tot)+'</b> · '
+    +'demanda = egreso del CD (despacho 601 + transferencias 641), promedio '+winTxt+'</div>'
+    +'<div class="cov-row">'
+    +  '<div class="cb"><div class="ct">Distribución por cobertura</div>'
+    +    '<div style="overflow-x:auto"><table><thead><tr><th>Cobertura</th><th>Valor Stock</th><th>% Total</th><th>SKUs</th></tr></thead>'
+    +    '<tbody id="cov-tb-ptimp"></tbody></table></div></div>'
+    +  '<div class="cb"><div class="ct">Resumen vs metas</div>'
+    +    '<div style="overflow-x:auto"><table><thead><tr><th>Grupo</th><th>$ Stock</th><th>% Stock</th><th>Meta</th></tr></thead>'
+    +    '<tbody id="cov-mt-ptimp"></tbody></table></div></div>'
+    +  '<div class="cb"><div class="ct">Cobertura de Stock Valorizado</div>'
+    +    '<div class="cw" style="height:240px"><canvas id="cov-ch-ptimp"></canvas></div></div>'
+    +'</div>'
+    +'<div class="cov-detail" id="cov-dt-ptimp"></div>';
+  host.appendChild(sec);
+  // Distribución por bucket (omite buckets vacíos — el universo es chico)
+  var tb=document.getElementById('cov-tb-ptimp'); var totCnt=0;
+  PTI_ORDER.forEach(function(k){
+    var b=buckets[k]; if(b.cnt===0 && b.val===0) return;
+    totCnt+=b.cnt; var p=tot>0?b.val/tot*100:0;
+    var tr=document.createElement('tr'); tr.setAttribute('data-bucket',k);
+    tr.innerHTML='<td><span class="cov-pill" style="background:'+PTI_COLOR[k]+'"></span>'+PTI_LABEL[k]+'</td>'
+      +'<td>$ '+f0(b.val)+'</td><td>'+covFmtPct(p)+'</td><td>'+b.cnt+'</td>';
+    tr.onclick=(function(bk,its){return function(){ covPTImpDetail(bk, its, tb); };})(k,b.items);
+    tb.appendChild(tr);
+  });
+  var trT=document.createElement('tr'); trT.className='cov-tot';
+  trT.innerHTML='<td>Total general</td><td>$ '+f0(tot)+'</td><td>100,0%</td><td>'+totCnt+'</td>';
+  tb.appendChild(trT);
+  // Resumen vs metas
+  var mt=document.getElementById('cov-mt-ptimp');
+  macros.forEach(function(m){
+    var s=covSemaforo(m.pct,m.meta,m.sense);
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+m.label+'</td><td>$ '+f0(m.val)+'</td>'
+      +'<td class="'+s[0]+'">'+covFmtPct(m.pct)+' <span class="cov-badge '+s[0]+'">'+s[1]+'</span></td>'
+      +'<td>'+m.meta+'%</td>';
+    mt.appendChild(tr);
+  });
+  // Gráfico
+  var ctx=document.getElementById('cov-ch-ptimp').getContext('2d');
+  if(window._covCh_ptimp) window._covCh_ptimp.destroy();
+  var chOrder=PTI_ORDER.filter(function(k){return buckets[k].cnt>0||buckets[k].val!==0;});
+  window._covCh_ptimp=new Chart(ctx,{type:'bar',
+    data:{labels:chOrder.map(function(k){return PTI_LABEL[k];}), datasets:[{label:'Valor Stock',
+      data:chOrder.map(function(k){return buckets[k].val;}),
+      backgroundColor:chOrder.map(function(k){return PTI_COLOR[k]+'cc';}),
+      borderColor:chOrder.map(function(k){return PTI_COLOR[k];}), borderWidth:1.2, borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){
+        var v=x.parsed.y,p=tot>0?v/tot*100:0; return ' '+covFmtMM(v)+' ('+covFmtPct(p)+')';}}}},
+      scales:{x:{ticks:{color:'#8892b0',font:{size:10}},grid:{display:false}},
+        y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+(v/1e6).toFixed(0)+'M';}},grid:{color:'#2d3452'}}}}});
+}
+function covPTImpDetail(bucket, items, tbody){
+  var det=document.getElementById('cov-dt-ptimp');
+  tbody.querySelectorAll('tr').forEach(function(t){t.classList.remove('cov-active');});
+  if(det.getAttribute('data-bucket')===bucket && det.classList.contains('open')){
+    det.classList.remove('open'); det.setAttribute('data-bucket',''); return;
+  }
+  var active=tbody.querySelector('tr[data-bucket="'+bucket.replace(/"/g,'\\"')+'"]');
+  if(active) active.classList.add('cov-active');
+  det.setAttribute('data-bucket',bucket); det.classList.add('open');
+  var sorted=items.slice().sort(function(a,b){return b.val-a.val;});
+  var totB=sorted.reduce(function(a,s){return a+s.val;},0);
+  if(!sorted.length){ det.innerHTML='<h4><span>'+PTI_LABEL[bucket]+' · sin SKUs</span><button class="cov-cl" onclick="document.getElementById(\'cov-dt-ptimp\').classList.remove(\'open\')">✕ Cerrar</button></h4>'; return; }
+  var rows=sorted.map(function(s){
+    var cob=(s.cob==null)?'<span style="color:var(--muted)">Sin despacho</span>':covFmtCob(s.cob);
+    var cobo=(s.cob_oc==null)?'<span style="color:var(--muted)">—</span>':covFmtCob(s.cob_oc);
+    var oc=(s.oc>0)?f0(s.oc):'<span style="color:var(--muted)">—</span>';
+    return '<tr>'
+      +'<td style="font-family:monospace;font-size:.65rem">'+s.sku+'</td>'
+      +'<td>'+(s.desc||'')+'</td>'
+      +'<td style="text-align:right">'+f0(s.stock)+'</td>'
+      +'<td style="text-align:right">$ '+f0(s.val)+'</td>'
+      +'<td style="text-align:right">'+oc+'</td>'
+      +'<td style="text-align:right" title="Despacho 601: '+f0(s.c601)+'/sem · Transf. 641: '+f0(s.c641)+'/sem">'+f0(s.cons_sem)+'</td>'
+      +'<td style="text-align:center;cursor:pointer" onclick="covPTImpHist(event,\''+s.sku+'\')" title="Egreso por semana · últimas 12 sem (clic para ver los números)">'+spark12(s.h12)+'</td>'
+      +'<td style="text-align:right">'+cob+'</td>'
+      +'<td style="text-align:right">'+cobo+'</td>'
+      +'</tr>';
+  }).join('');
+  det.innerHTML=''
+    +'<h4><span>Detalle · '+PTI_LABEL[bucket]+' · '+sorted.length+' SKUs · '+covFmtMM(totB)+'</span>'
+    +'<button class="cov-cl" onclick="document.getElementById(\'cov-dt-ptimp\').classList.remove(\'open\')">✕ Cerrar</button></h4>'
+    +'<div class="tw"><table><thead><tr>'
+    +'<th>SKU</th><th>Descripción</th><th style="text-align:right">Stock</th><th style="text-align:right">Valor Stock</th>'
+    +'<th style="text-align:right">OC tránsito</th>'
+    +'<th style="text-align:right" title="Egreso semanal = despacho 601 + transferencias 641 (promedio 12 sem)">Egreso/sem</th>'
+    +'<th style="text-align:center" title="Egreso real por semana · últimas 12 sem (clic para ver números)">Tendencia 12w</th>'
+    +'<th style="text-align:right">Cobertura (sem)</th>'
+    +'<th style="text-align:right" title="Cobertura incluyendo la OC en tránsito">Cob.+OC</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+// Expande el egreso semana a semana bajo la fila del SKU (réplica de tiToggleHist, B.11)
+function covPTImpHist(ev, sku){
+  ev.stopPropagation();
+  var tr=ev.currentTarget.closest('tr');
+  var nxt=tr.nextElementSibling;
+  if(nxt && nxt.classList.contains('pti-histrow')){ nxt.remove(); return; }
+  var s=(COVPTI&&COVPTI.items||[]).filter(function(x){return x.sku===sku;})[0];
+  if(!s || !s.h12 || !s.h12.length){ return; }
+  var fInt=function(n){return Math.round(n).toLocaleString('es-CL');};
+  var wk=(COVPTI&&COVPTI.win)||[];
+  var cells=s.h12.map(function(v,i){
+    var lbl=(wk[i]!=null)?('S'+wk[i]):('t'+(i+1));
+    var last=(i===s.h12.length-1);
+    return '<div style="text-align:center;min-width:38px">'
+      +'<div style="font-size:.55rem;color:var(--muted)">'+lbl+'</div>'
+      +'<div style="font-size:.68rem;color:'+(last?'#63b3ed':'#c0caf5')+'">'+(v>0?fInt(v):'·')+'</div></div>';
+  }).join('');
+  var htr=document.createElement('tr');
+  htr.className='pti-histrow';
+  htr.innerHTML='<td colspan="9" style="background:#1a1f33;padding:8px 12px">'
+    +'<div style="font-size:.6rem;color:var(--muted);margin-bottom:5px">'
+    +  'Egreso del CD por semana (601 + 641) · <b style="color:#c0caf5">'+(s.desc||s.sku)+'</b> · últimas 12 sem completas</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">'+cells+'</div></td>';
+  tr.parentNode.insertBefore(htr, tr.nextSibling);
 }
 // (loadPPA() global ya se encarga; mantenemos el alias por compatibilidad con showTab)
 function covLoadPPA(){ return loadPPA(); }
@@ -4776,7 +4927,7 @@ fetch('data.json?v='+Date.now())
     R=_D.R;SD=_D.SD;PA=_D.PA;PC=_D.PC;PS=_D.PS;G=_D.G;GR=_D.GR;GD=_D.GD;
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
-    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;PPAP=_D.PPAP||null;LUXO=_D.LUXO||null;LLEG_PPA=_D.LLEG_PPA||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;CONAN=_D.CONSUMO_ANUAL||null;
+    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;PPAP=_D.PPAP||null;LUXO=_D.LUXO||null;LLEG_PPA=_D.LLEG_PPA||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;CONAN=_D.CONSUMO_ANUAL||null;COVPTI=_D.COV_PTIMP||null;
     window._vendorMap=null;window._pltCobMap=null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
