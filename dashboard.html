@@ -431,8 +431,18 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
         <button class="sb" id="ih-btn-cats" onclick="ihSetView('cats')">Por categor&#237;a</button>
       </div>
       <div class="cb" style="margin-bottom:14px">
-        <div class="ct" id="ih-chart-title">Evoluci&#243;n del inventario total (MM CLP)</div>
-        <div class="cw" style="height:280px"><canvas id="cIHist"></canvas></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+          <div class="ct" id="ih-chart-title" style="margin:0">Evoluci&#243;n del inventario total (MM CLP)</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:.68rem;color:var(--muted)">Rango:</span>
+            <select id="ih-rng-a" onchange="ihBuildChart()" style="background:#13182a;color:#e2e8f0;border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:.7rem"></select>
+            <span style="color:var(--muted);font-size:.75rem">&#8594;</span>
+            <select id="ih-rng-b" onchange="ihBuildChart()" style="background:#13182a;color:#e2e8f0;border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:.7rem"></select>
+            <button onclick="ihResetRange()" style="background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">Todo</button>
+          </div>
+        </div>
+        <div class="cw" id="ih-cw" style="height:280px"><canvas id="cIHist"></canvas></div>
+        <div id="ih-cats-grid" style="display:none;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px"></div>
       </div>
       <div class="stt" style="margin-top:8px">
         Variaci&#243;n entre semanas
@@ -2292,8 +2302,20 @@ function buildHistInv(){
   });
   if(sems.length>1){sA.value=sems.length-2; sB.value=sems.length-1;}
   else{sA.value=0; sB.value=0;}
+  var rA=el('ih-rng-a'),rB=el('ih-rng-b'); rA.innerHTML=''; rB.innerHTML='';
+  sems.forEach(function(s,i){
+    var opt='<option value="'+i+'">W'+s.sem+' ('+s.fecha+')</option>';
+    rA.innerHTML+=opt; rB.innerHTML+=opt;
+  });
+  rA.value=0; rB.value=sems.length-1;
   ihBuildChart();
   ihBuildComp();
+}
+
+function ihResetRange(){
+  var sems=(HIST_INV&&HIST_INV.semanas)||[];
+  el('ih-rng-a').value=0; el('ih-rng-b').value=Math.max(0,sems.length-1);
+  ihBuildChart();
 }
 
 function ihSetView(v){
@@ -2305,38 +2327,100 @@ function ihSetView(v){
 function ihBuildChart(){
   if(!HIST_INV||!HIST_INV.semanas||!HIST_INV.semanas.length) return;
   var sems=HIST_INV.semanas;
+  var rA=el('ih-rng-a'),rB=el('ih-rng-b');
+  if(rA&&rB&&rA.value!==''&&rB.value!==''){
+    var iA=parseInt(rA.value),iB=parseInt(rB.value);
+    if(!isNaN(iA)&&!isNaN(iB)){
+      if(iA>iB){var t=iA;iA=iB;iB=t;}
+      sems=sems.slice(iA,iB+1);
+    }
+  }
+  if(!sems.length) return;
+  var cw=el('ih-cw'),grid=el('ih-cats-grid');
+  // ── Vista Por categoría → small multiples (una sparkline por categoría) ──
+  if(_ihView==='cats'){
+    el('ih-chart-title').textContent='Variación por categoría en el rango';
+    if(window._cIHist){window._cIHist.destroy();window._cIHist=null;}
+    if(cw)cw.style.display='none';
+    grid.style.display='grid';
+    ihBuildCatsGrid(sems);
+    return;
+  }
+  // ── Vista Total → línea ──
+  if(grid)grid.style.display='none';
+  if(cw)cw.style.display='';
+  el('ih-chart-title').textContent='Evolución del inventario total (MM CLP)';
   var labels=sems.map(function(s){return 'W'+s.sem;});
   var cc=el('cIHist').getContext('2d');
   if(window._cIHist) window._cIHist.destroy();
-  var PAL=['#6366f1','#E87B2A','#1D9E75','#E24B4A','#378ADD','#D85A30','#BA7517','#8892b0','#0F6E56','#D4537E'];
-  var datasets;
-  if(_ihView==='total'){
-    el('ih-chart-title').textContent='Evolución del inventario total (MM CLP)';
-    datasets=[{label:'Total',data:sems.map(function(s){return +(s.total/1e6).toFixed(1);}),
-      borderColor:'#6366f1',backgroundColor:'#6366f118',fill:true,tension:0.3,
-      pointRadius:5,pointHoverRadius:7,pointBackgroundColor:'#6366f1'}];
-  } else {
-    el('ih-chart-title').textContent='Evolución por categoría (MM CLP)';
-    var catSet={};
-    sems.forEach(function(s){(s.cats||[]).forEach(function(c){catSet[c.label]=true;});});
-    var catLabels=Object.keys(catSet);
-    datasets=catLabels.map(function(lbl,i){
-      return {label:lbl,data:sems.map(function(s){
-        var c=(s.cats||[]).find(function(x){return x.label===lbl;});
-        return c?+(c.val/1e6).toFixed(1):null;
-      }),borderColor:PAL[i%PAL.length],backgroundColor:'transparent',
-      tension:0.3,pointRadius:4,spanGaps:true};
-    });
-  }
+  var datasets=[{label:'Total',data:sems.map(function(s){return +(s.total/1e6).toFixed(1);}),
+    borderColor:'#6366f1',backgroundColor:'#6366f118',fill:true,tension:0.3,
+    pointRadius:5,pointHoverRadius:7,pointBackgroundColor:'#6366f1'}];
   window._cIHist=new Chart(cc,{type:'line',data:{labels:labels,datasets:datasets},
     options:{responsive:true,maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:_ihView==='cats',position:'bottom',
-        labels:{color:'#8892b0',font:{size:10},boxWidth:10}},
+      plugins:{legend:{display:false},
         tooltip:{callbacks:{label:function(x){return x.dataset.label+': $'+x.raw+' MM';}}}},
       scales:{x:{ticks:{color:'#8892b0',font:{size:10}},grid:{color:'#2d3452'}},
         y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+v+' MM';}},
         grid:{color:'#2d3452'}}}}});
+}
+
+// Sparkline SVG (autoescala a su propio min/max) para las tarjetas por categoría
+function ihSparkline(vals,color){
+  var pts=[]; vals.forEach(function(v,i){if(v!=null)pts.push([i,v]);});
+  if(pts.length<2){return '<svg viewBox="0 0 100 40" preserveAspectRatio="none" style="width:100%;height:38px"></svg>';}
+  var xs=pts.map(function(p){return p[0];}),ys=pts.map(function(p){return p[1];});
+  var xmin=Math.min.apply(null,xs),xmax=Math.max.apply(null,xs);
+  var ymin=Math.min.apply(null,ys),ymax=Math.max.apply(null,ys);
+  var xr=(xmax-xmin)||1,yr=(ymax-ymin)||1;
+  var P=pts.map(function(p){
+    var x=((p[0]-xmin)/xr)*100;
+    var y=36-((p[1]-ymin)/yr)*32-2; // margen 2px arriba/abajo
+    return x.toFixed(1)+','+y.toFixed(1);
+  });
+  var line=P.join(' ');
+  var area='0,40 '+line+' 100,40';
+  var end=P[P.length-1].split(',');
+  return '<svg viewBox="0 0 100 40" preserveAspectRatio="none" style="width:100%;height:38px;overflow:visible">'+
+    '<polygon points="'+area+'" fill="'+color+'" fill-opacity="0.12"/>'+
+    '<polyline points="'+line+'" fill="none" stroke="'+color+'" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>'+
+    '<circle cx="'+end[0]+'" cy="'+end[1]+'" r="2.6" fill="'+color+'"/></svg>';
+}
+
+function ihBuildCatsGrid(sems){
+  var grid=el('ih-cats-grid');
+  var catSet={};
+  sems.forEach(function(s){(s.cats||[]).forEach(function(c){catSet[c.label]=true;});});
+  var catLabels=Object.keys(catSet);
+  var cards=catLabels.map(function(lbl){
+    var series=sems.map(function(s){
+      var c=(s.cats||[]).find(function(x){return x.label===lbl;});
+      return c?c.val:null;
+    });
+    var present=series.filter(function(v){return v!=null;});
+    var first=present.length?present[0]:0, last=present.length?present[present.length-1]:0;
+    var dv=last-first, dpct=first>0?(dv/first*100):(last>0?100:0);
+    return {lbl:lbl,series:series,first:first,last:last,dv:dv,dpct:dpct,absDv:Math.abs(dv)};
+  }).sort(function(a,b){return b.absDv-a.absDv;});
+  var html=cards.map(function(r){
+    // Convención inventario: baja = verde (menos capital), sube = ámbar/rojo (más capital)
+    var up=r.dv>0, flat=Math.abs(r.dv)<1e-6;
+    var col=flat?'var(--muted)':(up?'var(--rT)':'var(--n)');
+    var arrow=flat?'→':(up?'↑':'↓'), sign=r.dv>=0?'+':'';
+    var esc=r.lbl.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    return '<div style="background:#161b2e;border:1px solid #2d3452;border-radius:8px;padding:9px 10px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-bottom:5px">'+
+        '<span style="font-size:.68rem;font-weight:600;color:#c0caf5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+esc+'">'+esc+'</span>'+
+        '<span style="font-size:.7rem;font-weight:700;color:'+col+';white-space:nowrap">'+arrow+' '+sign+r.dpct.toFixed(1)+'%</span>'+
+      '</div>'+
+      ihSparkline(r.series,flat?'#8892b0':(up?'#E24B4A':'#1D9E75'))+
+      '<div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);margin-top:4px">'+
+        '<span>$'+fMM(r.first)+' → $'+fMM(r.last)+'</span>'+
+        '<span style="color:'+col+';font-weight:600">'+sign+'$'+fMM(Math.abs(r.dv))+'</span>'+
+      '</div></div>';
+  }).join('');
+  grid.innerHTML=html||'<div style="color:var(--muted);font-size:.72rem;padding:20px;text-align:center">Sin categorías en el rango.</div>';
 }
 
 function ihBuildComp(){
