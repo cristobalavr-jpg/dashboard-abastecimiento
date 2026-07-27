@@ -208,11 +208,19 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .mc-dw-foot{padding:9px 14px;border-top:1px solid var(--border);font-size:.67rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
 /* === Coberturas (t10) === */
 .cov-sec{margin-bottom:16px}
+.cov-hwrap{max-width:1180px;margin:0 auto}  /* B.18 · centra el histórico dentro de la tarjeta ancha */
+.covh-gr{display:inline-flex;gap:2px;background:#232840;border:1px solid var(--border);border-radius:7px;padding:2px}
+.covh-gr button{background:none;border:0;color:var(--muted);font:inherit;font-size:.66rem;font-weight:600;padding:3px 10px;border-radius:5px;cursor:pointer}
+.covh-gr button.on{background:#378ADD;color:#fff}
 .cov-tit{font-size:.85rem;font-weight:700;color:#fff;margin-bottom:2px}
 .cov-sub{font-size:.65rem;color:var(--muted);margin-bottom:9px}
-.cov-row{display:grid;grid-template-columns:1.15fr 0.9fr 1.05fr;gap:10px;align-items:start}
+.cov-row{display:grid;grid-template-columns:1.15fr 0.9fr 1.05fr;gap:10px;align-items:stretch}
 @media(max-width:1180px){.cov-row{grid-template-columns:1fr}}
-.cov-row .cb{padding:10px 12px}
+.cov-row .cb{padding:10px 12px;display:flex;flex-direction:column}
+/* las 3 tarjetas quedan a la misma altura: el gráfico llena el alto sobrante y la
+   tabla de metas se centra verticalmente en vez de dejar un hueco abajo */
+.cov-row .cb>.cw{flex:1 1 auto;height:auto!important;min-height:200px}
+.cov-row .cb>.cov-fill{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center}
 .cov-row table{font-size:.71rem;width:100%;border-collapse:collapse}
 .cov-row thead th{background:#232840;color:var(--muted);padding:6px 9px;text-align:right;font-weight:600;white-space:nowrap;font-size:.62rem;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border)}
 .cov-row thead th:first-child{text-align:left}
@@ -759,7 +767,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 
 
 // ── GLOBAL DATA NAMESPACE ───────────────────────────────────────────────────
-var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT,INVCAT,HIST_INV,CONAN,COVPTI;
+var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT,INVCAT,HIST_INV,CONAN,COVPTI,COV_HIST;
 var gCompFilter='';  // filtro global de comprador
 // Filtro global PPA (Pan de Pascua). Por defecto ON — replica el contrato histórico de B.9 reporte diario.
 var PPA_SET = new Set();
@@ -3684,17 +3692,32 @@ function buildCoberturas(){
       +   '</div>'
       +   '<div class="cb">'
       +     '<div class="ct">Resumen vs metas</div>'
-      +     '<div style="overflow-x:auto"><table>'
+      +     '<div class="cov-fill" style="overflow-x:auto"><table>'
       +       '<thead><tr><th>Grupo</th><th>$ Stock</th><th>% Stock</th><th>Meta</th></tr></thead>'
       +       '<tbody id="cov-mt-'+g.id+'"></tbody>'
       +     '</table></div>'
       +   '</div>'
       +   '<div class="cb">'
       +     '<div class="ct">Cobertura de Stock Valorizado</div>'
-      +     '<div class="cw" style="height:240px"><canvas id="cov-ch-'+g.id+'"></canvas></div>'
+      +     '<div class="cw" style="min-height:240px"><canvas id="cov-ch-'+g.id+'"></canvas></div>'
       +   '</div>'
       + '</div>'
-      + '<div class="cov-detail" id="cov-dt-'+g.id+'"></div>';
+      + '<div class="cov-detail" id="cov-dt-'+g.id+'"></div>'
+      + '<div class="cov-row" id="cov-hr-'+g.id+'" style="grid-template-columns:1fr;margin-top:10px">'
+      +   '<div class="cb">'
+      +     '<div class="cov-hwrap">'
+      +       '<div class="ct" style="display:flex;align-items:center;justify-content:space-between;gap:10px">'
+      +         '<span>Evolución histórica · distribución de cobertura vs stock valorizado</span>'
+      +         '<span class="covh-gr" id="covh-gr-'+g.id+'">'
+      +           '<button data-gr="sem" onclick="covSetGrain(\'sem\')">Semana</button>'
+      +           '<button data-gr="mes" onclick="covSetGrain(\'mes\')">Mes</button>'
+      +         '</span>'
+      +       '</div>'
+      +       '<div class="cov-sub" style="margin:0 0 6px" id="cov-hs-'+g.id+'"></div>'
+      +       '<div class="cw" style="height:260px"><canvas id="cov-hc-'+g.id+'"></canvas></div>'
+      +     '</div>'
+      +   '</div>'
+      + '</div>';
     host.appendChild(sec);
 
     // detalle por bucket
@@ -3762,9 +3785,150 @@ function buildCoberturas(){
         }
       }
     });
+    // histórico (B.18)
+    try{ covRenderHist(g.id); }catch(e){ console.error('COV_HIST render '+g.id+':', e); }
   });
   // Productos Terminados Importados (ZPT / PT MAQUILADOS) — al final de la sección (B.17)
   try{ covRenderPTImp(host); }catch(e){ console.error('COV_PTIMP render:',e); }
+}
+
+// ── B.18 · Histórico de distribución de coberturas ────────────────────────────
+// Barras apiladas 100% con las 3 zonas macro (sub-cobertura / normal / Sin Plan)
+// + línea de stock valorizado total del grupo en eje secundario. Datos
+// precalculados en el pipeline (COV_HIST); respeta filtro de comprador y toggle PPA.
+var COVH_COLOR = {sub:'#639922', nor:'#E87B2A', sin:'#8892b0'};  // semántica de meta, no de bucket
+var COVH_GRAIN = localStorage.getItem('covhGrain') || 'sem';      // 'sem' | 'mes'
+function covHistSem(k){ return 'W'+String(k).slice(-2); }        // '2026W20' → 'W20'
+function covSetGrain(g){
+  COVH_GRAIN = g; try{ localStorage.setItem('covhGrain', g); }catch(e){}
+  COV_GROUPS.forEach(function(x){ try{ covRenderHist(x.id); }catch(e){} });
+}
+function covRenderHist(gid){
+  var host = document.getElementById('cov-hc-'+gid);
+  var row  = document.getElementById('cov-hr-'+gid);
+  if(!host || !row) return;
+  var H = (typeof COV_HIST!=='undefined' && COV_HIST) ? COV_HIST : null;
+  if(!H || !H.sem || !H.sem.length){ row.style.display='none'; return; }
+
+  var cfg = COV_MACRO_CFG[gid] || COV_MACRO_CFG.zmpr;
+  var bk  = H.buckets || COV_ORDER;
+  var iSub = cfg.sub.map(function(k){return bk.indexOf(k);}).filter(function(i){return i>=0;});
+  var iNor = cfg.normal.map(function(k){return bk.indexOf(k);}).filter(function(i){return i>=0;});
+  var iSin = ['Sin Plan c/Consumo','Sin Plan'].map(function(k){return bk.indexOf(k);}).filter(function(i){return i>=0;});
+
+  var ppaKey  = ppaActive() ? 'ppa1' : 'ppa0';
+  var compKey = gCompFilter || 'TODOS';
+  var labels=[], dSub=[], dNor=[], dSin=[], dTot=[], dSrc=[], anyComp=false;
+  // La serie extendida (`ext`, incluye el histórico oficial del Excel) sólo existe a
+  // nivel total: si hay filtro de comprador se cae a la serie propia por comprador.
+  var E = (!gCompFilter && H.ext && H.ext[COVH_GRAIN]) ? H.ext[COVH_GRAIN] : null;
+  if(E && E.g[gid]){
+    E.g[gid].forEach(function(d, i){
+      if(!d){ return; }
+      anyComp = true;
+      labels.push(E.labels[i]); dSrc.push(E.src[i]);
+      dSub.push(d.sub); dNor.push(d.nor); dSin.push(d.sin); dTot.push(d.tot);
+      var j = labels.length-1, t = d.tot||0;
+      dSub.$=dSub.$||[]; dNor.$=dNor.$||[]; dSin.$=dSin.$||[];
+      dSub.$[j]=t*d.sub/100; dNor.$[j]=t*d.nor/100; dSin.$[j]=t*d.sin/100;
+    });
+  } else {
+    H.sem.forEach(function(sk, i){
+      var gg = ((H.g[sk]||{})[gid]||{});
+      var d  = gg[compKey] || null;   // comprador sin cartera en este grupo → sin barra
+      var arr = d ? (d[ppaKey] || d.ppa0 || []) : null;
+      if(d) anyComp = true;
+      var sum = function(idx){ return arr ? idx.reduce(function(a,j){return a+(arr[j]||0);},0) : 0; };
+      var s=sum(iSub), n=sum(iNor), p=sum(iSin), t=s+n+p;
+      labels.push(covHistSem(sk)); dSrc.push('da');
+      dTot.push(t);
+      dSub.push(t>0 ? s/t*100 : null);
+      dNor.push(t>0 ? n/t*100 : null);
+      dSin.push(t>0 ? p/t*100 : null);
+      // guardamos los $ para el tooltip
+      dSub.$ = dSub.$||[]; dSub.$[i]=s; dNor.$ = dNor.$||[]; dNor.$[i]=n; dSin.$ = dSin.$||[]; dSin.$[i]=p;
+    });
+  }
+  if(!anyComp){ row.style.display='none'; return; }
+  row.style.display='';
+
+  // selector Semana/Mes: sólo tiene sentido con la serie extendida (sin filtro de comprador)
+  var grp = document.getElementById('covh-gr-'+gid);
+  if(grp){
+    var hayExt = !gCompFilter && H.ext && H.ext.mes && H.ext.mes.labels && H.ext.mes.labels.length;
+    grp.style.display = hayExt ? '' : 'none';
+    [].forEach.call(grp.querySelectorAll('button'), function(b){
+      b.classList.toggle('on', b.getAttribute('data-gr')===COVH_GRAIN);
+    });
+  }
+
+  var sub = document.getElementById('cov-hs-'+gid);
+  if(sub){
+    var last = dTot[dTot.length-1] || 0, first = dTot[0] || 0;
+    var dp = first>0 ? (last-first)/first*100 : 0;
+    var nXls = dSrc.filter(function(s){return s==='xls';}).length;
+    sub.innerHTML = labels.length+' '+(COVH_GRAIN==='mes'?'meses':'semanas')+' · '+labels[0]+' → '+labels[labels.length-1]
+      + ' · Stock valorizado: '+covFmtMM(first)+' → <b style="color:#fff">'+covFmtMM(last)+'</b> ('
+      + (dp>=0?'+':'')+covFmtPct(dp)+')'
+      + (gCompFilter ? ' · Comprador: '+gCompFilter+' (sin histórico oficial)' : '')
+      + (ppaActive() ? ' · excluye PPA' : ' · incluye PPA')
+      + (nXls ? ' · <span style="color:#8892b0">'+nXls+' períodos del histórico oficial (borde punteado)</span>' : '');
+  }
+
+  // el tramo que viene del histórico oficial (Excel) se marca con borde punteado
+  var brdDash = dSrc.map(function(s){return s==='xls' ? [3,2] : undefined;});
+  var mk = function(lbl, data, color){
+    return {label:lbl, data:data, backgroundColor:color+'cc',
+            borderColor: dSrc.map(function(s){return s==='xls' ? '#ffffff88' : color;}),
+            borderWidth:1, borderDash:brdDash,
+            borderRadius:3, stack:'d', yAxisID:'y', order:2, maxBarThickness:64,
+            _mm:data.$||[], _src:dSrc};
+  };
+  // headroom en el eje $ para que la línea no quede pegada al techo de las barras
+  var maxTot = Math.max.apply(null, dTot.concat([0]));
+  var ctx = host.getContext('2d');
+  var key = '_covHCh_'+gid;
+  if(window[key]) window[key].destroy();
+  window[key] = new Chart(ctx, {
+    data:{
+      labels: labels,
+      datasets:[
+        Object.assign(mk(cfg.sub_label, dSub, COVH_COLOR.sub),    {type:'bar'}),
+        Object.assign(mk(cfg.normal_label, dNor, COVH_COLOR.nor), {type:'bar'}),
+        Object.assign(mk('Sin Plan', dSin, COVH_COLOR.sin),       {type:'bar'}),
+        {type:'line', label:'Stock valorizado', data:dTot, yAxisID:'y1', order:1,
+         borderColor:'#38bdf8', backgroundColor:'#38bdf8', borderWidth:2,
+         pointRadius:3, pointHoverRadius:5, tension:0.25, fill:false}
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{align:'start', labels:{color:'#8892b0',font:{size:10},boxWidth:12,padding:14}},
+        tooltip:{callbacks:{
+          label:function(x){
+            if(x.dataset.yAxisID==='y1') return ' Stock valorizado: '+covFmtMM(x.parsed.y);
+            var mm = (x.dataset._mm||[])[x.dataIndex]||0;
+            return ' '+x.dataset.label+': '+covFmtPct(x.parsed.y)+' ('+covFmtMM(mm)+')';
+          },
+          afterBody:function(items){
+            var s = dSrc[items[0].dataIndex];
+            return s==='xls' ? 'Fuente: histórico oficial (Excel)' : 'Fuente: cálculo del DA';
+          }}}
+      },
+      scales:{
+        x:{stacked:true, ticks:{color:'#8892b0',font:{size:10}}, grid:{display:false}},
+        y:{stacked:true, min:0, max:100, position:'left',
+           ticks:{color:'#8892b0',font:{size:10},callback:function(v){return v+'%';}},
+           grid:{color:'#2d3452'}},
+        y1:{position:'right', min:0, max: maxTot>0 ? maxTot*1.45 : 1,
+            ticks:{color:'#38bdf8',font:{size:10},maxTicksLimit:6,
+                   callback:function(v){return '$'+(v/1e6).toFixed(0)+'M';}},
+            grid:{display:false}}
+      }
+    }
+  });
 }
 function covToggleDetail(gid, bucket, items, tbody){
   var det = document.getElementById('cov-dt-'+gid);
@@ -5011,7 +5175,7 @@ fetch('data.json?v='+Date.now())
     R=_D.R;SD=_D.SD;PA=_D.PA;PC=_D.PC;PS=_D.PS;G=_D.G;GR=_D.GR;GD=_D.GD;
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
-    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;PPAP=_D.PPAP||null;LUXO=_D.LUXO||null;LLEG_PPA=_D.LLEG_PPA||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;CONAN=_D.CONSUMO_ANUAL||null;COVPTI=_D.COV_PTIMP||null;
+    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;PPAP=_D.PPAP||null;LUXO=_D.LUXO||null;LLEG_PPA=_D.LLEG_PPA||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;CONAN=_D.CONSUMO_ANUAL||null;COVPTI=_D.COV_PTIMP||null;COV_HIST=_D.COV_HIST||null;
     window._vendorMap=null;window._pltCobMap=null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
