@@ -1492,22 +1492,25 @@ function _buildVendorMap(){
     var date=r[6]||'';
     var vendor=r[7]||'';
     if(!sku||!vendor) return;
-    // OCM idx: 7=Proveedor/Centro suministrador · 12=Precio neto · 13=Moneda
-    if(!m[sku]||date>m[sku].date) m[sku]={vendor:vendor,date:date,price:r[12]||0,mon:r[13]||''};
+    // OCM idx: 7=Proveedor/Centro suministrador · 12=Precio neto · 13=Moneda · 14=Cantidad base
+    if(!m[sku]||date>m[sku].date) m[sku]={vendor:vendor,date:date,price:r[12]||0,mon:r[13]||'',base:r[14]||0};
   });
   var out={};Object.keys(m).forEach(function(k){
     // Limpia el código SAP inicial (dígitos + espacios) y deja solo el nombre del proveedor.
     var name=String(m[k].vendor).replace(/^\s*\d+\s+/,'').trim();
-    out[k]={vendor:name, price:m[k].price, mon:m[k].mon};
+    // Precio neto de ME2M viene por "Cantidad base" (ej. por 100 kg) → unitario = neto / base.
+    var b=Number(m[k].base)||1; if(b<=0) b=1;
+    out[k]={vendor:name, price:(Number(m[k].price)||0)/b, mon:m[k].mon};
   });
   return out;
 }
-// Precio de la última OC. CLP → $ entero (miles). Moneda extranjera (EUR/USD) → símbolo + decimales
+// Precio UNITARIO de la última OC (= Precio neto / Cantidad base de ME2M).
+// CLP → $ con 1 decimal (ej. $32,7). Moneda extranjera (EUR/USD) → símbolo + 2 decimales
 // reales (un precio EUR de 0,67 no puede mostrarse como "$1": sería engañoso).
 function _fmtOCPrice(vi){
   if(!vi || !vi.price) return '<span style="color:#3a4566">—</span>';
   var p=vi.price, mon=(vi.mon||'CLP');
-  if(mon==='CLP' || mon===''){ return '$'+f0(p); }
+  if(mon==='CLP' || mon===''){ return '$'+Number(p).toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1}); }
   var sym = (mon==='EUR')?'€':((mon==='USD')?'US$':'');
   var num = p.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2});
   return '<span title="Moneda de la OC: '+mon+'">'+(sym?sym+num:num+' '+mon)+'</span>';
