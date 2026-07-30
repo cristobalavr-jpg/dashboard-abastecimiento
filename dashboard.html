@@ -309,8 +309,16 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 #rs-host .hv .d{font-size:.7rem;color:#9fabc6;margin-top:7px;line-height:1.6}
 #rs-host .hv .d b{color:#fff}
 #rs-host .hc{min-width:0}
-#rs-host .ct{font-size:.7rem;color:var(--muted);font-weight:700;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
-#rs-host .ct b{color:var(--ink2,#c0caf5)}
+/* Titulo de tabla/grafico dentro de un bloque. Va en blanco, mas grande y con una linea
+   inferior para que se lea como encabezado y no se confunda con las etiquetas menores.
+   El 2do <span> es el metadato de la derecha ("9 categorias", "48 semanas"): queda chico
+   y apagado para no competir con el titulo. */
+#rs-host .ct{font-size:.86rem;color:#fff;font-weight:800;letter-spacing:-.1px;margin-bottom:9px;
+  padding-bottom:6px;border-bottom:1px solid rgba(99,102,241,.3);
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+#rs-host .ct > span + span{font-size:.64rem;font-weight:700;color:var(--muted);letter-spacing:0}
+#rs-host .ct > span + span b{color:#c9d3e8}
+#rs-host .ct b{color:#fff}
 #rs-host .duo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 #rs-host .dp{background:#161b2e;border:1px solid var(--border);border-radius:10px;padding:12px 13px;display:flex;flex-direction:column}
 #rs-host .dh{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
