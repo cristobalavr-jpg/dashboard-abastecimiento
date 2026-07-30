@@ -1346,8 +1346,12 @@ function rsCols(pts,o){
     var _tp='<div class="tw2">Semana '+p.s+(o.dim&&o.dim(p)?' · incompleta':'')+'</div>'+
             '<div class="tv">'+p.v+' quiebres reales</div>'+
             (p.mot?('<div class="tx">motivo principal: <b>'+p.mot+'</b> ('+p.motn+' de '+p.v+')</div>'):'');
-    g+='<rect x="'+x.toFixed(1)+'" y="'+Y(p.v).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" fill="'+col+
-       '" style="cursor:crosshair" data-cx="'+((x+w/2)/W*100).toFixed(3)+'" data-tip="'+_tp.replace(/"/g,'&quot;')+'"></rect>';
+    /* Relleno translucido + borde marcado: mismo tratamiento que los graficos Chart.js del
+       DA (backgroundColor color+'99' con borderColor solido). Mantiene el rojo pero le baja
+       el peso visual, que en 31 columnas llenas saturaba la vista. */
+    g+='<rect x="'+x.toFixed(1)+'" y="'+Y(p.v).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+
+       '" rx="2" fill="'+col+'" fill-opacity="0.6" stroke="'+col+'" stroke-width="1.5"'+
+       ' style="cursor:crosshair" data-cx="'+((x+w/2)/W*100).toFixed(3)+'" data-tip="'+_tp.replace(/"/g,'&quot;')+'"></rect>';
   });
   if(o.avg!==undefined){
     var ya=Y(o.avg);
