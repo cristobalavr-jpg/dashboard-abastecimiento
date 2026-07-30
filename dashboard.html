@@ -1335,8 +1335,11 @@ function rsCols(pts,o){
   pts.forEach(function(p,i){
     var h=Math.max(0,(H-Bo)-Y(p.v)), x=L+i*bw+1.2, w=Math.max(1,bw-2.4);
     var col=(o.dim&&o.dim(p))?'#4a5578':o.color;
+    var _tp='<div class="tw2">Semana '+p.s+(o.dim&&o.dim(p)?' · incompleta':'')+'</div>'+
+            '<div class="tv">'+p.v+' quiebres reales</div>'+
+            (p.mot?('<div class="tx">motivo principal: <b>'+p.mot+'</b> ('+p.motn+' de '+p.v+')</div>'):'');
     g+='<rect x="'+x.toFixed(1)+'" y="'+Y(p.v).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" fill="'+col+
-       '" style="cursor:crosshair" data-cx="'+((x+w/2)/W*100).toFixed(3)+'" data-tip="Semana '+p.s+': <b>'+p.v+'</b> quiebres'+(o.dim&&o.dim(p)?' (semana incompleta)':'')+'"></rect>';
+       '" style="cursor:crosshair" data-cx="'+((x+w/2)/W*100).toFixed(3)+'" data-tip="'+_tp.replace(/"/g,'&quot;')+'"></rect>';
   });
   if(o.avg!==undefined){
     var ya=Y(o.avg);
@@ -1353,13 +1356,21 @@ function rsCols(pts,o){
 }
 
 // ── Barras horizontales ──
-function rsBars(items,vw){
-  var mx=Math.max.apply(null,items.map(function(i){return i.v;}))||1; vw=vw||54;
+/* Barras horizontales. `i.t` es el valor principal y `i.t2` el secundario (normalmente el
+   %): van en COLUMNAS PROPIAS y con `tabular-nums`, para que los dígitos queden en un solo
+   eje vertical en vez de moverse según el largo del número de al lado. */
+function rsBars(items,vw,vw2){
+  var mx=Math.max.apply(null,items.map(function(i){return i.v;}))||1;
+  vw=vw||54; var has2=items.some(function(i){return i.t2!==undefined;});
+  vw2=vw2||46;
+  var cols='118px 1fr '+vw+'px'+(has2?(' '+vw2+'px'):'');
   return '<div style="display:flex;flex-direction:column;gap:5px">'+items.map(function(i){
-    return '<div style="display:grid;grid-template-columns:118px 1fr '+vw+'px;align-items:center;gap:8px">'+
+    return '<div style="display:grid;grid-template-columns:'+cols+';align-items:center;gap:8px">'+
       '<span style="font-size:.65rem;color:#c9d3e8;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+i.l+'">'+i.l+'</span>'+
       '<div style="height:15px;background:#232840;border-radius:3px;overflow:hidden"><div style="width:'+(i.v/mx*100).toFixed(1)+'%;height:100%;background:'+i.c+';border-radius:3px" title="'+i.l+': '+i.v+'"></div></div>'+
-      '<span style="font-size:.66rem;font-weight:800;color:#fff">'+i.t+'</span></div>';
+      '<span style="font-size:.66rem;font-weight:800;color:#fff;text-align:right;font-variant-numeric:tabular-nums">'+i.t+'</span>'+
+      (has2?'<span style="font-size:.64rem;font-weight:700;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums">'+(i.t2!==undefined?i.t2:'')+'</span>':'')+
+      '</div>';
   }).join('')+'</div>';
 }
 
@@ -1397,7 +1408,11 @@ function rsRender(){
   if(B1) vp.push('La disponibilidad de materiales promedió <b>'+B1.t_prom+'%</b> del total de líneas requeridas, y el faltante de materia prima frenó <b>'+rsN(B1.un_mp)+' unidades</b> del plan de producción en el año.');
   if(B2){var NC=B2.merma.nc;
     vp.push('El inventario está en <b>'+rsMM(B2.total)+'</b> ('+rsSg(B2.var12,1)+'% en 12 semanas) con una merma de <b>'+rsMMx(B2.merma.total)+'</b>, de la cual <b>'+NC.pct_no+'% no tiene nota de crédito</b> — es pérdida que absorbe la compañía.');}
-  if(B3) vp.push('De los <b>'+B3.reales+' quiebres</b> del año, sólo <b>'+rsPc(B3.atrib.abast,B3.reales).toFixed(0)+'%</b> nace de una decisión de Abastecimiento.');
+  if(B3){
+    var _mt=B3.mot_top;
+    vp.push('Se registran <b>'+B3.prom+' quiebres reales por semana</b> en promedio'+
+      (_mt?(', y el motivo que más pesa es <b>'+_mt.m+'</b> con el <b>'+_mt.pct+'%</b> de los casos'):'')+'.');
+  }
   H.push('<div class="verd"><span class="sm2"></span><div>'+
     '<div class="vt">Estado del área — semana '+D.sem+'</div>'+
     '<div class="vp">'+vp.join(' ')+'</div></div></div>');
@@ -1460,10 +1475,11 @@ function rsRender(){
     Object.keys(RS_RANGO).forEach(function(k){tops.push(RS_RANGO[k][1]);});
     esc=Math.max(10,Math.ceil(Math.max.apply(null,tops)*1.15/2)*2);
     var cobHtml=B2.cob_cat.map(function(c){
-      if(!c.cob) return '<div style="display:grid;grid-template-columns:112px 1fr 92px 58px;align-items:center;gap:7px;opacity:.5">'+
+      var GC='display:grid;grid-template-columns:106px 1fr 40px 22px 84px;align-items:center;gap:7px';
+      if(!c.cob) return '<div style="'+GC+';opacity:.5">'+
         '<span style="font-size:.65rem;color:#c9d3e8;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.label+'</span>'+
         '<div style="height:16px;border:1px dashed #3d466b;border-radius:3px;display:flex;align-items:center;padding-left:6px;font-size:.58rem;color:#6b7694">'+(c.motivo||'sin dato')+'</div>'+
-        '<span style="font-size:.66rem;font-weight:800;color:var(--muted);text-align:right">—</span><span style="font-size:.58rem;color:var(--muted)">—</span></div>';
+        '<span style="font-size:.7rem;color:var(--muted);text-align:right">—</span><span></span><span style="font-size:.58rem;color:var(--muted);text-align:right">—</span></div>';
       var rg=rsRango(c.label), est=rg?(c.cob<rg[0]?'baja':(c.cob>rg[1]?'sobre':'ok')):'na';
       var col=est==='baja'?'#E24B4A':(est==='sobre'?'#378ADD':(est==='ok'?'#7FB52C':'#8b93f7'));
       var zona='',topes='';
@@ -1475,14 +1491,17 @@ function rsRender(){
       var disp='<div style="position:absolute;left:'+d1.toFixed(1)+'%;width:'+Math.max(0.6,d2-d1).toFixed(1)+'%;top:50%;height:2px;transform:translateY(-50%);background:rgba(255,255,255,.6);border-radius:1px"></div>'+
                '<div style="position:absolute;left:'+d1.toFixed(1)+'%;top:4px;bottom:4px;width:1px;background:rgba(255,255,255,.6)"></div>'+
                '<div style="position:absolute;left:'+d2.toFixed(1)+'%;top:4px;bottom:4px;width:1px;background:rgba(255,255,255,.6)"></div>';
-      return '<div style="display:grid;grid-template-columns:112px 1fr 92px 58px;align-items:center;gap:7px">'+
+      /* número, unidad y objetivo en columnas propias con tabular-nums: los dígitos y la
+         palabra "sem" quedan alineados verticalmente en todas las filas. */
+      return '<div style="'+GC+'">'+
         '<span style="font-size:.65rem;color:#c9d3e8;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+c.label+' · '+rsMM(c.val)+'">'+c.label+'</span>'+
         '<div style="position:relative;height:16px;background:#232840;border-radius:3px;overflow:hidden" title="'+c.label+': mediana '+c.cob+' sem · la mitad de los SKU entre '+c.p25+' y '+c.p75+' · '+c.n_cob+' SKU medidos">'+
           zona+'<div style="position:absolute;left:0;top:0;bottom:0;width:'+Math.min(100,c.cob/esc*100).toFixed(1)+'%;background:'+col+';border-radius:3px"></div>'+disp+topes+'</div>'+
-        '<span style="text-align:right;line-height:1.2"><span style="font-size:.7rem;font-weight:800;color:'+col+'">'+c.cob.toFixed(1)+'</span>'+
-          '<span style="font-size:.55rem;font-weight:600;color:var(--muted)"> sem</span>'+
-          '<br><span style="font-size:.53rem;color:var(--muted)">50%: '+c.p25+'–'+c.p75+'</span></span>'+
-        '<span style="font-size:.58rem;color:var(--muted);white-space:nowrap">'+(rg?('obj '+rg[0]+'–'+rg[1]):'sin rango')+'</span></div>';
+        '<span style="font-size:.72rem;font-weight:800;color:'+col+';text-align:right;font-variant-numeric:tabular-nums">'+c.cob.toFixed(1)+'</span>'+
+        '<span style="font-size:.55rem;font-weight:600;color:var(--muted)">sem</span>'+
+        '<span style="text-align:right;line-height:1.25;font-variant-numeric:tabular-nums">'+
+          '<span style="font-size:.6rem;color:var(--muted)">'+(rg?('obj '+rg[0]+'–'+rg[1]):'sin rango')+'</span>'+
+          '<br><span style="font-size:.53rem;color:#6b7694">50%: '+c.p25+'–'+c.p75+'</span></span></div>';
     }).join('');
     var mxM=Math.max.apply(null,M.cat.map(function(c){return c.pct;}))||1;
     var NCS=[{l:'Con nota de crédito',v:NC.si,c:'#7FB52C'},{l:'Sin nota de crédito',v:NC.no,c:'#E24B4A'},
@@ -1508,7 +1527,7 @@ function rsRender(){
       '<div class="two">'+
         '<div><div class="ct"><span>En qué está el inventario</span><span><b>'+B2.cats.length+'</b> categorías</span></div>'+
           rsBars(B2.cats.map(function(c){return {l:c.label,v:c.val,c:'#6366f1',
-            t:'<span style="color:#fff">'+rsMM(c.val)+'</span><span style="color:var(--muted);font-weight:600"> · '+c.pct+'%</span>'};}),112)+'</div>'+
+            t:rsMM(c.val), t2:(c.pct!==null&&c.pct!==undefined?Number(c.pct).toFixed(1):'—')+'%'};}),78,44)+'</div>'+
         '<div><div class="ct"><span>Cuántas semanas dura cada categoría</span><span style="color:var(--muted)">mismas categorías</span></div>'+
           '<div style="display:flex;flex-direction:column;gap:6px">'+cobHtml+'</div>'+
           '<div class="lg" style="margin-top:9px">'+
@@ -1524,16 +1543,17 @@ function rsRender(){
       '</div>'+
       '<div class="mstrip"><div class="mhead"><span class="mt">Merma del año</span>'+
         '<span class="mv">'+rsMMx(M.total)+'</span>'+
-        '<span class="mv2"><span class="mv2l">sin nota de crédito</span><span class="mv2v">'+rsMMx(NC.no)+'</span><span class="mv2p">'+NC.pct_no+'% del total</span></span>'+
+        '<span class="mv2"><span class="mv2l">sin nota de crédito</span><span class="mv2v">'+rsMMx(NC.no_amp)+'</span><span class="mv2p">'+NC.pct_no_amp+'% del total</span></span>'+
         '<span class="mp"><b>'+M.pct_consumo+'%</b> del consumo del período <span style="color:var(--muted)">· '+M.pct_stock+'% del stock actual</span> '+
         '<span style="color:var(--muted);font-size:.62rem">(ambos sobre la merma total)</span></span></div>'+
         '<div class="mgrid">'+M.cat.map(function(c){
           return '<div class="mc"><div class="mcl">'+c.lbl+'</div>'+
            '<div class="mcrow"><div><div class="mcv">'+rsMMx(c.val)+'</div><div class="mck">merma total</div></div>'+
-           '<div class="mcsep"></div><div><div class="mcv2">'+rsMMx(c.nonc)+'</div><div class="mck">sin nota de crédito · '+c.pct_nonc+'%</div></div></div>'+
+           '<div class="mcsep"></div><div><div class="mcv2">'+rsMMx(c.nonc)+'</div><div class="mck">sin nota de crédito · '+c.pct_nonc+'% de la merma</div></div></div>'+
            '<div class="mcb"><i style="width:'+(c.pct/mxM*100).toFixed(1)+'%"></i></div>'+
-           '<div class="mcp"><b>'+c.pct+'%</b> del stock de la categoría <span>('+rsMM(c.stock)+(c.ppa_stock>0?', incluye '+rsMM(c.ppa_stock)+' de PPA':'')+')</span>'+
-           (c.pct_ex!==null&&c.pct_ex!==c.pct?'<br><span>sin PPA: <b style="color:#E87B2A">'+c.pct_ex+'%</b></span>':'')+'</div></div>';
+           '<div class="mcp"><b>'+c.pct+'%</b> del stock de la categoría · sin NC <b style="color:var(--q)">'+c.pct_nonc_stock+'%</b>'+
+           '<br><span>sobre '+rsMM(c.stock)+(c.ppa_stock>0?', incluye '+rsMM(c.ppa_stock)+' de PPA':'')+
+           (c.pct_ex!==null&&c.pct_ex!==c.pct?' · sin PPA: <b style="color:#E87B2A">'+c.pct_ex+'%</b>':'')+'</span></div></div>';
         }).join('')+'</div>'+
         '<div class="ncbox"><div class="ct" style="margin-bottom:7px"><span>¿Cuánta merma recuperamos con nota de crédito?</span><span><b>'+NC.pct_no+'%</b> sin nota de crédito</span></div>'+
           '<div class="stk">'+NCS.map(function(x){var p=rsPc(x.v,NC.total);
@@ -1569,11 +1589,13 @@ function rsRender(){
         rsCols(B3.serie,{color:'#E24B4A',avg:B3.prom,dim:function(p){return p.s===B3.sem_max;}})+'</div></div>'+
       '<div class="two">'+
         '<div><div class="ct"><span>Dónde ocurren · por categoría</span><span><b>'+B3.cats_n+'</b> categorías · top 8</span></div>'+
-          rsBars(B3.cats.map(function(c){return {l:c.c,v:c.n,c:'#E24B4A',t:c.n+' · '+rsPc(c.n,B3.reales).toFixed(0)+'%'};}))+
+          rsBars(B3.cats.map(function(c){return {l:c.c,v:c.n,c:'#E24B4A',
+            t:rsN(c.n), t2:rsPc(c.n,B3.reales).toFixed(1)+'%'};}),40,46)+
           '<div class="hint"><b>'+B3.frescos_pct+'% de los quiebres ocurre en verduras y frutas</b> ('+B3.frescos_n+' casos, unificando las tres etiquetas '+
           'que el registro diario usaba para lo mismo). Coherente con el negocio — vida útil corta y reposición diaria — pero ahí se concentra el riesgo.</div></div>'+
         '<div><div class="ct"><span>Por qué ocurren · motivo declarado</span><span style="color:var(--muted)">color = área responsable</span></div>'+
-          rsBars(B3.motivos.map(function(m){return {l:m.m,v:m.n,c:rsFill(m.a),t:m.n+' · '+rsPc(m.n,B3.reales).toFixed(0)+'%'};}))+'</div>'+
+          rsBars(B3.motivos.map(function(m){return {l:m.m,v:m.n,c:rsFill(m.a),
+            t:rsN(m.n), t2:rsPc(m.n,B3.reales).toFixed(1)+'%'};}),40,46)+'</div>'+
       '</div>'+
       '<div class="astrip"><div class="ct"><span>De quién depende el quiebre</span><span style="color:var(--muted)">sobre '+B3.reales+' quiebres reales</span></div>'+
         '<div class="stk">'+ORD.map(function(k){var v=B3.atrib[k],p=rsPc(v,B3.reales);
