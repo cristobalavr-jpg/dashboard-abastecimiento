@@ -1201,7 +1201,32 @@ function ba(a){var m={quiebre:'baq',riesgo:'bar_',monitorear:'bam',normal:'ban',
 function togPlk(id){var b=el('body-'+id),ic=el('ico-'+id);if(!b)return;var open=(b.style.display!=='none');b.style.display=open?'none':'';if(ic)ic.textContent=open?'▸':'▾';}
 function tbar(v,color){var w=Math.min(v*8,100);return '<div class="tbw"><div class="tbr"><div class="tbf" style="width:'+w+'%;background:'+color+'"></div></div><span>'+fP(v)+'</span></div>';}
 function distBar(segs,w,h){var tot=Math.max(segs.reduce(function(a,s){return a+s[0];},0),1);return '<div style="display:flex;height:'+(h||7)+'px;border-radius:3px;overflow:hidden;width:'+(w||100)+'px">'+segs.map(function(s){return s[0]>0?'<div style="width:'+(s[0]/tot*100).toFixed(1)+'%;height:100%;background:'+s[1]+'"></div>':'';}).join('')+'</div>';}
+// ── Deep-link por URL (#ppa, #coberturas, ...) ───────────────────────────────
+// Permite compartir un link que abre directo en una sección. El hash se
+// sincroniza al navegar (replaceState: no ensucia el historial ni dispara
+// hashchange, evitando el loop showTab -> hash -> showTab).
+var TAB_ALIAS = {resumen:0, planificadores:1, inventarios:2, mermas:3, capital:4,
+  forecast:5, bloqueado:7, terceros:9, coberturas:10, quiebres:12,
+  plan:13, nds:14, ppa:15};
+var TAB_NOMBRE = Object.keys(TAB_ALIAS).reduce(function(m,k){m[TAB_ALIAS[k]]=k;return m;},{});
+function tabDesdeHash(){
+  var h=(location.hash||'').replace(/^#/,'').toLowerCase();
+  if(!h) return null;
+  if(TAB_ALIAS[h]!==undefined) return TAB_ALIAS[h];
+  var m=h.match(/^t?(\d+)$/);            // acepta también #t15 / #15
+  return m ? parseInt(m[1],10) : null;
+}
+function aplicarHash(){
+  var i=tabDesdeHash();
+  if(i!==null && document.getElementById('t'+i)) showTab(i);
+}
+window.addEventListener('hashchange', aplicarHash);
+
 function showTab(i){
+  try{
+    var nom=TAB_NOMBRE[i];
+    if(nom) history.replaceState(null,'','#'+nom);
+  }catch(e){}
   document.querySelectorAll('.tab').forEach(function(t){
     t.classList.toggle('active', t.getAttribute('onclick')==='showTab('+i+')');
   });
@@ -5567,6 +5592,9 @@ fetch('data.json?v='+Date.now())
     });
     // Comentarios TI (< 2 sem): carga backend → poda SKUs recuperados → rehidrata inputs abiertos
     ticComBackendLoad().then(function(){ ticComReconcile(); ticComHydrateOpen(); });
+
+    // Deep-link: si la URL trae #seccion, abrir esa pestaña (datos ya cargados).
+    aplicarHash();
 
     var ov=document.getElementById('ld-overlay');
     if(ov) ov.remove();
