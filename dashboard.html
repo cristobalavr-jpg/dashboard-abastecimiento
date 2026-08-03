@@ -95,6 +95,22 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .pkc.s{background:rgba(55,138,221,.12);border-color:rgba(55,138,221,.45)}.pkc.s .pkn,.pkc.s .pkl{color:var(--s)}
 .pkc.c5{background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.45)}.pkc.c5 .pkn,.pkc.c5 .pkl{color:var(--v)}
 .pkc.so{background:rgba(36,120,201,.12);border-color:rgba(36,120,201,.45)}.pkc.so .pkn,.pkc.so .pkl{color:var(--so)}
+/* Mini tarjetas KPI dentro de "Comparativo por Comprador" (B.19.4) — mismo lenguaje visual
+   que las tarjetas grandes de arriba, en tamaño de celda y clicables (abren el detalle). */
+.mkc{display:inline-flex;align-items:center;justify-content:center;min-width:42px;padding:4px 9px;border-radius:6px;font-size:.8rem;font-weight:800;line-height:1.15;cursor:pointer;border:1px solid rgba(128,128,128,.25);background:rgba(0,0,0,.18);transition:transform .1s,filter .1s;user-select:none}
+.mkc:hover{transform:translateY(-1px);filter:brightness(1.4)}
+.mkc.z{cursor:default;opacity:.32;font-weight:600}
+.mkc.z:hover{transform:none;filter:none}
+.mkc.q{background:rgba(226,75,74,.14);border-color:rgba(226,75,74,.45);color:var(--q)}
+.mkc.r{background:rgba(232,197,42,.14);border-color:rgba(232,197,42,.45);color:var(--rT)}
+.mkc.m{background:rgba(232,123,42,.14);border-color:rgba(232,123,42,.45);color:var(--mT)}
+.mkc.n{background:rgba(99,153,34,.14);border-color:rgba(99,153,34,.45);color:var(--n)}
+.mkc.s{background:rgba(55,138,221,.14);border-color:rgba(55,138,221,.45);color:var(--s)}
+.mkc.c5{background:rgba(124,58,237,.14);border-color:rgba(124,58,237,.45);color:var(--v)}
+.mkc.so{background:rgba(36,120,201,.14);border-color:rgba(36,120,201,.45);color:var(--so)}
+.mkc.sf{background:rgba(201,120,36,.14);border-color:rgba(201,120,36,.45);color:#d99a52}
+/* % del bucket sobre los SKUs c/FC del comprador — a la derecha de cada tarjeta */
+.mkp{font-size:.63rem;font-weight:700;color:var(--muted);margin-left:6px;white-space:nowrap}
 .fr{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
 .sb{background:#232840;border:1px solid var(--border);border-radius:5px;padding:5px 11px;color:var(--muted);font-size:.71rem;cursor:pointer;transition:all .15s}
 .sb.active,.sb:hover:not(.active){background:#6366f1;border-color:#6366f1;color:#fff}
@@ -399,30 +415,20 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 
   <!-- Comparativo por Comprador — trasladado desde Resumen (B.19) -->
   <div class="stt">Comparativo por Comprador</div>
+  <div style="font-size:.68rem;color:var(--muted);margin:-4px 0 7px;line-height:1.5">
+    Las tarjetas de color son <b>clicables</b>: abren el detalle de los SKU que las componen. El % a su derecha
+    es la participación del bucket sobre los <b>SKUs c/FC</b> del comprador.
+    <b>SKUs sin/FC</b> = SKUs que el comprador planifica por <b>consumo real</b> porque no tienen forecast
+    (Héctor: universo de Terceros e Insumos · resto: archivo <i>SKU sin FC.xlsx</i>).
+  </div>
   <div class="tw" style="margin-bottom:14px"><table>
-    <thead><tr><th>Comprador</th><th>SKUs c/FC</th><th style="color:var(--q)">Quiebre</th><th style="color:var(--rT)">Riesgo</th><th style="color:var(--mT)">Monitorear</th><th style="color:var(--n)">Normal</th><th style="color:var(--s)">Sobrestock</th><th style="color:var(--v)">Cob.c/OC&lt;5</th><th style="color:var(--so)">SobOC&gt;20</th><th>$Stock (MM)</th></tr></thead>
+    <thead><tr><th>Comprador</th><th>SKUs c/FC</th><th style="color:#d99a52">SKUs sin/FC</th><th style="color:var(--q)">Quiebre</th><th style="color:var(--rT)">Riesgo</th><th style="color:var(--mT)">Monitorear</th><th style="color:var(--n)">Normal</th><th style="color:var(--s)">Sobrestock</th><th style="color:var(--v)">Cob.c/OC&lt;5</th><th style="color:var(--so)">SobOC&gt;20</th><th>$Stock (MM)</th></tr></thead>
     <tbody id="ctb"></tbody></table></div>
 
-  <div class="plk-pill" onclick="togPlk('pa')"><span class="plk-ico" id="ico-pa">▸</span>Alertas — Stock actual insuficiente <button class="pbtn" onclick="event.stopPropagation();expPT('PA')" style="background:#E24B4A30;color:#E24B4A;border:1px solid #E24B4A">📥 Excel</button></div>
-  <div class="plk-body" id="body-pa" style="display:none">
-  <div class="fr"><button class="sb active" id="pa-ta" onclick="sPF('PA','t','')">Todos</button><button class="sb" id="pa-tz" onclick="sPF('PA','t','ZMPR')">ZMPR</button><button class="sb" id="pa-te" onclick="sPF('PA','t','ZEMP')">ZEMP</button><input type="text" class="si" id="pas" placeholder="Buscar..." oninput="sPSr('PA',this.value)"></div>
-  <div class="tw" style="margin-bottom:6px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>StockCD</th><th>Quilicura</th><th>Huechuraba</th><th>Total</th><th>Cons/sem</th><th>Cob.</th><th>Estado</th></tr></thead><tbody id="patb"></tbody></table></div>
-  <div class="pag" id="papag"></div>
-  </div>
-
-  <div class="plk-pill" onclick="togPlk('pc')"><span class="plk-ico" id="ico-pc">▸</span>Cobertura c/OC &lt; 5 semanas <button class="pbtn" onclick="event.stopPropagation();expPT('PC')" style="background:#7c3aed30;color:#7c3aed;border:1px solid #7c3aed">📥 Excel</button></div>
-  <div class="plk-body" id="body-pc" style="display:none">
-  <div class="fr"><button class="sb active" id="pc-ta" onclick="sPF('PC','t','')">Todos</button><button class="sb" id="pc-tz" onclick="sPF('PC','t','ZMPR')">ZMPR</button><button class="sb" id="pc-te" onclick="sPF('PC','t','ZEMP')">ZEMP</button><input type="text" class="si" id="pcs" placeholder="Buscar..." oninput="sPSr('PC',this.value)"></div>
-  <div class="tw" style="margin-bottom:6px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>OC</th><th>Stock+OC</th><th>Cons</th><th>Cob.</th><th style="color:var(--v)">Cob.c/OC</th><th>Estado</th></tr></thead><tbody id="pctb"></tbody></table></div>
-  <div class="pag" id="pcpag"></div>
-  </div>
-
-  <div class="plk-pill" onclick="togPlk('ps')"><span class="plk-ico" id="ico-ps">▸</span>Sobrestock c/OC &gt; 20 semanas (con OC en tránsito) <button class="pbtn" onclick="event.stopPropagation();expPT('PS')" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9">📥 Excel</button></div>
-  <div class="plk-body" id="body-ps" style="display:none">
-  <div class="fr"><button class="sb active" id="ps-ta" onclick="sPF('PS','t','')">Todos</button><button class="sb" id="ps-tz" onclick="sPF('PS','t','ZMPR')">ZMPR</button><button class="sb" id="ps-te" onclick="sPF('PS','t','ZEMP')">ZEMP</button><input type="text" class="si" id="pss" placeholder="Buscar..." oninput="sPSr('PS',this.value)"></div>
-  <div class="tw" style="margin-bottom:6px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>OC</th><th>Stock+OC</th><th style="color:var(--so)">Cob.c/OC 12w</th></tr></thead><tbody id="pstb"></tbody></table></div>
-  <div class="pag" id="pspag"></div>
-  </div>
+  <!-- Las pastillas "Alertas — Stock actual insuficiente", "Cobertura c/OC < 5 semanas" y
+       "Sobrestock c/OC > 20 semanas" se eliminaron el 2026-08-03: la misma información se
+       obtiene con más contexto haciendo clic en las celdas del Comparativo por Comprador
+       (drilldown opKpi, claves q/r/m/n/s/c5/so). Los payloads PA/PC/PS ya no se consumen. -->
 
   <div class="plk-pill" onclick="togPlk('fcw')"><span class="plk-ico" id="ico-fcw">▸</span>Forecast por semana — todos los SKU <button class="pbtn" onclick="event.stopPropagation();expFCW()" style="background:#1D9E7530;color:#1D9E75;border:1px solid #1D9E75">📥 Excel</button></div>
   <div class="plk-body" id="body-fcw" style="display:none">
@@ -487,6 +493,16 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="fr"><input type="text" class="si" id="luxos" placeholder="Buscar por SKU o descripción..." oninput="sLUXO(this.value)" style="width:320px"></div>
   <div class="tw" style="margin-bottom:6px;max-height:74vh;overflow:auto"><table id="luxo-table"><thead id="luxoth"></thead><tbody id="luxotb"></tbody></table></div>
   <div class="pag" id="luxopag"></div>
+  </div>
+
+  <div class="plk-pill new-pill" style="border-color:#c97824" onclick="togPlk('sfc')"><span class="plk-ico" id="ico-sfc">▸</span>Planificación por SKU — sin FC <span id="sfc-info" style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:4px"></span> <button class="pbtn" onclick="event.stopPropagation();expSFC()" style="background:#C9782430;color:#d99a52;border:1px solid #c97824">📥 Excel</button></div>
+  <div class="plk-body" id="body-sfc" style="display:none">
+  <div style="background:rgba(201,120,36,.07);border:1px solid rgba(201,120,36,.28);border-radius:7px;padding:7px 11px;margin-bottom:8px;font-size:.66rem;color:#e0b183">
+    Universo = archivo manual <b id="sfc-file">SKU sin FC.xlsx</b>: SKUs <b>sin forecast</b> en SumExpl (mayormente insumos ZINS), que por eso no aparecen en «consumo real vs FC» ni en Terceros e Insumos. Sin FC la única cobertura posible es por <b>consumo real</b>: stock ÷ promedio semanal de las últimas <b>4</b> y <b>12 semanas completas</b>. La <b>semana en curso está excluida</b> de ambas sumas (va parcial y inflaría la cobertura); se muestra igual, marcada con •. Columnas con <span style="opacity:.6">⇅</span> ordenan al hacer clic. El <b>Comprador</b> es el del propio archivo, no el maestro SKU_por_Comprador.
+  </div>
+  <div class="fr"><input type="text" class="si" id="sfcs" placeholder="Buscar por SKU o descripción..." oninput="sSFC(this.value)" style="width:320px"></div>
+  <div class="tw" style="margin-bottom:6px;max-height:74vh;overflow:auto"><table id="sfc-table"><thead id="sfcth"></thead><tbody id="sfctb"></tbody></table></div>
+  <div class="pag" id="sfcpag"></div>
   </div>
 
   <div class="plk-pill open-static"><span class="plk-ico">🧭</span>Planificación por SKU — consumo real vs FC <span id="plt-info" style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:4px"></span> <button class="pbtn" onclick="event.stopPropagation();expPLT()" style="background:#6366f130;color:#a4b4ce;border:1px solid #6366f1">📥 Excel</button></div>
@@ -862,7 +878,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 
 
 // ── GLOBAL DATA NAMESPACE ───────────────────────────────────────────────────
-var R,SD,PA,PC,PS,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT,INVCAT,HIST_INV,CONAN,COVPTI,COV_HIST,RESUMEN;
+var R,SD,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT,SFC,INVCAT,HIST_INV,CONAN,COVPTI,COV_HIST,RESUMEN;
 var gCompFilter='';  // filtro global de comprador
 // Filtro global PPA (Pan de Pascua). Por defecto ON — replica el contrato histórico de B.9 reporte diario.
 var PPA_SET = new Set();
@@ -1163,25 +1179,6 @@ function expXls(tbodyId, fname){
 
 // ── Export Estado por SKU (todas las páginas / datos filtrados) ──
 
-
-// ── Export Planificación pills (PA/PC/PS) — todas las filas, respeta filtros ──
-function expPT(n){
-  var raw=n==='PA'?PA:n==='PC'?PC:PS;
-  var fd=apF(raw,n);
-  var fname={PA:'alertas_stock_insuficiente',PC:'cobertura_oc_menor_5',PS:'sobrestock_oc'}[n];
-  var hasFilter=(aPlan||(PF[n]&&(PF[n].t||PF[n].s)));
-  var hdrs={
-    PA:['SKU','Descripcion','Tipo','Grupo','Comprador','StockCD','Quilicura','Huechuraba','Total','Cons/sem','Cob.','Estado'],
-    PC:['SKU','Descripcion','Tipo','Grupo','Comprador','Stock','OC','Stock+OC','Cons','Cob.','Cob.c/OC','Estado'],
-    PS:['SKU','Descripcion','Tipo','Grupo','Comprador','Stock','OC','Stock+OC','Cob.c/OC 12w']
-  };
-  try{
-    var ws=XLSX.utils.aoa_to_sheet([hdrs[n]].concat(fd.map(function(r){return r.slice();})));
-    var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Datos');
-    var stamp=new Date().toISOString().slice(0,10);
-    XLSX.writeFile(wb,(hasFilter?fname+'_filtrado':fname)+'_'+stamp+'.xlsx');
-  }catch(e){alert('Error exportando: '+e.message);}
-}
 
 var COMPS=['HECTOR','JAVIERA','JOSE','MATIAS','VICENTE'];
 var CC={HECTOR:'#534AB7',JAVIERA:'#D85A30',JOSE:'#1D9E75',MATIAS:'#E87B2A',VICENTE:'#378ADD'};
@@ -1647,12 +1644,49 @@ function rsRender(){
   host.innerHTML=H.join('');
 }
 
+// % del bucket sobre los SKUs c/FC del comprador. Se omite en 0 (la tarjeta ya va apagada)
+// y cuando no hay denominador. Sin decimales: es una proporción de lectura rápida, no una cifra
+// de cálculo — el número exacto está en la propia tarjeta.
+function mkpct(val,den){
+  var v=Math.round(val||0);
+  if(!v||!den) return '';
+  return '<span class="mkp">'+Math.round(v/den*100)+'%</span>';
+}
+// Mini tarjeta clicable de la tabla Comparativo. El valor SIEMPRE sale de effR (respeta
+// filtro global + toggle PPA) y el detalle que abre opKpi aplica exactamente el mismo
+// criterio, por lo que el número de la tarjeta == filas del popup.
+function mkc(comp,key,val,cls,lbl,den){
+  var v=Math.round(val||0);
+  if(!v) return '<span class="mkc z '+cls+'">0</span>';
+  return '<span class="mkc '+cls+'" onclick="opKpi(\''+comp+'\',\''+key+'\')" '+
+         'title="Ver los '+v+' SKU de '+comp+' en '+lbl+'">'+f0(v)+'</span>'+mkpct(v,den);
+}
 function buildResumen(){
   // La tabla Comparativo por Comprador vive ahora en Planificadores (B.19); el filtro
   // global la sigue afectando igual que antes.
   var compsShow = gCompFilter ? [gCompFilter] : COMPS;
   var t = el('ctb');
-  if(t) t.innerHTML=compsShow.map(function(c){var rv=effR(c);return '<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+CC[c]+';margin-right:6px;vertical-align:middle"></span>'+c+'</td><td>'+f0(rv.skus)+'</td><td style="color:var(--q);font-weight:700">'+f0(rv.quiebre)+'</td><td style="color:var(--rT);font-weight:700">'+f0(rv.riesgo)+'</td><td style="color:var(--mT);font-weight:700">'+f0(rv.monitorear)+'</td><td style="color:var(--n)">'+f0(rv.normal)+'</td><td style="color:var(--s)">'+f0(rv.sobrestock)+'</td><td style="color:var(--v);font-weight:700">'+f0(rv.coc5)+'</td><td style="color:var(--so);font-weight:700">'+f0(rv.sob_oc)+'</td><td>$'+fMM(rv.valor_stock)+'</td></tr>';}).join('');
+  if(t) t.innerHTML=compsShow.map(function(c){
+    var rv=effR(c);
+    var nsf=sinFcRows(c).length;
+    // Denominador de todos los % de la fila = SKUs c/FC del comprador. Los 7 buckets de
+    // estado son subconjuntos de ese universo, así que el % se lee directo.
+    var den=rv.skus||0;
+    // SKUs sin/FC va como número plano (mismo formato que SKUs c/FC): ni tarjeta, ni % .
+    // Un % ahí no sería comparable con el del resto de la fila — los SKU sin forecast están
+    // FUERA del universo c/FC que sirve de denominador (Héctor daría 136/8 = 1.700%).
+    return '<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+CC[c]+';margin-right:6px;vertical-align:middle"></span>'+c+'</td>'+
+      '<td>'+f0(rv.skus)+'</td>'+
+      '<td title="'+(nsf?nsf+' SKU que '+c+' planifica por consumo real (sin forecast)':'Sin SKUs fuera del forecast')+'">'+f0(nsf)+'</td>'+
+      '<td style="white-space:nowrap">'+mkc(c,'q', rv.quiebre,   'q', 'Quiebre',    den)+'</td>'+
+      '<td style="white-space:nowrap">'+mkc(c,'r', rv.riesgo,    'r', 'Riesgo',     den)+'</td>'+
+      '<td style="white-space:nowrap">'+mkc(c,'m', rv.monitorear,'m', 'Monitorear', den)+'</td>'+
+      '<td style="white-space:nowrap">'+mkc(c,'n', rv.normal,    'n', 'Normal',     den)+'</td>'+
+      '<td style="white-space:nowrap">'+mkc(c,'s', rv.sobrestock,'s', 'Sobrestock', den)+'</td>'+
+      '<td style="white-space:nowrap">'+mkc(c,'c5',rv.coc5,      'c5','Cob.c/OC<5', den)+'</td>'+
+      '<td style="white-space:nowrap">'+mkc(c,'so',rv.sob_oc,    'so','SobOC>'+((UMBRALES[c]||UMBRALES.DEFAULT).sob_oc), den)+'</td>'+
+      '<td>$'+fMM(rv.valor_stock)+'</td></tr>';
+  }).join('');
   // El Resumen es la vista del area completa: no depende del filtro de comprador.
   try{ rsRender(); }catch(e){ console.error('Resumen:', e); }
 }
@@ -1668,12 +1702,92 @@ function opMermaComp(comp){
   el('mdc').innerHTML=html||'<span style="color:var(--muted);font-size:.75rem">Sin registros</span>';
   el('mdp').classList.add('show');
 }
-function opKpi(comp,key){
-  var rows=(SD[comp]&&SD[comp][key])?SD[comp][key]:[];
+// ══════════ Drill-down de las tarjetas del Comparativo por Comprador (B.19.4) ══════════
+// Layout de SD[comp][key] (Python to_compact):
+//   0=sku 1=desc 2=tipo 3=grupo 4=comp 5=scd 6=sq 7=sh 8=stock 9=oc 10=stock_oc 11=c4
+//   12=cob(FC 4w, sin OC) 13=cob4(4w c/tránsito) 14=cob12(12w c/tránsito) 15=alerta
+//   16=delta_pct 17=fc_flag 18=um 19=cob12s(FC 12w, sin OC)
+// El popup muestra siempre las mismas columnas; en la tarjeta "Cob.c/OC<5" se inserta
+// además la cobertura 4w CON tránsito, que es la métrica que define ese bucket (si no,
+// el usuario no puede auditar por qué el SKU está ahí).
+var KPOP={rows:[],cols:[],title:'',def:'',col:'#fff',sc:null,sd:1};
+function kpVal(r,i){ var v=r[i]; return (v===undefined||v===null)?null:v; }
+// 999 es el centinela "no calculable" (SKU sin FC). Excepción: la columna 12 (cob = stock/c4)
+// llega como 999 también cuando el stock es 0 aunque SÍ haya FC — es una rareza de la fórmula
+// Python (`r.c4 and r.stock/r.c4 or 999`: el 0.0 cae al `or`). En ese caso la cobertura real
+// es 0, no "sin dato", y así se muestra: si no, un quiebre aparecería con "—" en la misma
+// fila donde Cob. FC 12w dice 0.00. No se toca el valor de origen porque `cob` alimenta los
+// promedios de cobertura de otras pestañas.
+function kpCob(r,i){
+  var v=kpVal(r,i);
+  if(v!==null&&v<999) return Number(v).toFixed(2);
+  if(i===12 && (r[8]||0)<=0 && (r[11]||0)>0) return '0.00';
+  return '—';
+}
+function kpiRows(comp,key){
+  var rows=(SD[comp]&&SD[comp][key])?SD[comp][key].slice():[];
   // Respetar el toggle global PPA (Pan de Pascua). SD[comp][key] viene precalculado
   // desde Python SIN excluir PPA; las tarjetas de conteo usan effR (sí excluye), por lo
   // que el drill-down debe filtrar igual para no mostrar/contar SKUs PPA. (ver PARAMETRO.MD A.9)
   if(ppaActive()) rows = rows.filter(function(r){return !isPPA(r[0]);});
+  return rows;
+}
+function kpopSort(i){
+  var c=KPOP.cols[i]; if(!c||!c.s) return;
+  if(KPOP.sc!==i){KPOP.sc=i;KPOP.sd=1;}
+  else if(KPOP.sd===1){KPOP.sd=-1;}
+  else {KPOP.sc=null;KPOP.sd=1;}
+  kpopRender();
+}
+function kpopRender(){
+  var head=el('kpop-th'), body=el('kpop-tb'); if(!head||!body) return;
+  var rows=KPOP.rows.slice();
+  if(KPOP.sc!==null){
+    var c=KPOP.cols[KPOP.sc], dir=KPOP.sd;
+    rows.sort(function(a,b){
+      var x=c.v(a), y=c.v(b);
+      // null / 999 (sin FC) siempre al final, en cualquier dirección
+      var xn=(x===null||x===undefined||(c.n&&x>=999)), yn=(y===null||y===undefined||(c.n&&y>=999));
+      if(xn&&yn) return 0; if(xn) return 1; if(yn) return -1;
+      if(c.n) return (x-y)*dir;
+      return String(x).localeCompare(String(y))*dir;
+    });
+  }
+  var TH='padding:7px 9px;background:#232840;color:#8892b0;position:sticky;top:0;z-index:1;white-space:nowrap';
+  head.innerHTML='<tr>'+KPOP.cols.map(function(c,i){
+    var act=(KPOP.sc===i);
+    var ar=act?(KPOP.sd===1?' ▲':' ▼'):(c.s?' <span style="opacity:.45">⇅</span>':'');
+    return '<th style="'+TH+';text-align:'+(c.n?'right':'left')+(c.s?';cursor:pointer':'')+
+           (act?';color:#c0caf5':'')+'"'+(c.s?' onclick="kpopSort('+i+')"':'')+
+           (c.t?' title="'+c.t+'"':'')+'>'+c.h+ar+'</th>';
+  }).join('')+'</tr>';
+  body.innerHTML=rows.map(function(r){
+    return '<tr style="border-bottom:1px solid rgba(45,52,82,.4)">'+KPOP.cols.map(function(c){
+      return '<td style="padding:6px 9px;text-align:'+(c.n?'right':'left')+(c.st||'')+'">'+c.f(r)+'</td>';
+    }).join('')+'</tr>';
+  }).join('');
+  var n=el('kpop-n'); if(n) n.textContent=rows.length+' SKUs';
+}
+function kpopShow(){
+  var ov=el('kpi-pop-ov'); if(ov) ov.remove();
+  var popHtml='<div id="kpi-pop-ov" onclick="if(event.target===this)this.remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:flex;align-items:center;justify-content:center">'+
+    '<div style="background:#1a1f2e;border:1px solid #2d3452;border-radius:12px;width:94vw;max-width:1180px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.5)">'+
+      '<div style="padding:14px 18px;border-bottom:1px solid #2d3452;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0">'+
+        '<div><div style="font-size:.9rem;font-weight:700;color:'+KPOP.col+'">'+KPOP.title+'</div>'+
+        '<div style="font-size:.72rem;color:#8892b0;margin-top:4px">'+KPOP.def+'</div>'+
+        '<div style="font-size:.7rem;color:#8892b0;margin-top:2px" id="kpop-n"></div></div>'+
+        '<button onclick="document.getElementById(\'kpi-pop-ov\').remove()" style="background:none;border:1px solid #2d3452;border-radius:5px;color:#8892b0;cursor:pointer;padding:3px 9px;font-size:.75rem;margin-left:12px;flex-shrink:0">✕ Cerrar</button>'+
+      '</div>'+
+      '<div style="flex:1;overflow:auto;padding:0">'+
+        '<table style="width:100%;border-collapse:collapse;font-size:.72rem"><thead id="kpop-th"></thead><tbody id="kpop-tb"></tbody></table>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+  var tmp=document.createElement('div');tmp.innerHTML=popHtml;document.body.appendChild(tmp.firstChild);
+  kpopRender();
+}
+function opKpi(comp,key){
+  var rows=kpiRows(comp,key);
   var d=KD.find(function(x){return x.k===key;});
   var lbl=d?(d.dynLbl?d.dynLbl(comp):d.lbl):key;
   var u=UMBRALES[comp]||UMBRALES.DEFAULT;
@@ -1683,60 +1797,68 @@ function opKpi(comp,key){
     m:'SKUs con cobertura entre '+u.riesgo+' y '+u.monitorear_hi+' semanas — requieren seguimiento',
     n:'SKUs con cobertura entre '+u.monitorear_hi+' y '+u.sobrestock+' semanas — situación normal',
     s:'SKUs con cobertura mayor a '+u.sobrestock+' semanas — inventario excesivo',
-    c5:'SKUs donde stock + OC en tránsito cubre menos de 5 semanas de consumo',
-    so:'SKUs con cobertura (stock+OC) mayor a '+u.sob_oc+' semanas y con OC en tránsito activa',
+    c5:'SKUs donde stock + OC en tránsito cubre menos de 5 semanas de consumo (Cob. 4w c/tránsito < 5)',
+    so:'SKUs con OC en tránsito activa y cobertura 12w c/tránsito mayor a '+u.sob_oc+' semanas. '+
+       'Incluye los SKU marcados «sin FC»: tienen OC en camino sin demanda proyectada, '+
+       'por lo que su cobertura no es calculable (—) y todo el pedido es excedente.',
   };
-  var def=DEFS[key]||'';
-  var col=CC[comp]||'#fff';
-  // Build popup modal
-  var popHtml='<div id="kpi-pop-ov" onclick="if(event.target===this)document.getElementById(\'kpi-pop-ov\').remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:flex;align-items:center;justify-content:center">'+
-    '<div style="background:#1a1f2e;border:1px solid #2d3452;border-radius:12px;width:94vw;max-width:1100px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.5)">'+
-      '<div style="padding:14px 18px;border-bottom:1px solid #2d3452;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0">'+
-        '<div><div style="font-size:.9rem;font-weight:700;color:'+col+'">'+comp+' &mdash; '+lbl+'</div>'+
-        '<div style="font-size:.72rem;color:#8892b0;margin-top:4px">'+def+'</div>'+
-        '<div style="font-size:.7rem;color:#8892b0;margin-top:2px">'+rows.length+' SKUs</div></div>'+
-        '<button onclick="document.getElementById(\'kpi-pop-ov\').remove()" style="background:none;border:1px solid #2d3452;border-radius:5px;color:#8892b0;cursor:pointer;padding:3px 9px;font-size:.75rem;margin-left:12px;flex-shrink:0">✕ Cerrar</button>'+
-      '</div>'+
-      '<div style="flex:1;overflow:auto;padding:0">'+
-        '<table style="width:100%;border-collapse:collapse;font-size:.72rem">'+
-          '<thead><tr>'+
-            '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:left;position:sticky;top:0;z-index:1;white-space:nowrap">SKU</th>'+
-            '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:left;position:sticky;top:0;z-index:1;white-space:nowrap">Descripción</th>'+
-            '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:left;position:sticky;top:0;z-index:1;white-space:nowrap">Tipo</th>'+
-            '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:left;position:sticky;top:0;z-index:1;white-space:nowrap">Grupo</th>'+
-            '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:right;position:sticky;top:0;z-index:1;white-space:nowrap">Stock total</th>'+
-            '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:right;position:sticky;top:0;z-index:1;white-space:nowrap">OC tránsito</th>'+
-            '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:right;position:sticky;top:0;z-index:1;white-space:nowrap">Stock+OC</th>'+
-            '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:right;position:sticky;top:0;z-index:1;white-space:nowrap">Cob.actual</th>'+
-            '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:right;position:sticky;top:0;z-index:1;white-space:nowrap">Cob.c/OC 4w</th>'+
-            '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:right;position:sticky;top:0;z-index:1;white-space:nowrap">Cob.c/OC 12w</th>'+
-            '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:right;position:sticky;top:0;z-index:1;white-space:nowrap" title="Sesgo del FC vs consumo real últimas 4 sem">Δ FC %</th>'+
-            '<th style="padding:7px 9px;background:#232840;color:#8892b0;text-align:left;position:sticky;top:0;z-index:1;white-space:nowrap">Estado</th>'+
-          '</tr></thead>'+
-          '<tbody>'+rows.map(function(r){
-            // r[16] = delta_pct (puede ser null si no hay consumo real)
-            var dp=r[16];
-            var dpCell;
-            if(dp===null||dp===undefined){dpCell='<span style="color:var(--muted)">—</span>';}
-            else{
-              var ab=Math.abs(dp);
-              var dpCol = ab<=30?'var(--n)':(dp>0?'var(--mT)':'var(--q)');
-              var dpTag = ab<=30?'':(dp>0?' ⚠️':' 🚨');
-              dpCell='<span style="color:'+dpCol+';font-weight:700">'+(dp>0?'+':'')+dp.toFixed(1)+'%'+dpTag+'</span>';
-            }
-            return '<tr style="border-bottom:1px solid rgba(45,52,82,.4)"><td style="padding:6px 9px">'+r[0]+'</td><td style="padding:6px 9px">'+r[1]+'</td><td style="padding:6px 9px">'+r[2]+'</td><td style="padding:6px 9px">'+r[3]+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[8])+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[9])+'</td><td style="padding:6px 9px;text-align:right">'+f0(r[10])+'</td><td style="padding:6px 9px;text-align:right;font-weight:700">'+fC(r[12])+'</td><td style="padding:6px 9px;text-align:right;color:var(--v)">'+fC(r[13])+'</td><td style="padding:6px 9px;text-align:right;color:var(--so)">'+fC(r[14])+'</td><td style="padding:6px 9px;text-align:right">'+dpCell+'</td><td style="padding:6px 9px">'+ba(r[15])+'</td></tr>';}).join('')+
-          '</tbody></table>'+
-      '</div>'+
-    '</div>'+
-  '</div>';
-  var tmp=document.createElement('div');tmp.innerHTML=popHtml;document.body.appendChild(tmp.firstChild);
+  // Los buckets q/r/m/n/s se definen sobre "Cob. FC 4w"; c5 sobre "Cob. 4w c/tránsito";
+  // so sobre "Cob. 12w c/tránsito". Se resalta en negrita la columna que define la tarjeta.
+  var HIIDX={q:12,r:12,m:12,n:12,s:12,c5:13,so:14}[key];
+  var mk=function(h,idx,color,tip){
+    return {h:h,n:true,s:true,t:tip,v:function(r){return kpVal(r,idx);},
+      f:function(r){return kpCob(r,idx);},
+      st:';color:'+color+(HIIDX===idx?';font-weight:800':'')};
+  };
+  var cols=[
+    {h:'SKU',        n:false,s:true, v:function(r){return r[0];}, f:function(r){return r[0];}},
+    // Marca "sin FC": SKU sin forecast que entró al bucket por tener OC en tránsito
+    // (sólo puede pasar en SobOC). Sin la marca, sus columnas de cobertura en "—" no se
+    // entienden y parece que la tarjeta cuenta de más.
+    {h:'Descripción',n:false,s:true, v:function(r){return r[1];},
+       f:function(r){return r[1]+(((r[11]||0)>0)?'':' <span style="font-size:.6rem;font-weight:800;color:#d99a52;background:rgba(201,120,36,.14);border:1px solid rgba(201,120,36,.45);border-radius:4px;padding:1px 5px;margin-left:5px;white-space:nowrap">sin FC</span>');}},
+    {h:'UNM',        n:false,s:false,v:function(r){return r[18]||'';}, f:function(r){return r[18]||'—';}},
+    {h:'Comprador',  n:false,s:true, v:function(r){return r[4];},
+       f:function(r){return '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(CC[r[4]]||'#8892b0')+';margin-right:5px;vertical-align:middle"></span>'+r[4];}},
+    {h:'Stock total',n:true, s:true, v:function(r){return kpVal(r,8);}, f:function(r){return f0(r[8]);}},
+    {h:'OC tránsito',n:true, s:true, v:function(r){return kpVal(r,9);}, f:function(r){return f0(r[9]);}},
+    mk('Cob. FC 4w', 12,'#c0caf5','Stock ÷ FC promedio semanal de las próximas 4 sem (sin OC en tránsito)')
+  ];
+  if(key==='c5') cols.push(mk('Cob. 4w c/tránsito',13,'var(--v)','(Stock + OC) ÷ FC promedio semanal 4 sem — es la métrica que define este bucket'));
+  cols.push(mk('Cob. FC 12w',        19,'#c0caf5','Stock ÷ FC promedio semanal de las próximas 12 sem (sin OC en tránsito)'));
+  cols.push(mk('Cob. 12w c/tránsito',14,'var(--so)','(Stock + OC) ÷ FC promedio semanal de las próximas 12 sem'));
+  KPOP={rows:rows,cols:cols,title:comp+' — '+lbl,def:DEFS[key]||'',col:CC[comp]||'#fff',sc:null,sd:1};
+  kpopShow();
 }
 
+// ── SKUs sin FC por comprador (columna "SKUs sin/FC" del Comparativo) ──
+// Universo = SKUs que se planifican por CONSUMO REAL porque no tienen forecast:
+//   · HECTOR  → universo completo de Terceros e Insumos (TI, tipo material ZIME).
+//   · resto   → archivo manual "SKU sin FC.xlsx" (SFC), respetando SU columna Comprador.
+// Ambas fuentes son disjuntas (TI es ZIME; el archivo es ZINS + algunos ZEMP/ZMPR).
+function sinFcRows(comp){
+  var out=[];
+  if(comp==='HECTOR'){
+    ((typeof TI!=='undefined'&&TI&&TI.skus)||[]).forEach(function(s){
+      var c4r=s.c4r||0;
+      out.push({sku:s.sku,desc:s.desc,um:s.um||'',comp:'HECTOR',stock:s.stock||0,oc:s.oc||0,
+        cob4r:c4r>0?+((s.stock||0)/c4r).toFixed(2):null, cob12r:null, cat:s.cat||'', src:'Terceros e Insumos'});
+    });
+    return out;
+  }
+  if(typeof SFC==='undefined'||!SFC||!SFC.rows) return out;
+  var B=SFC_C0+((SFC.weeks)?SFC.weeks.length:0);   // offset del bloque resumen (ver B.7.8)
+  SFC.rows.forEach(function(r){
+    if(String(r[3]||'').trim().toUpperCase()!==comp) return;
+    out.push({sku:r[0],desc:r[1],um:r[2]||'',comp:r[3],stock:r[4]||0,oc:r[9]||0,
+      cob4r:r[B+1], cob12r:r[B+3], cat:'', src:'SKU sin FC.xlsx'});
+  });
+  return out;
+}
 // ── PLANIFICADORES ──
-var aPlan='';var PF={PA:{t:'',s:'',p:1},PC:{t:'',s:'',p:1},PS:{t:'',s:'',p:1}};var PER=15;
+var aPlan='';
 function updPlan(){
   aPlan=gCompFilter||'';
-  var ns=['PA','PC','PS'];ns.forEach(function(n){PF[n]={t:'',s:'',p:1};el(n.toLowerCase()+'s').value='';['ta','tz','te'].forEach(function(f){el(n.toLowerCase()+'-'+f).classList.toggle('active',f==='ta');});});
   var kv;var skuTotal=0;
   if(aPlan&&effR(aPlan)){kv=effR(aPlan);skuTotal=kv.skus||1;}
   else{kv={};KD.forEach(function(d){kv[d.rk]=COMPS.reduce(function(a,c){return a+(effR(c)[d.rk]||0);},0);});skuTotal=COMPS.reduce(function(a,c){return a+(effR(c).skus||0);},0)||1;}
@@ -1753,29 +1875,20 @@ function updPlan(){
       '<span style="font-size:.62rem;color:inherit;opacity:.8;margin-top:2px">'+pct+'%</span>'+
     '</div>';
   }).join('');
-  rPT('PA');rPT('PC');rPT('PS');
   if(typeof rndPLT==='function') rndPLT();
+  if(typeof rndSFC==='function') rndSFC();
   if(typeof rndPPAP==='function') rndPPAP();
   if(typeof rndLUXO==='function') rndLUXO();
   if(typeof rndLlegPPA==='function') rndLlegPPA();
 }
 
+// Filtro común de las tablas de Planificadores: comprador activo + toggle Excluir PPA.
 function fpA(arr){
   var out=arr;
   if(aPlan) out=out.filter(function(r){return r[4]===aPlan;});
   if(ppaActive()) out=out.filter(function(r){return !isPPA(r[0]);});
   return out;
 }
-function apF(arr,n){var d=fpA(arr);var f=PF[n];if(f.t)d=d.filter(function(r){return r[2]===f.t;});if(f.s){var q=f.s.toLowerCase();d=d.filter(function(r){return r[0].indexOf(f.s)>=0||r[1].toLowerCase().indexOf(q)>=0||r[3].toLowerCase().indexOf(q)>=0;});}return d;}
-function rPT(n){var raw=n==='PA'?PA:n==='PC'?PC:PS;var fd=apF(raw,n);var f=PF[n];var tot=fd.length;var pages=Math.max(1,Math.ceil(tot/PER));f.p=Math.min(f.p,pages);var sl=fd.slice((f.p-1)*PER,f.p*PER);var tb=el(n.toLowerCase()+'tb');
-  if(n==='PA'){tb.innerHTML=sl.map(function(r){return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td><td style="text-align:right">'+f0(r[5])+'</td><td style="text-align:right">'+f0(r[6])+'</td><td style="text-align:right">'+f0(r[7])+'</td><td style="text-align:right;font-weight:700">'+f0(r[8])+'</td><td style="text-align:right">'+f0(r[9])+'</td><td style="text-align:right;font-weight:700">'+r[10]+'</td><td>'+ba(r[11])+'</td></tr>';}).join('');}
-  else if(n==='PC'){tb.innerHTML=sl.map(function(r){return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td><td style="text-align:right">'+f0(r[5])+'</td><td style="text-align:right">'+f0(r[6])+'</td><td style="text-align:right">'+f0(r[7])+'</td><td style="text-align:right">'+f0(r[8])+'</td><td style="text-align:right">'+r[9]+'</td><td style="text-align:right;font-weight:700;color:var(--v)">'+r[10]+'</td><td>'+ba(r[11])+'</td></tr>';}).join('');}
-  else{tb.innerHTML=sl.map(function(r){return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td><td style="text-align:right">'+f0(r[5])+'</td><td style="text-align:right">'+f0(r[6])+'</td><td style="text-align:right">'+f0(r[7])+'</td><td style="text-align:right;font-weight:700;color:var(--so)">'+r[8]+'</td></tr>';}).join('');}
-  rPag(n,f.p,pages,tot);}
-function rPag(n,p,pages,tot){var div=el(n.toLowerCase()+'pag');if(pages<=1){div.innerHTML='<span class="pi">'+tot+' registros</span>';return;}var h='';var sh=[1,pages];for(var i=Math.max(1,p-1);i<=Math.min(pages,p+1);i++)if(sh.indexOf(i)<0)sh.push(i);sh.sort(function(a,b){return a-b;});var prev=0;sh.forEach(function(i){if(prev&&i-prev>1)h+='<span style="color:var(--muted);padding:0 2px">…</span>';h+='<button class="pb'+(i===p?' active':'')+'" onclick="gP(\''+n+'\','+i+')">'+i+'</button>';prev=i;});h+='<span class="pi">'+tot+' reg.</span>';div.innerHTML=h;}
-function gP(n,p){PF[n].p=p;rPT(n);}
-function sPF(n,f,v){if(f==='t'){PF[n].t=v;PF[n].p=1;var px=n.toLowerCase()+'-';['ta','tz','te'].forEach(function(x){el(px+x).classList.toggle('active',x===(v===''?'ta':v==='ZMPR'?'tz':'te'));});}rPT(n);}
-function sPSr(n,v){PF[n].s=v;PF[n].p=1;rPT(n);}
 
 // ── Forecast por semana (todos los SKU) ──
 var FCWF={s:'',p:1};var FCW_PER=50;
@@ -2173,6 +2286,146 @@ function expPLT(){
     var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Planificacion');
     var stamp=new Date().toISOString().slice(0,10);
     XLSX.writeFile(wb,'planificacion_por_sku_'+stamp+'.xlsx');
+  }catch(e){alert('Error exportando: '+e.message);}
+}
+
+// ── Planificación por SKU — sin FC (B.7.8) ──
+// Universo = "SKU sin FC.xlsx" (insumos ZINS + algunos ZEMP, sin forecast en SumExpl).
+// Layout fila SFC: 0=sku 1=desc 2=um 3=comp 4=stock 5=scd 6=sq 7=blq 8=sh 9=oc
+//   10..(9+nW)=consumo real semanal · B=10+nW:
+//   B+0=ΣReal4 B+1=CobReal4 B+2=ΣReal12 B+3=CobReal12 B+4=CobReal12 c/OC B+5=$stock B+6=$tránsito
+var SFCF={s:'',p:1,sortCol:null,sortDir:1};
+var SFC_PER=50, SFC_C0=10, SFC_HH=28;
+var SFC_FZ=[{w:66,left:0},{w:190,left:66},{w:42,left:256},{w:90,left:298},{w:82,left:388}];
+function sfcB(){return SFC_C0+((SFC&&SFC.weeks)?SFC.weeks.length:0);} // offset del bloque resumen
+function sfcFzH(i,extra){var f=SFC_FZ[i];return 'position:sticky;top:0;left:'+f.left+'px;width:'+f.w+'px;min-width:'+f.w+'px;max-width:'+f.w+'px;z-index:8;background:#232840;vertical-align:middle'+(i===SFC_FZ.length-1?';border-right:2px solid #3a4566':'')+(extra||'');}
+function sfcFzB(i,extra){var f=SFC_FZ[i];return 'position:sticky;left:'+f.left+'px;width:'+f.w+'px;min-width:'+f.w+'px;max-width:'+f.w+'px;z-index:3;background:#111a2e'+(i===SFC_FZ.length-1?';border-right:2px solid #3a4566':'')+(extra||'');}
+function sfcFilter(){
+  if(!SFC||!SFC.rows) return [];
+  var lst=SFC.rows.slice();
+  if(gCompFilter) lst=lst.filter(function(r){return r[3]===gCompFilter;});
+  var q=(SFCF.s||'').toLowerCase().trim();
+  if(q) lst=lst.filter(function(r){return (r[0]||'').toString().toLowerCase().indexOf(q)>=0||(r[1]||'').toLowerCase().indexOf(q)>=0;});
+  return lst;
+}
+function sSFC(v){SFCF.s=v;SFCF.p=1;rndSFC();}
+function gPSFC(p){SFCF.p=p;rndSFC();}
+function sfcSort(col){
+  if(SFCF.sortCol!==col){SFCF.sortCol=col;SFCF.sortDir=1;}
+  else if(SFCF.sortDir===1){SFCF.sortDir=-1;}
+  else {SFCF.sortCol=null;SFCF.sortDir=1;}
+  SFCF.p=1; rndSFC();
+}
+function rndSFC(){
+  var th=el('sfcth'), tb=el('sfctb');
+  if(!th||!tb) return;
+  if(!SFC||!SFC.rows){ if(el('sfc-info'))el('sfc-info').textContent='(sin datos)'; th.innerHTML='';tb.innerHTML='';return; }
+  var w=SFC.weeks||[], sem=SFC.sem, nW=w.length, B=sfcB();
+  var r4=SFC.r4_weeks||[], r12=SFC.r12_weeks||[];
+  if(el('sfc-file')) el('sfc-file').textContent=SFC.archivo||'SKU sin FC.xlsx';
+  // ── Header de 2 filas: frozen + bodegas + semanas de consumo + resumen ──
+  var froz=[['SKU',''],['Descripción',''],['UNM',''],['Comprador','Comprador según el archivo SKU sin FC'],['Stock total','scd+sq+sh']];
+  var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01 (igual que sección Stock bloqueado)'],['Huechuraba','Centro 4020'],['OC tránsito','Órdenes de compra en tránsito']];
+  // [label, title, colIndex, sortable]
+  var summ=[['ΣReal 4w','Suma consumo real últimas 4 sem completas (S'+(r4[0]||'')+'–S'+(r4[r4.length-1]||'')+'), excl. sem en curso',B+0,false],
+            ['Cob. Real 4w','stock / prom. semanal de las últimas 4 sem completas',B+1,true],
+            ['ΣReal 12w','Suma consumo real últimas 12 sem completas (S'+(r12[0]||'')+'–S'+(r12[r12.length-1]||'')+'), excl. sem en curso',B+2,false],
+            ['Cob. Real 12w','stock / prom. semanal de las últimas 12 sem completas',B+3,true],
+            ['OC tránsito','Órdenes de compra en tránsito',9,false],
+            ['Cob. 12w c/tránsito','(stock + OC) / prom. semanal de las últimas 12 sem completas',B+4,true],
+            ['$Stock','Valor stock actual',B+5,false],
+            ['$Tránsito','Valor OC en tránsito',B+6,false],
+            ['Últ. Proveedor','Proveedor de la última OC generada para el SKU',-1,false],
+            ['Precio últ. OC','Precio unitario de la última OC generada para el SKU',-1,false]];
+  var r1='<tr>';
+  froz.forEach(function(c,i){r1+='<th rowspan="2" title="'+c[1]+'" style="'+sfcFzH(i)+'">'+c[0]+'</th>';});
+  mid.forEach(function(c){r1+='<th rowspan="2" title="'+c[1]+'" style="text-align:right;position:sticky;top:0;z-index:6;background:#232840">'+c[0]+'</th>';});
+  r1+='<th colspan="'+nW+'" style="text-align:center;position:sticky;top:0;z-index:6;background:#1c2438;border-left:2px solid #2d3452;border-right:2px solid #2d3452">Consumo real (sem)</th>';
+  summ.forEach(function(c,i){
+    var ci=c[2], isSort=c[3];
+    var arrow=isSort?((SFCF.sortCol===ci)?(SFCF.sortDir>0?' ▲':' ▼'):' <span style="opacity:.35">⇅</span>'):'';
+    r1+='<th rowspan="2" title="'+c[1]+(isSort?' · clic para ordenar':'')+'"'+(isSort?(' onclick="sfcSort('+ci+')"'):'')+' style="text-align:right;position:sticky;top:0;z-index:6;background:#232840'+(isSort?';cursor:pointer'+(SFCF.sortCol===ci?';color:#cdd6f4':''):'')+(i===0?';border-left:2px solid #2d3452':'')+'">'+c[0]+arrow+'</th>';
+  });
+  r1+='</tr>';
+  var r2='<tr>';
+  w.forEach(function(wk,i){var curr=(wk===sem);
+    r2+='<th title="'+(curr?'Semana en curso — parcial, excluida de ΣReal y de las coberturas':'')+'" style="text-align:right;position:sticky;top:'+SFC_HH+'px;z-index:5;background:'+(curr?'#2a2416':'#1c2438')+';color:'+(curr?'#e0b183':'#8aa0c8')+(i===0?';border-left:2px solid #2d3452':'')+(i===nW-1?';border-right:2px solid #2d3452':'')+'">S'+wk+(curr?'•':'')+'</th>';});
+  r2+='</tr>';
+  th.innerHTML=r1+r2;
+  var vendorMap=window._vendorMap||(window._vendorMap=_buildVendorMap());
+  var lst=sfcFilter();
+  if(SFCF.sortCol!==null){
+    var sc=SFCF.sortCol, sd=SFCF.sortDir;
+    lst.sort(function(a,b){
+      var va=a[sc], vb=b[sc];
+      var na=(va===null||va===undefined), nb=(vb===null||vb===undefined);
+      if(na&&nb) return 0; if(na) return 1; if(nb) return -1;
+      return (va-vb)*sd;
+    });
+  }
+  var tot=lst.length, pages=Math.max(1,Math.ceil(tot/SFC_PER));
+  SFCF.p=Math.min(SFCF.p,pages);
+  var sl=lst.slice((SFCF.p-1)*SFC_PER,SFCF.p*SFC_PER);
+  var cc=CC, dash='<span style="color:#3a4566">—</span>';
+  tb.innerHTML=sl.map(function(r){
+    var col=cc[r[3]]||'#8892b0';
+    var h='<tr>';
+    h+='<td style="font-family:monospace;font-size:.68rem;'+sfcFzB(0)+'">'+r[0]+'</td>';
+    h+='<td title="'+(r[1]||'').replace(/"/g,'&quot;')+'" style="'+sfcFzB(1,';white-space:nowrap;overflow:hidden;text-overflow:ellipsis')+'">'+r[1]+'</td>';
+    h+='<td style="color:var(--muted);'+sfcFzB(2)+'">'+(r[2]||'')+'</td>';
+    h+='<td style="'+sfcFzB(3)+'"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+col+';margin-right:5px;vertical-align:middle"></span>'+r[3]+'</td>';
+    h+='<td style="text-align:right;font-weight:700;'+sfcFzB(4)+'">'+f0(r[4]||0)+'</td>';
+    h+='<td style="text-align:right;color:var(--muted)">'+f0(r[5]||0)+'</td>';
+    h+='<td style="text-align:right;color:var(--muted)">'+f0(r[6]||0)+'</td>';
+    var blq=r[7]||0;h+='<td style="text-align:right;color:'+(blq>0?'#E8924A;font-weight:700':'var(--muted)')+'" title="Stock bloqueado BL01">'+(blq>0?f0(blq):dash)+'</td>';
+    h+='<td style="text-align:right;color:var(--muted)">'+f0(r[8]||0)+'</td>';
+    h+='<td style="text-align:right">'+f0(r[9]||0)+'</td>';
+    for(var i=0;i<nW;i++){var curr=(w[i]===sem);var v=r[SFC_C0+i]||0;
+      h+='<td style="text-align:right;background:'+(curr?'rgba(220,180,120,.10)':'rgba(99,131,200,.06)')+(i===0?';border-left:2px solid #2d3452':'')+(i===nW-1?';border-right:2px solid #2d3452':'')+'">'+(v?f0(v):dash)+'</td>';}
+    h+='<td style="text-align:right;font-weight:700;border-left:2px solid #2d3452">'+f0(r[B+0]||0)+'</td>';
+    h+=pltCovCell(r[B+1]);
+    h+='<td style="text-align:right;font-weight:700">'+f0(r[B+2]||0)+'</td>';
+    h+=pltCovCell(r[B+3]);
+    h+='<td style="text-align:right">'+f0(r[9]||0)+'</td>';
+    h+=pltCovCell(r[B+4]);
+    h+='<td style="text-align:right">$'+f0(r[B+5]||0)+'</td>';
+    h+='<td style="text-align:right;color:var(--muted)">$'+f0(r[B+6]||0)+'</td>';
+    var vinfo=vendorMap[r[0]]||null, vend=vinfo?vinfo.vendor:'';
+    h+='<td style="color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px" title="'+vend.replace(/"/g,'&quot;')+'">'+(vend||dash)+'</td>';
+    h+='<td style="text-align:right;color:var(--muted)">'+_fmtOCPrice(vinfo)+'</td>';
+    h+='</tr>';
+    return h;
+  }).join('')||'<tr><td colspan="'+(10+nW+10)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
+  var ordTxt='';
+  if(SFCF.sortCol!==null){var nmm={};nmm[B+1]='Cob. Real 4w';nmm[B+3]='Cob. Real 12w';nmm[B+4]='Cob. 12w c/tránsito';ordTxt=' · orden: '+(nmm[SFCF.sortCol]||'')+(SFCF.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
+  if(el('sfc-info')) el('sfc-info').innerHTML='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+' sin FC'+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(SFCF.s?' · búsqueda: "'+SFCF.s+'"':'')+ordTxt;
+  var div=el('sfcpag');
+  if(!div) return;
+  if(pages<=1){div.innerHTML='<span class="pi">'+tot+' SKUs</span>';return;}
+  var hh='',shp=[1,pages];
+  for(var k=Math.max(1,SFCF.p-1);k<=Math.min(pages,SFCF.p+1);k++)if(shp.indexOf(k)<0)shp.push(k);
+  shp.sort(function(a,b){return a-b;});
+  var prev=0;shp.forEach(function(i){if(prev&&i-prev>1)hh+='<span style="color:var(--muted);padding:0 2px">…</span>';hh+='<button class="pb'+(i===SFCF.p?' active':'')+'" onclick="gPSFC('+i+')">'+i+'</button>';prev=i;});
+  hh+='<span class="pi">'+((SFCF.p-1)*SFC_PER+1)+'–'+Math.min(SFCF.p*SFC_PER,tot)+' de '+tot+' SKUs</span>';div.innerHTML=hh;
+}
+function expSFC(){
+  if(!SFC||!SFC.rows){alert('Sin datos de SKU sin FC');return;}
+  var w=SFC.weeks||[], B=sfcB();
+  var header=['SKU','Descripción','UNM','Comprador','Stock total','StockCD','Quilicura','Bloqueado','Huechuraba','OC tránsito']
+    .concat(w.map(function(k){return 'Cons S'+k+(k===SFC.sem?' (en curso)':'');}))
+    .concat(['ΣReal 4w','Cob. Real 4w','ΣReal 12w','Cob. Real 12w','OC tránsito','Cob. 12w c/transito','$Stock','$Transito','Ult. Proveedor','Precio ult. OC','Moneda']);
+  var vm=window._vendorMap||(window._vendorMap=_buildVendorMap());
+  var lst=sfcFilter();
+  // Mismo orden que la tabla en pantalla (OC tránsito se repite antes de la cob. c/tránsito)
+  var aoa=[header].concat(lst.map(function(r){
+    var vi=vm[r[0]]||null;
+    return r.slice(0,B+4).concat([r[9],r[B+4],r[B+5],r[B+6],
+      vi?vi.vendor:'', (vi&&vi.price)?vi.price:'', vi?(vi.mon||'CLP'):'']);
+  }));
+  try{
+    var ws=XLSX.utils.aoa_to_sheet(aoa);var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Sin FC');
+    XLSX.writeFile(wb,'planificacion_sin_fc_'+new Date().toISOString().slice(0,10)+'.xlsx');
   }catch(e){alert('Error exportando: '+e.message);}
 }
 
@@ -5563,10 +5816,10 @@ fetch('data.json?v='+Date.now())
     return resp.json();
   })
   .then(function(_D){
-    R=_D.R;SD=_D.SD;PA=_D.PA;PC=_D.PC;PS=_D.PS;G=_D.G;GR=_D.GR;GD=_D.GD;
+    R=_D.R;SD=_D.SD;G=_D.G;GR=_D.GR;GD=_D.GD;
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
-    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;PPAP=_D.PPAP||null;LUXO=_D.LUXO||null;LLEG_PPA=_D.LLEG_PPA||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;CONAN=_D.CONSUMO_ANUAL||null;COVPTI=_D.COV_PTIMP||null;COV_HIST=_D.COV_HIST||null;RESUMEN=_D.RESUMEN||null;
+    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;SFC=_D.SFC||null;PPAP=_D.PPAP||null;LUXO=_D.LUXO||null;LLEG_PPA=_D.LLEG_PPA||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;CONAN=_D.CONSUMO_ANUAL||null;COVPTI=_D.COV_PTIMP||null;COV_HIST=_D.COV_HIST||null;RESUMEN=_D.RESUMEN||null;
     window._vendorMap=null;window._pltCobMap=null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
@@ -5583,7 +5836,7 @@ fetch('data.json?v='+Date.now())
     var _ppaCb = document.getElementById('gPPA'); if(_ppaCb) _ppaCb.checked = gExcludePPA;
     loadPPA().then(function(){ if(ppaActive()) _rebuildAll(); });
 
-    buildResumen();buildGer();updPlan();rndPLT();rndFCW();rndOCM();rndPPAP();rndLUXO();rndLlegPPA();rndCONAN();updMKpis();updMCharts(TA);bldTop10();buildKpiAv();
+    buildResumen();buildGer();updPlan();rndPLT();rndSFC();rndFCW();rndOCM();rndPPAP();rndLUXO();rndLlegPPA();rndCONAN();updMKpis();updMCharts(TA);bldTop10();buildKpiAv();
     mcUpdLockUI(); mcRenderCausa(); mcRenderResumen();
     // Hidrata clasificaciones desde backend (si configurado) y re-renderiza
     mcBackendLoad().then(function(loaded){
