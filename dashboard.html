@@ -4789,6 +4789,11 @@ function ppaLastWeek(){
   var w = PLAN_PPA && PLAN_PPA.weeks;
   return (w && w.length) ? w[w.length-1] : 52;
 }
+// Primera semana del plan (arranque de la temporada según el archivo; hoy S30)
+function ppaFirstWeek(){
+  var w = PLAN_PPA && PLAN_PPA.weeks;
+  return (w && w.length) ? w[0] : 30;
+}
 function ppaSkuIdx(){
   if(_ppaSkuIdx) return _ppaSkuIdx;
   _ppaSkuIdx={}; (SKUS||[]).forEach(function(s){ _ppaSkuIdx[String(s.sku)]=s; });
@@ -4801,6 +4806,17 @@ function ppaDemProm(code, sem, N){
   if(!weeks.length) return null;
   var sum=weeks.reduce(function(a,w){return a+(d[String(w)]||0);},0);
   return sum>0 ? sum/weeks.length : null;
+}
+// Demanda TOTAL de la temporada (S30→S52), FIJA: no depende de la semana en curso. Denominador
+// del "% s/ temporada" del panel de sobre-abastecimiento — se quiso fijo a propósito, para que la
+// cifra no se mueva sola semana a semana y sea leíble como "qué % del volumen anual me sobrará".
+// Suma TODAS las semanas que traiga el plan; hoy `SumExpl` llega a S49, así que S50-52 aportan 0,
+// y si a futuro el archivo se extiende hasta S52 lo toma sin tocar código.
+function ppaDemTotal(code){
+  var e=PLAN_PPA && PLAN_PPA.dem[code]; if(!e) return 0;
+  var d=e.d||{}, t=0;
+  for(var k in d){ if(Object.prototype.hasOwnProperty.call(d,k)) t+=(d[k]||0); }
+  return t;
 }
 // Demanda total restante de la temporada (para el KPI de avance vs plan)
 function ppaDemRest(code, sem){
@@ -5057,6 +5073,8 @@ function ppaExclRender(){
     return (va<vb?-1:(va>vb?1:0))*s.dir; });
   var tot=items.reduce(function(a,x){return a+x.ev;},0);
   var totRev=items.reduce(function(a,x){return a+(x.oc>0?x.ev:0);},0);
+  // Semáforo del % de sobre-stock sobre la demanda restante: ≥100% sobra otra temporada entera.
+  var pcol=function(p){ return p==null?'var(--muted)':(p>=100?'var(--q)':(p>=50?'#E87B2A':'#f0c98a')); };
   var rows=items.map(function(x){
     var cc=(typeof CC!=='undefined' && CC[x.comp])||'#8892b0';
     return '<tr>'
@@ -5068,6 +5086,11 @@ function ppaExclRender(){
       + '<td style="text-align:right">'+f0(x.oc)+'</td>'
       + '<td style="text-align:right">'+f0(x.rest)+'</td>'
       + '<td style="text-align:right;color:#f0c98a;font-weight:700">'+f0(x.over_u)+'</td>'
+      // Se capa la etiqueta en >999% para que la columna siga legible (hay casos de 6 cifras,
+      // ej. film PVC con 148.251 m sobre 9 m de demanda restante); el valor exacto va en el title.
+      + '<td style="text-align:right;font-weight:700;color:'+pcol(x.pct_over)+'"'
+      +   (x.pct_over==null?'':' title="'+f0(x.pct_over)+'% — sobran '+f0(x.over_u)+' '+(x.und||'u')+' sobre un volumen total de temporada de '+f0(x.dem_tot)+' '+(x.und||'u')+' (demanda restante hoy: '+f0(x.rest)+')"')+'>'
+      +   (x.pct_over==null?'—':(x.pct_over>=1000?'&gt;999':f0(x.pct_over))+'%')+'</td>'
       + '<td style="text-align:right;color:var(--muted)">$ '+f0(x.pu)+'</td>'
       + '<td style="text-align:right;color:#f0c98a;font-weight:800">$ '+f0(x.ev)+'</td>'
       + '<td style="text-align:center">'+(x.oc>0?'<span style="color:#639922;font-weight:700">Sí · en OC</span>':'<span style="color:#8892b0">No · en bodega</span>')+'</td>'
@@ -5083,11 +5106,12 @@ function ppaExclRender(){
     +   '<button onclick="expXls(\'ppa-excl-tb\',\'sobreabast_exclusivos_ppa\')" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button>'
     +   '<button class="cov-cl" onclick="ppaToggleExcl()">✕ Cerrar</button>'
     + '</span></h4>'
-    + '<div style="font-size:.62rem;color:var(--muted);margin:2px 0 8px">Sobre-stock = (Stock + OC) − Demanda restante del plan (S'+ppaCurWeek()+'→S'+ppaLastWeek()+'), valorizado a precio unitario. Sólo insumos de uso <b>exclusivo PPA</b> → el excedente no se reutiliza en otros productos (merma real). <b style="color:#639922">Reversible</b> = aún en OC en tránsito: se puede recortar o reprogramar antes de que llegue.</div>'
+    + '<div style="font-size:.62rem;color:var(--muted);margin:2px 0 8px">Sobre-stock = (Stock + OC) − Demanda restante del plan (S'+ppaCurWeek()+'→S'+ppaLastWeek()+'), valorizado a precio unitario. <b>% s/ volumen temporada</b> = ese sobre-stock <b>en volumen</b> sobre el <b>volumen TOTAL de la temporada (S'+ppaFirstWeek()+'→S52, fijo)</b>, no sobre lo que queda: así el % no se mueve solo semana a semana y se lee como <i>"qué fracción del volumen anual de este insumo me va a sobrar"</i>. <b>100% = sobrará una temporada entera</b> (<span style="color:#f0c98a">&lt;50%</span> / <span style="color:#E87B2A">50–100%</span> / <span style="color:var(--q)">≥100%</span>). Sólo insumos de uso <b>exclusivo PPA</b> → el excedente no se reutiliza en otros productos (merma real). <b style="color:#639922">Reversible</b> = aún en OC en tránsito: se puede recortar o reprogramar antes de que llegue.</div>'
     + '<div class="tw"><table><thead><tr>'
     + '<th>SKU</th><th>Descripción</th><th>Comprador</th><th style="text-align:right">Und</th>'
     + th('Stock','stock') + th('OC tránsito','oc') + th('Demanda rest.','rest')
-    + th('Sobre-stock (u)','over_u') + th('Precio $','pu') + th('Sobre-abast $','ev')
+    + th('Sobre-stock (u)','over_u') + th('% s/ volumen temporada','pct_over')
+    + th('Precio $','pu') + th('Sobre-abast $','ev')
     + '<th style="text-align:center">Reversible</th>'
     + '</tr></thead><tbody id="ppa-excl-tb">'+rows+'</tbody></table></div>';
 }
@@ -5153,9 +5177,13 @@ function ppaBolsaQRender(){
 // Cobertura del plan semana a semana: asignación CRONOLÓGICA del inventario (cada semana consume
 // primero; el sobrante pasa a la siguiente). Devuelve, por semana con demanda, el % value-weighted
 // cubierto con Stock+OC (asume OC a tiempo) y con Solo Stock (piso físico). Ver B.16.
+// Métrica del gráfico = CONTEO BINARIO de SKU (decisión 2026-08-04, ver B.16.2): por semana,
+// nº de SKU cuya demanda queda 100% cubierta ÷ nº de SKU con demanda esa semana. En paralelo se
+// sigue acumulando la demanda valorizada (`dem`) y el % valorizado (`valOC`/`valS`) porque el
+// tooltip los muestra como contexto y el drill-down prioriza la compra en $.
 function ppaWeeklyCoverage(items, sem){
   var weeks=(PLAN_PPA.weeks||[]).filter(function(w){return w>=sem;});
-  var acc=weeks.map(function(w){return {w:w, covOC:0, covS:0, dem:0, det:[]};});
+  var acc=weeks.map(function(w){return {w:w, covOC:0, covS:0, dem:0, n:0, nOC:0, nS:0, det:[]};});
   items.forEach(function(it){
     var e=PLAN_PPA.dem[it.sku]; if(!e) return;
     var d=e.d||{}, pu=it.pu||0, aOC=(it.stock||0)+(it.oc||0), aS=(it.stock||0);
@@ -5164,6 +5192,9 @@ function ppaWeeklyCoverage(items, sem){
       var cOC=Math.min(aOC,need); aOC-=cOC;
       var cS=Math.min(aS,need); aS-=cS;
       acc[i].covOC+=cOC*pu; acc[i].covS+=cS*pu; acc[i].dem+=need*pu;
+      acc[i].n++;
+      if(cOC>=need-1e-6) acc[i].nOC++;   // SKU 100% cubierto contando la OC en tránsito
+      if(cS >=need-1e-6) acc[i].nS++;    // SKU 100% cubierto sólo con el stock en bodega
       // Faltante del SKU en ESA semana bajo cada lente. Como aS ≤ aOC siempre, fS ≥ fOC:
       // fOC>0 = no alcanza ni contando la OC → hay que comprar. fOC=0 y fS>0 = la OC lo
       // salva, pero sólo si llega a tiempo. Alimenta el drill-down al hacer clic en la semana.
@@ -5175,8 +5206,11 @@ function ppaWeeklyCoverage(items, sem){
       }
     }
   });
-  return acc.filter(function(r){return r.dem>0;}).map(function(r){
-    return {w:r.w, dem:r.dem, pctOC:r.covOC/r.dem*100, pctS:r.covS/r.dem*100, det:r.det};});
+  return acc.filter(function(r){return r.n>0;}).map(function(r){
+    return {w:r.w, dem:r.dem, n:r.n, nOC:r.nOC, nS:r.nS,
+      pctOC:r.nOC/r.n*100, pctS:r.nS/r.n*100,                                   // graficado: conteo binario
+      valOC:r.dem>0?r.covOC/r.dem*100:null, valS:r.dem>0?r.covS/r.dem*100:null, // contexto: valorizado
+      det:r.det};});
 }
 // ── Drill-down al hacer clic en una semana del gráfico "Cobertura del plan semana a semana" ──
 // Lista los SKU que impiden llegar al 100% de esa semana, bajo los dos lentes del gráfico.
@@ -5234,7 +5268,7 @@ function ppaWkRender(){
   };
   var sem=ppaCurWeek();
   det.innerHTML=''
-    + '<h4><span>Semana '+row.w+(row.w===sem?' (en curso)':'')+' · '+items.length+' SKU impiden el 100%'
+    + '<h4><span>Semana '+row.w+(row.w===sem?' (en curso)':'')+' · '+items.length+' de '+row.n+' SKU sin cubrir'
     +   (nComprar?' · <span style="color:var(--q)">'+nComprar+' a comprar</span>':'')+'</span>'
     + '<span style="display:flex;gap:8px;align-items:center">'
     +   '<button onclick="expXls(\'ppa-wk-tb\',\'faltantes_S'+row.w+'\')" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button>'
@@ -5242,11 +5276,12 @@ function ppaWkRender(){
     + '</span></h4>'
     + '<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:.65rem;margin:2px 0 8px">'
     +   '<span style="color:var(--muted)">Demanda MP de la semana <b style="color:#e2e8f0">$'+fMM(row.dem)+'</b></span>'
-    +   '<span style="color:#639922">Con Stock+OC <b>'+row.pctOC.toFixed(1)+'%</b> · falta <b>$'+fMM(totOC)+'</b></span>'
-    +   '<span style="color:#378ADD">Solo Stock <b>'+row.pctS.toFixed(1)+'%</b> · falta <b>$'+fMM(totS)+'</b></span>'
+    +   '<span style="color:#639922">Con Stock+OC <b>'+row.pctOC.toFixed(1)+'%</b> ('+row.nOC+'/'+row.n+' SKU) · falta <b>$'+fMM(totOC)+'</b></span>'
+    +   '<span style="color:#378ADD">Solo Stock <b>'+row.pctS.toFixed(1)+'%</b> ('+row.nS+'/'+row.n+' SKU) · falta <b>$'+fMM(totS)+'</b></span>'
+    +   '<span style="color:var(--muted)">En valor: '+(row.valOC==null?'—':row.valOC.toFixed(1)+'% c/OC · '+row.valS.toFixed(1)+'% solo stock')+'</span>'
     + '</div>'
     + '<div style="font-size:.62rem;color:var(--muted);margin-bottom:8px">Faltante de cada SKU para cubrir la demanda de <b>esta</b> semana, con el inventario ya consumido por las semanas anteriores (asignación cronológica). <b style="color:var(--q)">Falta comprar</b> = no alcanza ni contando la OC en tránsito → hay que emitir compra. <b style="color:#E8C52A">Depende de OC</b> = el stock físico no alcanza pero la OC sí, siempre que llegue antes de S'+row.w+'.'
-    +   (sinPu ? ' · <b style="color:#E8C52A">'+sinPu+' SKU sin precio</b> en MOBIDIC ni en OC: se listan en unidades pero valen $0, así que no mueven el % del gráfico (value-weighted).' : '')+'</div>'
+    +   (sinPu ? ' · <b style="color:#E8C52A">'+sinPu+' SKU sin precio</b> en MOBIDIC ni en OC: cuentan igual en el % (es conteo de SKU), pero su columna $ queda en 0, así que el orden por defecto los manda al final — revísalos aparte.' : '')+'</div>'
     + '<div class="tw"><table><thead><tr>'
     + th('SKU','sku','left') + th('Descripción','desc','left') + th('Comprador','comp','left')
     + '<th style="text-align:right">Und</th>'
@@ -5261,7 +5296,7 @@ function ppaRenderWeekly(host, items, sem){
   var sec=document.createElement('div'); sec.className='cov-sec';
   sec.innerHTML=''
     + '<div class="cov-tit">Cobertura del plan semana a semana</div>'
-    + '<div class="cov-sub">% de la demanda de MP de cada semana del plan que alcanza a cubrirse, asignando el inventario <b>cronológicamente</b> (cada semana consume primero; el sobrante pasa a la siguiente). <b style="color:#639922">Con Stock+OC</b> asume que las OC llegan a tiempo · <b style="color:#378ADD">Solo Stock</b> = piso con lo físico en bodega hoy. Value-weighted sobre todo el universo del programa. <b style="color:#c0caf5">Clic en una semana</b> para ver los SKU que impiden llegar al 100%.</div>'
+    + '<div class="cov-sub">% de <b>SKU del programa cuya demanda de esa semana queda 100% cubierta</b>, sobre el total de SKU con demanda esa semana (conteo: todos los SKU pesan igual, sin ponderar por valor). El inventario se asigna <b>cronológicamente</b> — cada semana consume primero y el sobrante pasa a la siguiente. <b style="color:#639922">Con Stock+OC</b> asume que las OC llegan a tiempo · <b style="color:#378ADD">Solo Stock</b> = piso con lo físico en bodega hoy. El tooltip muestra además el % valorizado como contexto. <b style="color:#c0caf5">Clic en una semana</b> para ver los SKU que impiden llegar al 100%.</div>'
     + '<div class="cw" style="height:300px"><canvas id="ppa-wk-ch" style="cursor:pointer"></canvas></div>'
     + '<div class="cov-detail" id="ppa-wk-dt"></div>';
   host.appendChild(sec);
@@ -5281,9 +5316,15 @@ function ppaRenderWeekly(host, items, sem){
       },
       plugins:{legend:{labels:{color:'#e2e8f0',font:{size:11},padding:10}},
         tooltip:{callbacks:{
-          label:function(x){return ' '+x.dataset.label+': '+x.parsed.y.toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';},
-          afterBody:function(a){var i=a[0].dataIndex;
-            return 'Demanda MP de la semana: $'+fMM(data[i].dem)+'\nClic para ver los SKU faltantes';}}}},
+          label:function(x){var i=x.dataIndex, r=data[i];
+            var cub=(x.datasetIndex===0)?r.nOC:r.nS;
+            return ' '+x.dataset.label+': '+x.parsed.y.toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1})+'% ('+cub+' de '+r.n+' SKU)';},
+          afterBody:function(a){var i=a[0].dataIndex, r=data[i];
+            // El % graficado es conteo de SKU; el valorizado se declara aparte para no perder
+            // la señal de $ — un mismo % de SKU pesa muy distinto según qué SKU sean.
+            return 'Demanda MP de la semana: $'+fMM(r.dem)
+              + '\nEn valor: '+(r.valOC==null?'—':r.valOC.toFixed(1)+'% c/OC · '+r.valS.toFixed(1)+'% solo stock')
+              + '\nClic para ver los SKU faltantes';}}}},
       scales:{x:{ticks:{color:'#8892b0',font:{size:10}},grid:{display:false}},
         y:{min:0,max:100,ticks:{color:'#8892b0',font:{size:10},callback:function(v){return v+'%';}},grid:{color:'#2d3452'}}}}});
 }
@@ -5331,8 +5372,13 @@ function buildPPA(){
     var ev=overU*(it.pu||0);  // sobre-abast
     if(ev>0 && setB[it.sku]){  // sólo exclusivos = merma real (no reutilizable)
       excExclTot+=ev; excExclCnt++;
+      // Denominador FIJO = volumen total de la temporada (S30→S52), no el restante: así el % no
+      // se mueve solo a medida que avanzan las semanas y se lee como "qué fracción del volumen
+      // anual de este insumo me va a sobrar al cierre". demTot ≥ rest > 0, así que nunca divide 0.
+      var demTot=ppaDemTotal(it.sku);
       exclDet.push({sku:it.sku, desc:it.desc, comp:it.comp, und:it.und||'',
-        stock:it.stock||0, oc:it.oc||0, rest:rest, over_u:overU, pu:it.pu||0, ev:ev});
+        stock:it.stock||0, oc:it.oc||0, rest:rest, dem_tot:demTot, over_u:overU, pu:it.pu||0, ev:ev,
+        pct_over: demTot>0 ? overU/demTot*100 : null});
     }
   });
   window._ppaExclDet=exclDet;
