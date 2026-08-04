@@ -259,6 +259,23 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .cov-detail thead th{position:sticky;top:0;z-index:2}
 .cov-cl{background:none;border:1px solid var(--border);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:.65rem;color:var(--muted)}
 .cov-cl:hover{color:#c0caf5;border-color:#6366f1}
+/* Calendario de emisión de OC (pestaña PPA, B.16.3). Las casillas van en UNA fila con
+   flex:1 1 0 + min-width:0 para que se repartan el ancho y nunca envuelvan, y el contenedor
+   se paddea al chartArea del gráfico de cobertura para que cada casilla caiga bajo su semana. */
+.calw{display:flex;gap:4px}
+.calk{flex:1 1 0;min-width:0;background:#13182a;border:1px solid var(--border);border-top:3px solid var(--border);border-radius:7px;padding:6px 2px 5px;text-align:center;cursor:pointer;overflow:hidden;transition:transform .1s,box-shadow .1s}
+.calk:hover{transform:translateY(-2px);box-shadow:0 4px 12px #0007}
+.calk.sel{box-shadow:0 0 0 2px #6ea8ff}
+.calk .cw2{font-size:.55rem;font-weight:700;color:var(--muted);line-height:1}
+.calk .cn{font-size:1.18rem;font-weight:900;line-height:1.15}
+.calk .cv{font-size:.53rem;font-weight:700;line-height:1;white-space:nowrap}
+.calk.vac{opacity:.3}.calk.vac .cn{color:var(--muted)}
+.calk.hoy{position:relative}
+.calk.hoy:after{content:'HOY';position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:var(--q);color:#fff;font-size:.42rem;font-weight:800;padding:0 4px;border-radius:0 0 5px 5px;letter-spacing:.3px}
+.calk.hoy .cw2{margin-top:5px}
+.caltg{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden}
+.caltg button{background:none;border:none;color:var(--muted);font:600 .65rem system-ui;padding:3px 10px;cursor:pointer}
+.caltg button.on{background:#6366f1;color:#fff}
 </style>
 </head>
 <body>
@@ -4847,7 +4864,8 @@ function ppaItems(codes){
     // se caía del embudo y de la cobertura por categoría, justo los que están en quiebre total.
     var puB=s.pu||0, puO=s.pu_oc||0, puR=puB>0?puB:puO;
     out.push({sku:c, desc:s.desc||(pe?pe.nom:''), comp:s.comp||'—', grupo:s.grupo||'—', und:(pe&&pe.und)||'', stock:s.stock||0, val:s.val||0,
-      oc:s.oc||0, pu:puR, pu_bod:puB, pu_oc:puO, c4_real:s.c4_real||0, cob:cob, demProm:demProm});
+      oc:s.oc||0, pu:puR, pu_bod:puB, pu_oc:puO, c4_real:s.c4_real||0, cob:cob, demProm:demProm,
+      lt:s.lt||0, ltw:(s.lt>0?Math.ceil(s.lt/7):0), lt_src:s.lt_src||'', lt_low:!!s.lt_low});
   });
   return out;
 }
@@ -5325,8 +5343,160 @@ function ppaRenderWeekly(host, items, sem){
             return 'Demanda MP de la semana: $'+fMM(r.dem)
               + '\nEn valor: '+(r.valOC==null?'—':r.valOC.toFixed(1)+'% c/OC · '+r.valS.toFixed(1)+'% solo stock')
               + '\nClic para ver los SKU faltantes';}}}},
-      scales:{x:{ticks:{color:'#8892b0',font:{size:10}},grid:{display:false}},
+      // `offset:true` deja los puntos en el CENTRO de cada banda semanal en vez de sobre los
+      // bordes del área. Es lo que permite alinear el calendario de emisión de OC de abajo
+      // (B.16.3) casilla-a-semana, y además es lo correcto: una semana es un período, no un
+      // instante. Sin esto, las casillas quedan corridas media casilla (~30 px).
+      scales:{x:{offset:true,ticks:{color:'#8892b0',font:{size:10}},grid:{display:false}},
         y:{min:0,max:100,ticks:{color:'#8892b0',font:{size:10},callback:function(v){return v+'%';}},grid:{color:'#2d3452'}}}}});
+  ppaCalRender(sec, items, sem);
+}
+// ══ Calendario de emisión de OC (B.16.3) ═════════════════════════════════════════════
+// Semana en que hay que emitir la OC a más tardar para que el material llegue con margen:
+//     semana_emisión = semana_quiebre(stock+OC) − ceil(lead_time/7) − colchón
+// Lo que ya está fuera de plazo se acumula en la semana en curso, no se pierde.
+var PPA_CAL_BUF=+(localStorage.getItem('ppaCalBuf')||2);   // colchón en semanas (1 ó 2)
+function ppaCalSetBuf(b){ PPA_CAL_BUF=b; try{localStorage.setItem('ppaCalBuf',b);}catch(e){}
+  window._ppaCalSel=null; ppaCalPaint(); }
+// Construye el universo del calendario: SKU con déficit que quiebran dentro del horizonte.
+function ppaCalData(items, sem){
+  var weeks=(PLAN_PPA.weeks||[]).filter(function(w){return w>=sem;}), out=[];
+  items.forEach(function(it){
+    var e=PLAN_PPA.dem[it.sku]; if(!e) return;
+    var d=e.d||{}, rest=0;
+    weeks.forEach(function(w){ rest+=(d[String(w)]||0); });
+    if(rest<=0) return;
+    var av=(it.stock||0)+(it.oc||0), faltaU=Math.max(0, rest-av), df=faltaU*(it.pu||0);
+    if(df<=0) return;                       // sin déficit no hay nada que emitir
+    var run=av, qw=null;
+    for(var i=0;i<weeks.length;i++){ run-=(d[String(weeks[i])]||0); if(run<0){ qw=weeks[i]; break; } }
+    if(qw==null) return;                    // no quiebra en el horizonte → sin fecha que calcular
+    if(!it.ltw) return;                     // sin lead time no hay plazo computable
+    out.push({sku:it.sku, desc:it.desc||'', comp:it.comp||'—', grupo:it.grupo||'—', und:it.und||'',
+      falta_u:faltaU, df:df, qw:qw, lt:it.lt, ltw:it.ltw, lt_src:it.lt_src, lt_low:it.lt_low});
+  });
+  return out;
+}
+function ppaCalRender(sec, items, sem){
+  var data=ppaCalData(items, sem);
+  window._ppaCalData=data; window._ppaCalWeeks=(PLAN_PPA.weeks||[]).filter(function(w){return w>=sem;});
+  window._ppaCalSem=sem; window._ppaCalSel=null;
+  window._ppaCalSort=window._ppaCalSort||{col:'df',dir:-1};
+  var box=document.createElement('div');
+  box.innerHTML=''
+    + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:9px;margin:15px 0 5px">'
+    +   '<span style="font-size:.85rem;font-weight:700;color:#c0caf5">Calendario de emisión de OC</span>'
+    +   '<span style="display:flex;align-items:center;gap:8px">'
+    +     '<span style="font-size:.62rem;color:var(--muted)">Colchón antes del quiebre:</span>'
+    +     '<span class="caltg"><button id="ppa-cal-b1" onclick="ppaCalSetBuf(1)">1 sem</button>'
+    +       '<button id="ppa-cal-b2" onclick="ppaCalSetBuf(2)">2 sem</button></span>'
+    +   '</span>'
+    + '</div>'
+    + '<div class="cov-sub" id="ppa-cal-sub" style="margin-bottom:8px"></div>'
+    + '<div id="ppa-cal-wrap"><div class="calw" id="ppa-cal"></div></div>'
+    + '<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:.62rem;color:var(--muted);margin-top:10px">'
+    +   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--q);margin-right:5px;vertical-align:middle"></span>Esta semana o atrasado</span>'
+    +   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#E87B2A;margin-right:5px;vertical-align:middle"></span>Próximas 4 sem</span>'
+    +   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#E8C52A;margin-right:5px;vertical-align:middle"></span>5–8 sem</span>'
+    +   '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#639922;margin-right:5px;vertical-align:middle"></span>9+ sem</span>'
+    +   '<span>· Número grande = <b>SKU cuya OC debe emitirse a más tardar esa semana</b>. Clic para el detalle.</span>'
+    + '</div>'
+    + '<div class="cov-detail" id="ppa-cal-dt"></div>';
+  sec.appendChild(box);
+  ppaCalPaint();
+  if(!window._ppaCalResize){ window._ppaCalResize=1;
+    window.addEventListener('resize',function(){ setTimeout(ppaCalAlign,80); }); }
+}
+// Alinea el calendario al área de trazado del gráfico: cada casilla bajo su semana del eje X.
+function ppaCalAlign(){
+  var ch=window._ppaWkCh, w=el('ppa-cal-wrap'); if(!ch||!w||!ch.chartArea) return;
+  w.style.paddingLeft=ch.chartArea.left+'px';
+  w.style.paddingRight=(ch.width-ch.chartArea.right)+'px';
+}
+function ppaCalPaint(){
+  var host=el('ppa-cal'); if(!host) return;
+  var data=window._ppaCalData||[], weeks=window._ppaCalWeeks||[], sem=window._ppaCalSem;
+  var g={}, nVenc=0, totV=0;
+  data.forEach(function(x){
+    var lim=x.qw-x.ltw-PPA_CAL_BUF;
+    if(lim<sem) nVenc++;
+    var k=Math.max(sem, lim); (g[k]=g[k]||[]).push(x); totV+=x.df;
+  });
+  window._ppaCalGrp=g;
+  var col=function(w){ return w<=sem?'var(--q)':(w<=sem+4?'#E87B2A':(w<=sem+8?'#E8C52A':'#639922')); };
+  // Formato compacto para la casilla: fMM() ("735.0 MM") no cabe en ~60 px de ancho.
+  var fc=function(v){ return Math.round(v/1e6).toLocaleString('es-CL'); };   // millones, sin sufijo
+  el('ppa-cal-sub').innerHTML='Semana en la que hay que <b>emitir la OC a más tardar</b> para que el material llegue con <b>'
+    +PPA_CAL_BUF+' semana'+(PPA_CAL_BUF>1?'s':'')+'</b> de margen antes del quiebre. '
+    +'<b style="color:#e2e8f0">'+data.length+' SKU</b> con déficit que quiebran en el horizonte · <b style="color:#e2e8f0">$'+fMM(totV)+'</b>'
+    +(nVenc?' · <b style="color:var(--q)">'+nVenc+' ya fuera de plazo</b> (acumulados en S'+sem+')':'');
+  var b1=el('ppa-cal-b1'), b2=el('ppa-cal-b2');
+  if(b1) b1.className=(PPA_CAL_BUF===1?'on':''); if(b2) b2.className=(PPA_CAL_BUF===2?'on':'');
+  host.innerHTML=weeks.map(function(w){
+    var it=g[w]||[], v=it.reduce(function(a,x){return a+x.df;},0), c=col(w);
+    return '<div class="calk'+(it.length?'':' vac')+(w===sem?' hoy':'')+(window._ppaCalSel===w?' sel':'')+'" data-w="'+w+'"'
+      + ' style="border-top-color:'+(it.length?c:'var(--border)')+'"'
+      + ' title="'+(it.length?('S'+w+': '+it.length+' SKU · $'+fMM(v)+' — clic para el detalle'):('S'+w+': sin OC que emitir'))+'">'
+      + '<div class="cw2">S'+w+'</div>'
+      + '<div class="cn" style="color:'+(it.length?c:'')+'">'+(it.length||'—')+'</div>'
+      + '<div class="cv" style="color:'+(it.length?'#e2e8f0':'transparent')+'">'+(it.length?'$'+fc(v):'·')+'</div>'
+      + '</div>';
+  }).join('');
+  Array.prototype.forEach.call(host.querySelectorAll('.calk'), function(e){
+    e.onclick=function(){ var w=+e.dataset.w;
+      window._ppaCalSel=(window._ppaCalSel===w)?null:w; ppaCalPaint(); }; });
+  ppaCalAlign();
+  ppaCalDetail();
+}
+function ppaCalSort(c){
+  var s=window._ppaCalSort||{col:'df',dir:-1};
+  if(s.col===c){ s.dir=-s.dir; } else { s.col=c; s.dir=(c==='sku'||c==='desc'||c==='comp'||c==='grupo')?1:-1; }
+  window._ppaCalSort=s; ppaCalDetail();
+}
+function ppaCalDetail(){
+  var det=el('ppa-cal-dt'); if(!det) return;
+  var sel=window._ppaCalSel, g=window._ppaCalGrp||{}, sem=window._ppaCalSem;
+  if(sel==null || !(g[sel]||[]).length){ det.classList.remove('open'); det.innerHTML=''; return; }
+  var it=g[sel].slice(), s=window._ppaCalSort||{col:'df',dir:-1};
+  it.sort(function(a,b){ var va=a[s.col],vb=b[s.col], r;
+    if(typeof va==='string') r=va.localeCompare(vb)*s.dir; else r=(va<vb?-1:(va>vb?1:0))*s.dir;
+    return r!==0?r:(b.df-a.df); });          // desempate: primero la plata grande
+  var col=function(w){ return w<=sem?'var(--q)':(w<=sem+4?'#E87B2A':(w<=sem+8?'#E8C52A':'#639922')); };
+  var SRC={declarado:['#639922','maestro'],'grupo+origen':['#E8C52A','inferido'],grupo:['#E8C52A','inferido'],
+           'tipo+origen':['#E8C52A','inferido'],'default':['#E24B4A','default']};
+  var rows=it.map(function(x){
+    var f=SRC[x.lt_src]||SRC['default'];
+    var low=x.lt_low?' <span style="padding:1px 6px;border-radius:8px;font-size:.57rem;font-weight:800;background:#E24B4A25;color:#E24B4A">baja conf.</span>':'';
+    return '<tr>'
+      + '<td style="font-family:monospace;color:#c0caf5">'+x.sku+'</td><td>'+x.desc+'</td>'
+      + '<td style="color:var(--muted)">'+x.comp+'</td><td style="color:var(--muted)">'+x.grupo+'</td>'
+      + '<td style="text-align:right">'+f0(x.falta_u)+' <span style="color:var(--muted);font-size:.6rem">'+x.und+'</span></td>'
+      + '<td style="text-align:right;font-weight:700;color:#f0c98a">$'+fMM(x.df)+'</td>'
+      + '<td style="text-align:right"><b style="color:'+col(x.qw)+'">S'+x.qw+'</b></td>'
+      + '<td style="text-align:right">'+f0(x.lt)+' d <span style="color:var(--muted);font-size:.6rem">('+x.ltw+' sem)</span></td>'
+      + '<td style="text-align:center"><span style="padding:1px 6px;border-radius:8px;font-size:.57rem;font-weight:800;background:'+f[0]+'25;color:'+f[0]+'">'+f[1]+'</span>'+low+'</td>'
+      + '</tr>';
+  }).join('');
+  var th=function(l,c,al){
+    var a=(s.col===c)?(s.dir<0?' <span style="color:#6ea8ff">▼</span>':' <span style="color:#6ea8ff">▲</span>'):' <span style="color:#4a536e;font-size:.55rem">↕</span>';
+    return '<th style="text-align:'+(al||'right')+';cursor:pointer;user-select:none" onclick="ppaCalSort(\''+c+'\')">'+l+a+'</th>'; };
+  var tot=it.reduce(function(a,x){return a+x.df;},0);
+  var nLow=it.filter(function(x){return x.lt_low;}).length;
+  det.classList.add('open');
+  det.innerHTML=''
+    + '<h4><span>Emitir a más tardar en <b style="color:'+col(sel)+'">S'+sel+'</b> · '+it.length+' SKU · $'+fMM(tot)
+    +   (sel===sem?' <span style="color:var(--muted);font-weight:400">(incluye lo ya fuera de plazo)</span>':'')+'</span>'
+    + '<span style="display:flex;gap:8px;align-items:center">'
+    +   '<button onclick="expXls(\'ppa-cal-tb\',\'emision_oc_S'+sel+'\')" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button>'
+    +   '<button class="cov-cl" onclick="window._ppaCalSel=null;ppaCalPaint()">✕ Cerrar</button>'
+    + '</span></h4>'
+    + '<div style="font-size:.62rem;color:var(--muted);margin:2px 0 8px">Semana límite = <b>quiebre − lead time − colchón</b>. <b>Origen LT</b>: <span style="color:#639922">maestro</span> = declarado en <code>Lead Time MMPP.xlsx</code>; <span style="color:#E8C52A">inferido</span> = mediana de su categoría × origen (PARAMETRO.MD B.20.2).'
+    +   (nLow?' <span style="color:var(--q)"><b>'+nLow+' con baja confianza</b>: categoría heterogénea (dispersión &gt;100%), el plazo es referencial — conviene confirmar el lead time real antes de comprometer la compra.</span>':'')+'</div>'
+    + '<div class="tw"><table><thead><tr>'
+    + th('SKU','sku','left') + th('Descripción','desc','left') + th('Comprador','comp','left') + th('Categoría','grupo','left')
+    + th('Falta (u)','falta_u') + th('Déficit $','df') + th('Quiebra en','qw') + th('Lead time','lt')
+    + '<th style="text-align:center">Origen LT</th>'
+    + '</tr></thead><tbody id="ppa-cal-tb">'+rows+'</tbody></table></div>';
 }
 function ppaRenderBolsas(host){
   if(!host) return;
