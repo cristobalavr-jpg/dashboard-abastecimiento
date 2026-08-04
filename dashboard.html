@@ -4825,8 +4825,13 @@ function ppaItems(codes){
     var demProm=ppaDemProm(c, sem, 12);
     var cob=(demProm && demProm>0) ? (s.stock||0)/demProm : null;
     var pe=PLAN_PPA && PLAN_PPA.dem[c];
+    // Precio de referencia para valorizar la DEMANDA del programa: el stock en bodega se valoriza
+    // a MOBIDIC (`pu`), el stock en tránsito a precio de OC (`pu_oc`). Un SKU sin stock en bodega
+    // tiene pu=0 por construcción (val/qty con qty=0) → sin `pu_oc` su demanda valdría $0 y el SKU
+    // se caía del embudo y de la cobertura por categoría, justo los que están en quiebre total.
+    var puB=s.pu||0, puO=s.pu_oc||0, puR=puB>0?puB:puO;
     out.push({sku:c, desc:s.desc||(pe?pe.nom:''), comp:s.comp||'—', grupo:s.grupo||'—', und:(pe&&pe.und)||'', stock:s.stock||0, val:s.val||0,
-      oc:s.oc||0, pu:s.pu||0, c4_real:s.c4_real||0, cob:cob, demProm:demProm});
+      oc:s.oc||0, pu:puR, pu_bod:puB, pu_oc:puO, c4_real:s.c4_real||0, cob:cob, demProm:demProm});
   });
   return out;
 }
@@ -5091,50 +5096,58 @@ function ppaToggleBolsaQ(){
   var det=document.getElementById('ppa-bolsaq-dt'); if(!det) return;
   if(det.classList.contains('open')){ det.classList.remove('open'); det.innerHTML=''; return; }
   var other=document.getElementById('ppa-excl-dt'); if(other){ other.classList.remove('open'); other.innerHTML=''; }  // solo un panel abierto a la vez
-  window._ppaBolsaQSort=window._ppaBolsaQSort||{col:'firstQ',dir:1};  // default: quiebre más próximo primero
+  window._ppaBolsaQSort=window._ppaBolsaQSort||{col:'firstD',dir:1};  // default: la que se necesita antes
   det.classList.add('open'); ppaBolsaQRender();
   det.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function ppaBolsaQSort(col){
-  var s=window._ppaBolsaQSort||{col:'firstQ',dir:1};
+  var s=window._ppaBolsaQSort||{col:'firstD',dir:1};
   if(s.col===col){ s.dir=-s.dir; } else { s.col=col; s.dir=1; }
   window._ppaBolsaQSort=s; ppaBolsaQRender();
 }
 function ppaBolsaQRender(){
   var det=document.getElementById('ppa-bolsaq-dt'); if(!det) return;
-  var items=(window._ppaBolsaQDet||[]).slice(), s=window._ppaBolsaQSort||{col:'firstQ',dir:1};
+  var items=(window._ppaBolsaQDet||[]).slice(), s=window._ppaBolsaQSort||{col:'firstD',dir:1};
   items.sort(function(a,b){ var va=a[s.col],vb=b[s.col];
     if(typeof va==='string'){ return va.localeCompare(vb)*s.dir; }
+    if(va==null) va=-Infinity; if(vb==null) vb=-Infinity;
     return (va<vb?-1:(va>vb?1:0))*s.dir; });
   var sem=ppaCurWeek();
   var qcol=function(w){ return (w<=sem+4)?'var(--q)':(w<=sem+10?'#E8C52A':'#8892b0'); };
   var rows=items.map(function(x){
+    var cubre=(x.demR<=0) ? '<span style="color:var(--muted)">sin demanda</span>'
+            : (x.saldo>=0 ? '<span style="color:var(--n);font-weight:700">Sí</span>'
+                          : '<span style="color:var(--q);font-weight:700">No · faltan '+f0(-x.saldo)+'</span>');
     return '<tr>'
       + '<td style="font-family:monospace;font-weight:700;color:#c0caf5">'+x.cod+'</td>'
       + '<td>'+(x.nom||'')+'</td>'
-      + '<td style="text-align:right">'+f0(x.stock)+'</td>'
+      + '<td style="text-align:right;color:var(--q);font-weight:700">'+f0(x.stock)+'</td>'
       + '<td style="text-align:right">'+f0(x.oc)+'</td>'
-      + '<td style="text-align:right;font-weight:700;color:'+qcol(x.firstQ)+'">S'+x.firstQ+'</td>'
-      + '<td style="text-align:right">'+x.nNeg+'</td>'
-      + '<td style="text-align:right;color:var(--q);font-weight:700">-'+f0(-x.worst)+' <span style="color:var(--muted);font-weight:400">(S'+x.worstW+')</span></td>'
+      + '<td style="text-align:right">'+f0(x.demR)+'</td>'
+      + '<td style="text-align:right;font-weight:700;color:'+(x.firstD>=999?'#8892b0':qcol(x.firstD))+'">'+(x.firstD>=999?'—':'S'+x.firstD)+'</td>'
+      + '<td style="text-align:right">'+(x.pct==null?'—':Math.round(x.pct)+'%')+'</td>'
+      + '<td style="text-align:right">'+cubre+'</td>'
       + '</tr>';
   }).join('');
   var th=function(label,col,align){
     var arr=(s.col===col)?(s.dir<0?' <span style="color:#6ea8ff">▼</span>':' <span style="color:#6ea8ff">▲</span>'):' <span style="color:#4a536e;font-size:.55rem">↕</span>';
     return '<th style="text-align:'+(align||'right')+';cursor:pointer;user-select:none" onclick="ppaBolsaQSort(\''+col+'\')" title="Ordenar por '+label+'">'+label+arr+'</th>';
   };
-  var urg=items.filter(function(x){return x.firstQ<=sem+4;}).length;
+  var urg=items.filter(function(x){return x.firstD<=sem+4;}).length;
+  var sinOC=items.filter(function(x){return (x.oc||0)<=0 && x.demR>0;}).length;
   det.innerHTML=''
-    + '<h4><span>Bolsas PPA en quiebre proyectado · '+items.length+' bolsas'+(urg?' · <span style="color:var(--q)">'+urg+' en ≤4 sem</span>':'')+'</span>'
+    + '<h4><span>Bolsas PPA sin stock en bodega · '+items.length+' bolsas'
+    +   (urg?' · <span style="color:var(--q)">'+urg+' se necesitan en ≤4 sem</span>':'')
+    +   (sinOC?' · <span style="color:var(--q)">'+sinOC+' sin OC en tránsito</span>':'')+'</span>'
     + '<span style="display:flex;gap:8px;align-items:center">'
-    +   '<button onclick="expXls(\'ppa-bolsaq-tb\',\'bolsas_ppa_quiebre\')" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button>'
+    +   '<button onclick="expXls(\'ppa-bolsaq-tb\',\'bolsas_ppa_sin_stock\')" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button>'
     +   '<button class="cov-cl" onclick="ppaToggleBolsaQ()">✕ Cerrar</button>'
     + '</span></h4>'
-    + '<div style="font-size:.62rem;color:var(--muted);margin:2px 0 8px">Bolsa (producto terminado) cuyo <b>stock proyectado semanal</b> (stock inicial + llegadas planificadas − demanda) cae por <b>debajo de 0</b> en algún punto del horizonte (S'+sem+'→S'+ppaLastWeek()+'). <b>1er quiebre</b> = primera semana negativa (color por urgencia: <span style="color:var(--q)">≤4 sem</span> / <span style="color:#E8C52A">≤10 sem</span>). <b>Déficit máx</b> = punto más negativo de la proyección y su semana. Refleja la vista "Stock Proyectado semanal" de Llegadas Bolsas PPA.'+(LLEG_PPA&&LLEG_PPA.fuente?' · '+LLEG_PPA.fuente:'')+'</div>'
+    + '<div style="font-size:.62rem;color:var(--muted);margin:2px 0 8px">Bolsa (producto terminado) con <b>stock 0 en bodega hoy</b>. El único suministro reconocido es la <b>OC en tránsito de ME2M</b> (toda OC con saldo pendiente cuenta como activa, aunque su fecha de entrega ya haya pasado). <b>Se necesita en</b> = primera semana del horizonte (S'+sem+'→S'+ppaLastWeek()+') con demanda del plan (<span style="color:var(--q)">≤4 sem</span> / <span style="color:#E8C52A">≤10 sem</span>). <b>¿La OC alcanza?</b> compara la OC en tránsito contra la demanda restante de la temporada. El calendario de entregas del proveedor no interviene acá — vive en la tabla "Stock Proyectado Semanal", al final de esta pestaña.</div>'
     + '<div class="tw"><table><thead><tr>'
     + '<th>Código</th><th>Nombre bolsa</th>'
-    + th('Stock hoy','stock') + th('OC tránsito','oc') + th('1er quiebre','firstQ')
-    + th('Sem. en quiebre','nNeg') + th('Déficit máx (u)','worst')
+    + th('Stock hoy','stock') + th('OC tránsito','oc') + th('Demanda restante','demR')
+    + th('Se necesita en','firstD') + th('% cub. c/OC','pct') + th('¿La OC alcanza?','saldo')
     + '</tr></thead><tbody id="ppa-bolsaq-tb">'+rows+'</tbody></table></div>';
 }
 // Cobertura del plan semana a semana: asignación CRONOLÓGICA del inventario (cada semana consume
@@ -5142,7 +5155,7 @@ function ppaBolsaQRender(){
 // cubierto con Stock+OC (asume OC a tiempo) y con Solo Stock (piso físico). Ver B.16.
 function ppaWeeklyCoverage(items, sem){
   var weeks=(PLAN_PPA.weeks||[]).filter(function(w){return w>=sem;});
-  var acc=weeks.map(function(w){return {w:w, covOC:0, covS:0, dem:0};});
+  var acc=weeks.map(function(w){return {w:w, covOC:0, covS:0, dem:0, det:[]};});
   items.forEach(function(it){
     var e=PLAN_PPA.dem[it.sku]; if(!e) return;
     var d=e.d||{}, pu=it.pu||0, aOC=(it.stock||0)+(it.oc||0), aS=(it.stock||0);
@@ -5151,10 +5164,96 @@ function ppaWeeklyCoverage(items, sem){
       var cOC=Math.min(aOC,need); aOC-=cOC;
       var cS=Math.min(aS,need); aS-=cS;
       acc[i].covOC+=cOC*pu; acc[i].covS+=cS*pu; acc[i].dem+=need*pu;
+      // Faltante del SKU en ESA semana bajo cada lente. Como aS ≤ aOC siempre, fS ≥ fOC:
+      // fOC>0 = no alcanza ni contando la OC → hay que comprar. fOC=0 y fS>0 = la OC lo
+      // salva, pero sólo si llega a tiempo. Alimenta el drill-down al hacer clic en la semana.
+      var fOC=need-cOC, fS=need-cS;
+      if(fOC>1e-6 || fS>1e-6){
+        acc[i].det.push({sku:it.sku, desc:it.desc||'', comp:it.comp||'—', grupo:it.grupo||'—',
+          und:it.und||'', need:need, fOC:fOC, fS:fS, vOC:fOC*pu, vS:fS*pu,
+          stock:it.stock||0, oc:it.oc||0});
+      }
     }
   });
   return acc.filter(function(r){return r.dem>0;}).map(function(r){
-    return {w:r.w, dem:r.dem, pctOC:r.covOC/r.dem*100, pctS:r.covS/r.dem*100};});
+    return {w:r.w, dem:r.dem, pctOC:r.covOC/r.dem*100, pctS:r.covS/r.dem*100, det:r.det};});
+}
+// ── Drill-down al hacer clic en una semana del gráfico "Cobertura del plan semana a semana" ──
+// Lista los SKU que impiden llegar al 100% de esa semana, bajo los dos lentes del gráfico.
+function ppaWkToggle(i){
+  var det=document.getElementById('ppa-wk-dt'); if(!det) return;
+  if(det.classList.contains('open') && window._ppaWkSel===i){ det.classList.remove('open'); det.innerHTML=''; window._ppaWkSel=null; return; }
+  window._ppaWkSel=i;
+  // El orden se REINICIA en cada apertura (no se hereda de la semana anterior): la tabla siempre
+  // abre por "Falta c/OC $" de mayor a menor = lo más caro que hay que comprar, primero. Las
+  // columnas siguen siendo ordenables a mano para explorar dentro de la semana ya abierta.
+  window._ppaWkSort={col:'vOC',dir:-1};
+  det.classList.add('open'); ppaWkRender();
+  det.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function ppaWkSort(col){
+  var s=window._ppaWkSort||{col:'vOC',dir:-1};
+  if(s.col===col){ s.dir=-s.dir; } else { s.col=col; s.dir=(col==='sku'||col==='desc'||col==='comp')?1:-1; }
+  window._ppaWkSort=s; ppaWkRender();
+}
+function ppaWkRender(){
+  var det=document.getElementById('ppa-wk-dt'); if(!det) return;
+  var data=window._ppaWkData||[], i=window._ppaWkSel;
+  if(i==null || !data[i]){ det.classList.remove('open'); det.innerHTML=''; return; }
+  var row=data[i], items=(row.det||[]).slice(), s=window._ppaWkSort||{col:'vOC',dir:-1};
+  items.sort(function(a,b){ var va=a[s.col],vb=b[s.col];
+    if(typeof va==='string'){ return va.localeCompare(vb)*s.dir; }
+    return (va<vb?-1:(va>vb?1:0))*s.dir; });
+  var totOC=items.reduce(function(a,x){return a+x.vOC;},0);
+  var totS=items.reduce(function(a,x){return a+x.vS;},0);
+  var nComprar=items.filter(function(x){return x.fOC>1e-6;}).length;
+  // SKU sin precio (ni MOBIDIC ni OC): faltan en unidades pero su $ es 0, así que el % del
+  // gráfico —value-weighted— no los ve. Se declara para que la tarjeta no parezca contradecir
+  // al gráfico cuando marca 100% y aquí igual aparece un SKU "Falta comprar".
+  var sinPu=items.filter(function(x){return (x.fOC>1e-6 && x.vOC<=0)||(x.fS>1e-6 && x.vS<=0);}).length;
+  var rows=items.map(function(x){
+    var comprar=x.fOC>1e-6;
+    var est=comprar ? '<span style="color:var(--q);font-weight:700">Falta comprar</span>'
+                    : '<span style="color:#E8C52A;font-weight:700">Depende de OC</span>';
+    return '<tr>'
+      + '<td style="font-family:monospace;color:#c0caf5">'+x.sku+'</td>'
+      + '<td>'+x.desc+'</td>'
+      + '<td style="color:var(--muted)">'+x.comp+'</td>'
+      + '<td style="text-align:right;color:var(--muted)">'+x.und+'</td>'
+      + '<td style="text-align:right">'+f0(x.need)+'</td>'
+      + '<td style="text-align:right'+(comprar?';color:var(--q);font-weight:700':';color:var(--muted)')+'">'+f0(x.fOC)+'</td>'
+      + '<td style="text-align:right'+(comprar?';color:var(--q);font-weight:700':';color:var(--muted)')+'">$'+fMM(x.vOC)+'</td>'
+      + '<td style="text-align:right;color:#378ADD">'+f0(x.fS)+'</td>'
+      + '<td style="text-align:right;color:#378ADD">$'+fMM(x.vS)+'</td>'
+      + '<td style="text-align:right">'+est+'</td>'
+      + '</tr>';
+  }).join('');
+  var th=function(label,col,align){
+    var arr=(s.col===col)?(s.dir<0?' <span style="color:#6ea8ff">▼</span>':' <span style="color:#6ea8ff">▲</span>'):' <span style="color:#4a536e;font-size:.55rem">↕</span>';
+    return '<th style="text-align:'+(align||'right')+';cursor:pointer;user-select:none" onclick="ppaWkSort(\''+col+'\')" title="Ordenar por '+label+'">'+label+arr+'</th>';
+  };
+  var sem=ppaCurWeek();
+  det.innerHTML=''
+    + '<h4><span>Semana '+row.w+(row.w===sem?' (en curso)':'')+' · '+items.length+' SKU impiden el 100%'
+    +   (nComprar?' · <span style="color:var(--q)">'+nComprar+' a comprar</span>':'')+'</span>'
+    + '<span style="display:flex;gap:8px;align-items:center">'
+    +   '<button onclick="expXls(\'ppa-wk-tb\',\'faltantes_S'+row.w+'\')" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button>'
+    +   '<button class="cov-cl" onclick="ppaWkToggle('+i+')">✕ Cerrar</button>'
+    + '</span></h4>'
+    + '<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:.65rem;margin:2px 0 8px">'
+    +   '<span style="color:var(--muted)">Demanda MP de la semana <b style="color:#e2e8f0">$'+fMM(row.dem)+'</b></span>'
+    +   '<span style="color:#639922">Con Stock+OC <b>'+row.pctOC.toFixed(1)+'%</b> · falta <b>$'+fMM(totOC)+'</b></span>'
+    +   '<span style="color:#378ADD">Solo Stock <b>'+row.pctS.toFixed(1)+'%</b> · falta <b>$'+fMM(totS)+'</b></span>'
+    + '</div>'
+    + '<div style="font-size:.62rem;color:var(--muted);margin-bottom:8px">Faltante de cada SKU para cubrir la demanda de <b>esta</b> semana, con el inventario ya consumido por las semanas anteriores (asignación cronológica). <b style="color:var(--q)">Falta comprar</b> = no alcanza ni contando la OC en tránsito → hay que emitir compra. <b style="color:#E8C52A">Depende de OC</b> = el stock físico no alcanza pero la OC sí, siempre que llegue antes de S'+row.w+'.'
+    +   (sinPu ? ' · <b style="color:#E8C52A">'+sinPu+' SKU sin precio</b> en MOBIDIC ni en OC: se listan en unidades pero valen $0, así que no mueven el % del gráfico (value-weighted).' : '')+'</div>'
+    + '<div class="tw"><table><thead><tr>'
+    + th('SKU','sku','left') + th('Descripción','desc','left') + th('Comprador','comp','left')
+    + '<th style="text-align:right">Und</th>'
+    + th('Demanda sem.','need') + th('Falta c/OC (u)','fOC') + th('Falta c/OC $','vOC')
+    + th('Falta solo Stock (u)','fS') + th('Falta solo Stock $','vS')
+    + '<th style="text-align:right">Estado</th>'
+    + '</tr></thead><tbody id="ppa-wk-tb">'+rows+'</tbody></table></div>';
 }
 function ppaRenderWeekly(host, items, sem){
   if(!host) return;
@@ -5162,10 +5261,12 @@ function ppaRenderWeekly(host, items, sem){
   var sec=document.createElement('div'); sec.className='cov-sec';
   sec.innerHTML=''
     + '<div class="cov-tit">Cobertura del plan semana a semana</div>'
-    + '<div class="cov-sub">% de la demanda de MP de cada semana del plan que alcanza a cubrirse, asignando el inventario <b>cronológicamente</b> (cada semana consume primero; el sobrante pasa a la siguiente). <b style="color:#639922">Con Stock+OC</b> asume que las OC llegan a tiempo · <b style="color:#378ADD">Solo Stock</b> = piso con lo físico en bodega hoy. Value-weighted sobre todo el universo del programa.</div>'
-    + '<div class="cw" style="height:300px"><canvas id="ppa-wk-ch"></canvas></div>';
+    + '<div class="cov-sub">% de la demanda de MP de cada semana del plan que alcanza a cubrirse, asignando el inventario <b>cronológicamente</b> (cada semana consume primero; el sobrante pasa a la siguiente). <b style="color:#639922">Con Stock+OC</b> asume que las OC llegan a tiempo · <b style="color:#378ADD">Solo Stock</b> = piso con lo físico en bodega hoy. Value-weighted sobre todo el universo del programa. <b style="color:#c0caf5">Clic en una semana</b> para ver los SKU que impiden llegar al 100%.</div>'
+    + '<div class="cw" style="height:300px"><canvas id="ppa-wk-ch" style="cursor:pointer"></canvas></div>'
+    + '<div class="cov-detail" id="ppa-wk-dt"></div>';
   host.appendChild(sec);
   if(!data.length){ host.querySelector('.cw').innerHTML='<div style="color:var(--muted);padding:14px">Sin demanda futura en el plan.</div>'; return; }
+  window._ppaWkData=data; window._ppaWkSel=null;   // estado del drill-down por semana
   var ctx=document.getElementById('ppa-wk-ch').getContext('2d');
   if(window._ppaWkCh) window._ppaWkCh.destroy();
   window._ppaWkCh=new Chart(ctx,{type:'line',data:{labels:data.map(function(r){return 'S'+r.w;}),
@@ -5174,10 +5275,15 @@ function ppaRenderWeekly(host, items, sem){
       {label:'Solo Stock',data:data.map(function(r){return +r.pctS.toFixed(1);}),borderColor:'#378ADD',backgroundColor:'#378ADD15',tension:.3,pointRadius:2,borderWidth:2,fill:true}
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      onClick:function(evt,els,chart){
+        var pts=chart.getElementsAtEventForMode(evt,'index',{intersect:false},true);
+        if(pts.length) ppaWkToggle(pts[0].index);
+      },
       plugins:{legend:{labels:{color:'#e2e8f0',font:{size:11},padding:10}},
         tooltip:{callbacks:{
           label:function(x){return ' '+x.dataset.label+': '+x.parsed.y.toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';},
-          afterBody:function(a){var i=a[0].dataIndex;return 'Demanda MP de la semana: $'+fMM(data[i].dem);}}}},
+          afterBody:function(a){var i=a[0].dataIndex;
+            return 'Demanda MP de la semana: $'+fMM(data[i].dem)+'\nClic para ver los SKU faltantes';}}}},
       scales:{x:{ticks:{color:'#8892b0',font:{size:10}},grid:{display:false}},
         y:{min:0,max:100,ticks:{color:'#8892b0',font:{size:10},callback:function(v){return v+'%';}},grid:{color:'#2d3452'}}}}});
 }
@@ -5194,7 +5300,7 @@ function ppaRenderBolsas(host){
   var totc=W.map(function(w){var s=0;D.rows.forEach(function(r){s+=(r.fin&&r.fin[String(w)])||0;});return '<td style="text-align:right;font-weight:800;color:#c0caf5">'+f0(s)+'</td>';}).join('');
   body+='<tr style="background:#1c2238"><td colspan="2" style="font-weight:800;color:#c0caf5">TOTAL</td>'+totc+'</tr>';
   host.innerHTML='<div class="cov-sec"><div class="cov-tit">Abastecimiento de bolsas PPA — Stock Proyectado Semanal</div>'
-    + '<div class="cov-sub">Reflejo de la vista "Stock Proyectado semanal" de Llegadas Bolsas PPA (Planificadores). Stock inicial + llegadas planificadas − demanda, semana a semana. Rojo = proyección negativa (quiebre).'+(D.fuente?' · '+D.fuente:'')+'</div>'
+    + '<div class="cov-sub">Reflejo de la vista "Stock Proyectado semanal" de Llegadas Bolsas PPA (Planificadores). Stock inicial + llegadas planificadas − demanda, semana a semana. Rojo = proyección negativa (quiebre). Única vista de la pestaña que usa el <b>calendario de entregas del proveedor</b>; las tarjetas y la cobertura del programa se calculan con la <b>OC en tránsito de ME2M</b>. Las llegadas planificadas en semanas ya vencidas se arrastran a S'+sem+' (el atraso sigue comprometido, no se descarta).'+(D.fuente?' · '+D.fuente:'')+'</div>'
     + '<div class="tw" style="overflow-x:auto"><table style="font-size:.7rem"><thead><tr><th>Cód.</th><th>Nombre bolsa</th>'+wkTh+'</tr></thead><tbody>'+body+'</tbody></table></div>'
     + '<div style="font-size:.62rem;color:var(--muted);margin-top:6px"><span style="background:var(--q);display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:4px"></span>Stock proyectado negativo (quiebre). "•" = semana en curso.</div></div>';
 }
@@ -5231,18 +5337,23 @@ function buildPPA(){
   });
   window._ppaExclDet=exclDet;
   var avance=den>0 ? num/den*100 : null;
-  var bolsasQ=0, bolsasTot=0, bolsaQDet=[];  // detalle de bolsas en quiebre (para el panel clic)
+  // Tarjeta "Bolsas PPA sin stock": bolsas con stock EN BODEGA = 0 hoy. Deliberadamente NO usa la
+  // proyección del calendario de Matías (que es el plan del proveedor y vive en la tabla de Stock
+  // Proyectado, abajo): el suministro reconocido en los cálculos de la pestaña es la OC en tránsito
+  // de ME2M. Ver PARAMETRO.MD B.16.
+  var bolsasQ=0, bolsasTot=0, bolsaQDet=[];
   if(LLEG_PPA && LLEG_PPA.rows){
     bolsasTot=LLEG_PPA.rows.length;
     var Wb=LLEG_PPA.weeks||[];
     LLEG_PPA.rows.forEach(function(r){
-      var negW=Wb.filter(function(w){return r.fin && r.fin[String(w)]<0;});
-      if(!negW.length) return;
+      if((r.stock||0)>0) return;
       bolsasQ++;
-      var worst=Infinity, worstW=null;
-      Wb.forEach(function(w){ var v=(r.fin&&r.fin[String(w)]); if(v!=null && v<worst){worst=v; worstW=w;} });
-      bolsaQDet.push({cod:r.cod, nom:r.nom||'', stock:r.stock||0, oc:r.oc||0,
-        firstQ:negW[0], nNeg:negW.length, worst:worst, worstW:worstW});
+      // Demanda restante de la temporada y primera semana en que se necesita la bolsa.
+      var demR=0, firstD=null;
+      Wb.forEach(function(w){ var dv=(r.dem&&r.dem[String(w)])||0; if(dv>0){ demR+=dv; if(firstD===null) firstD=w; } });
+      var oc=r.oc||0;
+      bolsaQDet.push({cod:r.cod, nom:r.nom||'', stock:r.stock||0, oc:oc, demR:demR,
+        firstD:(firstD===null?999:firstD), saldo:oc-demR, pct:(demR>0?Math.min(100,oc/demR*100):null)});
     });
   }
   window._ppaBolsaQDet=bolsaQDet;
@@ -5306,7 +5417,7 @@ function buildPPA(){
     +   kc('#378ADD','$'+fMM(valA),'Stock valorizado PPA','Todo el programa · '+itemsA.length+' SKU')
     +   kc('#38bdf8','$'+fMM(valExcl),'Stock valorizado Exclusivos PPA','Uso exclusivo · '+exclCnt+' SKU · no reutilizable')
     +   kc('#E87B2A','$'+fMM(excExclTot),'Sobre-abastec. exclusivos PPA','riesgo merma real · '+excExclCnt+' SKU', excExclCnt>0?'ppaToggleExcl()':'')
-    +   kc('#a855f7',f0(bolsasQ),'Bolsas PPA en quiebre','de '+bolsasTot+' bolsas', bolsasQ>0?'ppaToggleBolsaQ()':'')
+    +   kc('#a855f7',f0(bolsasQ),'Bolsas PPA sin stock','stock 0 en bodega · de '+bolsasTot+' bolsas', bolsasQ>0?'ppaToggleBolsaQ()':'')
     +   gaugesPanel
     +   funnelPanel
     + '</div>'
