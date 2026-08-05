@@ -515,7 +515,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="plk-pill new-pill" style="border-color:#c97824" onclick="togPlk('sfc')"><span class="plk-ico" id="ico-sfc">▸</span>Planificación por SKU — sin FC <span id="sfc-info" style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:4px"></span> <button class="pbtn" onclick="event.stopPropagation();expSFC()" style="background:#C9782430;color:#d99a52;border:1px solid #c97824">📥 Excel</button></div>
   <div class="plk-body" id="body-sfc" style="display:none">
   <div style="background:rgba(201,120,36,.07);border:1px solid rgba(201,120,36,.28);border-radius:7px;padding:7px 11px;margin-bottom:8px;font-size:.66rem;color:#e0b183">
-    Universo = archivo manual <b id="sfc-file">SKU sin FC.xlsx</b>: SKUs <b>sin forecast</b> en SumExpl (mayormente insumos ZINS), que por eso no aparecen en «consumo real vs FC» ni en Terceros e Insumos. Sin FC la única cobertura posible es por <b>consumo real</b>: stock ÷ promedio semanal de las últimas <b>4</b> y <b>12 semanas completas</b>. La <b>semana en curso está excluida</b> de ambas sumas (va parcial y inflaría la cobertura); se muestra igual, marcada con •. Columnas con <span style="opacity:.6">⇅</span> ordenan al hacer clic. El <b>Comprador</b> es el del propio archivo, no el maestro SKU_por_Comprador.
+    Todos los SKUs <b>sin forecast</b> en SumExpl, que por eso no aparecen en «consumo real vs FC». Dos universos disjuntos: el archivo manual <b id="sfc-file">SKU sin FC.xlsx</b> (mayormente insumos ZINS; <b>Comprador</b> = el del propio archivo, no el maestro SKU_por_Comprador) y el universo de <b>Terceros e Insumos</b> (ZIME), cargado como <b>HECTOR</b>. Sin FC la única cobertura posible es por <b>consumo real</b>: stock ÷ promedio semanal de las últimas <b>4</b> y <b>12 semanas completas</b>. La <b>semana en curso está excluida</b> de ambas sumas (va parcial y inflaría la cobertura); se muestra igual, marcada con •. Ojo: el consumo de los ZIME se mide por <b>despacho desde el CD (mov. 601)</b>, no por consumo de planta. <b>OC tránsito</b> abre el detalle de las OC al hacer clic. Columnas con <span style="opacity:.6">⇅</span> ordenan al hacer clic.
   </div>
   <div class="fr"><input type="text" class="si" id="sfcs" placeholder="Buscar por SKU o descripción..." oninput="sSFC(this.value)" style="width:320px"></div>
   <div class="tw" style="margin-bottom:6px;max-height:74vh;overflow:auto"><table id="sfc-table"><thead id="sfcth"></thead><tbody id="sfctb"></tbody></table></div>
@@ -525,7 +525,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="plk-pill open-static"><span class="plk-ico">🧭</span>Planificación por SKU — consumo real vs FC <span id="plt-info" style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:4px"></span> <button class="pbtn" onclick="event.stopPropagation();expPLT()" style="background:#6366f130;color:#a4b4ce;border:1px solid #6366f1">📥 Excel</button></div>
   <div class="plk-body" id="body-plt">
   <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.25);border-radius:7px;padding:7px 11px;margin-bottom:8px;font-size:.66rem;color:#a4b4ce">
-    Cruza stock por bodega y OC en tránsito con <b>consumo real semanal (últimas 12 sem)</b> y <b>FC semanal (próximas 12 sem)</b>. <b>Desv. %</b> = (ΣFC 4w − ΣReal 4w)/ΣReal 4w (Real 4w excluye la semana en curso): <span style="color:var(--mT)">+</span> = FC sobreestima (riesgo merma), <span style="color:var(--q)">−</span> = FC subestima (riesgo quiebre). <b>Cob.</b> en semanas. Respeta filtro global de comprador y toggle Excluir PPA.
+    Cruza stock por bodega y OC en tránsito con <b>consumo real semanal (últimas 12 sem)</b> y <b>FC semanal (próximas 12 sem)</b>. <b>Desv. %</b> = (ΣFC 4w − ΣReal 4w)/ΣReal 4w (Real 4w excluye la semana en curso): <span style="color:var(--mT)">+</span> = FC sobreestima (riesgo merma), <span style="color:var(--q)">−</span> = FC subestima (riesgo quiebre). <b>Cob.</b> en semanas. <b>OC tránsito</b> abre el detalle de las OC al hacer clic. Respeta filtro global de comprador y toggle Excluir PPA.
   </div>
   <div class="fr"><input type="text" class="si" id="plts" placeholder="Buscar por SKU o descripción..." oninput="sPLT(this.value)" style="width:320px"></div>
   <div class="tw" style="margin-bottom:6px;max-height:74vh;overflow:auto"><table id="plt-table"><thead id="pltth"></thead><tbody id="plttb"></tbody></table></div>
@@ -1849,26 +1849,20 @@ function opKpi(comp,key){
 }
 
 // ── SKUs sin FC por comprador (columna "SKUs sin/FC" del Comparativo) ──
-// Universo = SKUs que se planifican por CONSUMO REAL porque no tienen forecast:
-//   · HECTOR  → universo completo de Terceros e Insumos (TI, tipo material ZIME).
-//   · resto   → archivo manual "SKU sin FC.xlsx" (SFC), respetando SU columna Comprador.
-// Ambas fuentes son disjuntas (TI es ZIME; el archivo es ZINS + algunos ZEMP/ZMPR).
+// Universo = SKUs que se planifican por CONSUMO REAL porque no tienen forecast. Desde
+// 2026-08-05 la fuente es ÚNICA: SFC, que ya integra las dos poblaciones disjuntas —
+// archivo manual "SKU sin FC.xlsx" (ZINS + algunos ZEMP/ZMPR) y el universo de Terceros
+// e Insumos (ZIME), éste cargado como HECTOR. Antes HECTOR se leía de TI y el resto de
+// SFC, con coberturas calculadas distinto; ahora todos salen del mismo cálculo (B.7.8).
 function sinFcRows(comp){
   var out=[];
-  if(comp==='HECTOR'){
-    ((typeof TI!=='undefined'&&TI&&TI.skus)||[]).forEach(function(s){
-      var c4r=s.c4r||0;
-      out.push({sku:s.sku,desc:s.desc,um:s.um||'',comp:'HECTOR',stock:s.stock||0,oc:s.oc||0,
-        cob4r:c4r>0?+((s.stock||0)/c4r).toFixed(2):null, cob12r:null, cat:s.cat||'', src:'Terceros e Insumos'});
-    });
-    return out;
-  }
   if(typeof SFC==='undefined'||!SFC||!SFC.rows) return out;
   var B=SFC_C0+((SFC.weeks)?SFC.weeks.length:0);   // offset del bloque resumen (ver B.7.8)
   SFC.rows.forEach(function(r){
     if(String(r[3]||'').trim().toUpperCase()!==comp) return;
     out.push({sku:r[0],desc:r[1],um:r[2]||'',comp:r[3],stock:r[4]||0,oc:r[9]||0,
-      cob4r:r[B+1], cob12r:r[B+3], cat:'', src:'SKU sin FC.xlsx'});
+      cob4r:r[B+1], cob12r:r[B+3], cat:'',
+      src:(r[B+7]==='T')?'Terceros e Insumos':'SKU sin FC.xlsx'});
   });
   return out;
 }
@@ -2033,6 +2027,78 @@ function _fmtOCPrice(vi){
   var num = p.toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2});
   return '<span title="Moneda de la OC: '+mon+'">'+(sym?sym+num:num+' '+mon)+'</span>';
 }
+// ═══════════════ Detalle de OC en tránsito (popup) — B.7.10 ═══════════════
+// La celda "OC tránsito" de las pastillas de Planificación por SKU (con y sin FC) abre el
+// desglose de las posiciones ME2M que componen ese volumen. La suma del pie SIEMPRE debe
+// calzar con el número de la tabla: ambos salen de OCM (ME2M ya filtrado por Indicador de
+// borrado ≠ 'L') sumando "Por entregar (cantidad)".
+// Índices OCM: 0=Documento 1=Posición 3=Material 4=Texto breve 6=Fecha documento
+//              7=Proveedor 10=Cantidad de pedido 11=UM 12=Precio neto 13=Moneda
+//              14=Cantidad base 16=Por entregar (cantidad) 17=Por entregar (valor)
+function ocLines(sku){
+  if(!OCM||!OCM.rows) return [];
+  var s=String(sku);
+  return OCM.rows.filter(function(r){return String(r[3])===s && Number(r[16]||0)!==0;})
+    .sort(function(a,b){return String(b[6]||'').localeCompare(String(a[6]||''));});
+}
+function ocCell(sku,v,extra){
+  var n=Number(v||0);
+  if(!n) return '<td style="text-align:right'+(extra||'')+'">'+f0(0)+'</td>';
+  return '<td style="text-align:right;cursor:pointer;color:#7fb2f0;text-decoration:underline dotted;text-underline-offset:2px'+(extra||'')+
+         '" onclick="ocPop(\''+String(sku).replace(/'/g,'')+'\')" title="Clic para ver el detalle de las OC que componen este volumen">'+f0(n)+'</td>';
+}
+function ocPop(sku){
+  var lines=ocLines(sku);
+  var ov=el('oc-pop-ov'); if(ov) ov.remove();
+  var desc='', tot=0, um='';
+  lines.forEach(function(r){tot+=Number(r[16]||0); if(!desc)desc=r[4]||''; if(!um)um=r[11]||'';});
+  var body;
+  if(!lines.length){
+    body='<div style="padding:22px;color:var(--muted);font-size:.75rem">Sin posiciones de OC pendientes en ME2M para este SKU.</div>';
+  }else{
+    var TH='padding:7px 9px;background:#232840;color:#8892b0;position:sticky;top:0;z-index:1;white-space:nowrap';
+    var hd=['OC','Pos.','Fecha creación','Proveedor','Descripción','Pedido','Por entregar','UM','Precio unit.','Valor por entregar'];
+    var num={5:1,6:1,8:1,9:1};
+    var head='<tr>'+hd.map(function(h,i){return '<th style="'+TH+';text-align:'+(num[i]?'right':'left')+'">'+h+'</th>';}).join('')+'</tr>';
+    var rows=lines.map(function(r){
+      var base=Number(r[14])||1; if(base<=0) base=1;
+      var pu=(Number(r[12])||0)/base;              // precio unitario = Precio neto ÷ Cantidad base
+      var mon=r[13]||'CLP';
+      var prov=String(r[7]||'').replace(/^\s*\d+\s+/,'').trim();
+      var val=Number(r[17]||0);
+      var vTxt=(mon==='CLP'||mon==='')?('$'+f0(val)):(f0(val)+' '+mon);
+      return '<tr style="border-bottom:1px solid rgba(45,52,82,.4)">'+
+        '<td style="padding:6px 9px;font-family:monospace;font-size:.68rem">'+(r[0]||'')+'</td>'+
+        '<td style="padding:6px 9px;color:var(--muted)">'+(r[1]||'')+'</td>'+
+        '<td style="padding:6px 9px;color:var(--muted)">'+(r[6]||'—')+'</td>'+
+        '<td style="padding:6px 9px;max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+prov.replace(/"/g,'&quot;')+'">'+(prov||'—')+'</td>'+
+        '<td style="padding:6px 9px;max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+String(r[4]||'').replace(/"/g,'&quot;')+'">'+(r[4]||'')+'</td>'+
+        '<td style="padding:6px 9px;text-align:right;color:var(--muted)">'+f0(r[10]||0)+'</td>'+
+        '<td style="padding:6px 9px;text-align:right;font-weight:700">'+f0(r[16]||0)+'</td>'+
+        '<td style="padding:6px 9px;color:var(--muted)">'+(r[11]||'')+'</td>'+
+        '<td style="padding:6px 9px;text-align:right">'+_fmtOCPrice({price:pu,mon:mon})+'</td>'+
+        '<td style="padding:6px 9px;text-align:right;color:var(--muted)">'+vTxt+'</td></tr>';
+    }).join('');
+    var foot='<tr style="background:#20263a;font-weight:700">'+
+      '<td colspan="6" style="padding:7px 9px;text-align:right;color:var(--muted)">TOTAL OC en tránsito</td>'+
+      '<td style="padding:7px 9px;text-align:right">'+f0(tot)+'</td>'+
+      '<td colspan="3" style="padding:7px 9px;color:var(--muted)">'+um+'</td></tr>';
+    body='<table style="width:100%;border-collapse:collapse;font-size:.72rem"><thead>'+head+'</thead><tbody>'+rows+foot+'</tbody></table>';
+  }
+  var h='<div id="oc-pop-ov" onclick="if(event.target===this)this.remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:520;display:flex;align-items:center;justify-content:center">'+
+    '<div style="background:#1a1f2e;border:1px solid #2d3452;border-radius:12px;width:94vw;max-width:1120px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.5)">'+
+      '<div style="padding:14px 18px;border-bottom:1px solid #2d3452;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0">'+
+        '<div><div style="font-size:.9rem;font-weight:700;color:#7fb2f0">OC en tránsito · '+sku+(desc?' — '+desc:'')+'</div>'+
+        '<div style="font-size:.72rem;color:#8892b0;margin-top:4px">Posiciones de ME2M con cantidad pendiente de entrega (excluye posiciones anuladas). '+
+        'El <b>precio unitario</b> es el Precio neto de la OC ÷ Cantidad base.</div>'+
+        '<div style="font-size:.7rem;color:#8892b0;margin-top:2px">'+lines.length+' posición'+(lines.length===1?'':'es')+' · total '+f0(tot)+' '+um+'</div></div>'+
+        '<button onclick="document.getElementById(\'oc-pop-ov\').remove()" style="background:none;border:1px solid #2d3452;border-radius:5px;color:#8892b0;cursor:pointer;padding:3px 9px;font-size:.75rem;margin-left:12px;flex-shrink:0">✕ Cerrar</button>'+
+      '</div>'+
+      '<div style="flex:1;overflow:auto">'+body+'</div>'+
+    '</div></div>';
+  var tmp=document.createElement('div');tmp.innerHTML=h;document.body.appendChild(tmp.firstChild);
+}
+
 // ═══════════════ Consumos Anuales SKU (CONAN) — pastilla Planificadores ═══════════════
 var CONANF={s:'',p:1};var CONAN_PER=25;
 function conanMk(mo){return mo.y+'-'+String(mo.m).padStart(2,'0');}
@@ -2255,7 +2321,7 @@ function rndPLT(){
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[6]||0)+'</td>';
     var blq=r[7]||0;h+='<td style="text-align:right;color:'+(blq>0?'#E8924A;font-weight:700':'var(--muted)')+'" title="Stock bloqueado BL01">'+(blq>0?f0(blq):'<span style="color:#3a4566">—</span>')+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[8]||0)+'</td>';
-    h+='<td style="text-align:right">'+f0(r[9]||0)+'</td>';
+    h+=ocCell(r[0],r[9]);
     for(var i=0;i<nC;i++){var v=r[PLT_C0+i]||0;h+='<td style="text-align:right;background:rgba(99,131,200,.06)'+(i===0?';border-left:2px solid #2d3452':'')+(i===nC-1?';border-right:2px solid #2d3452':'')+'">'+(v?f0(v):'<span style="color:#3a4566">—</span>')+'</td>';}
     for(var j=0;j<nF;j++){var curr=(fw[j]===sem);var fv=r[PLT_F0+j]||0;h+='<td style="text-align:right;background:'+(curr?'rgba(120,220,160,.13)':'rgba(127,200,168,.06)')+(j===nF-1?';border-right:2px solid #2d3452':'')+'">'+(fv?f0(fv):'<span style="color:#3a4566">—</span>')+'</td>';}
     h+='<td style="text-align:right;font-weight:700;border-left:2px solid #2d3452">'+f0(r[35]||0)+'</td>';
@@ -2264,7 +2330,7 @@ function rndPLT(){
     h+=pltCovCell(r[38]);
     h+='<td style="text-align:right;font-weight:700">'+f0(r[39]||0)+'</td>';
     h+=pltCovCell(r[40]);
-    h+='<td style="text-align:right">'+f0(r[9]||0)+'</td>';
+    h+=ocCell(r[0],r[9]);
     h+=pltCovCell(r[41]);
     h+='<td style="text-align:right">$'+f0(r[42]||0)+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">$'+f0(r[43]||0)+'</td>';
@@ -2346,6 +2412,7 @@ function rndSFC(){
   // [label, title, colIndex, sortable]
   var summ=[['ΣReal 4w','Suma consumo real últimas 4 sem completas (S'+(r4[0]||'')+'–S'+(r4[r4.length-1]||'')+'), excl. sem en curso',B+0,false],
             ['Cob. Real 4w','stock / prom. semanal de las últimas 4 sem completas',B+1,true],
+            ['Tendencia 12w','Consumo real de las últimas 12 sem completas (S'+(r12[0]||'')+'–S'+(r12[r12.length-1]||'')+'); la barra azul es la más reciente',-1,false],
             ['ΣReal 12w','Suma consumo real últimas 12 sem completas (S'+(r12[0]||'')+'–S'+(r12[r12.length-1]||'')+'), excl. sem en curso',B+2,false],
             ['Cob. Real 12w','stock / prom. semanal de las últimas 12 sem completas',B+3,true],
             ['OC tránsito','Órdenes de compra en tránsito',9,false],
@@ -2384,6 +2451,9 @@ function rndSFC(){
   SFCF.p=Math.min(SFCF.p,pages);
   var sl=lst.slice((SFCF.p-1)*SFC_PER,SFCF.p*SFC_PER);
   var cc=CC, dash='<span style="color:#3a4566">—</span>';
+  // Tendencia 12w: posiciones (dentro del bloque semanal) de las 12 sem COMPLETAS —
+  // las mismas que suma ΣReal 12w, así que la barra y el número siempre cuentan lo mismo.
+  var i12=r12.map(function(wk){return w.indexOf(wk);}).filter(function(i){return i>=0;});
   tb.innerHTML=sl.map(function(r){
     var col=cc[r[3]]||'#8892b0';
     var h='<tr>';
@@ -2396,14 +2466,17 @@ function rndSFC(){
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[6]||0)+'</td>';
     var blq=r[7]||0;h+='<td style="text-align:right;color:'+(blq>0?'#E8924A;font-weight:700':'var(--muted)')+'" title="Stock bloqueado BL01">'+(blq>0?f0(blq):dash)+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[8]||0)+'</td>';
-    h+='<td style="text-align:right">'+f0(r[9]||0)+'</td>';
+    h+=ocCell(r[0],r[9]);
     for(var i=0;i<nW;i++){var curr=(w[i]===sem);var v=r[SFC_C0+i]||0;
       h+='<td style="text-align:right;background:'+(curr?'rgba(220,180,120,.10)':'rgba(99,131,200,.06)')+(i===0?';border-left:2px solid #2d3452':'')+(i===nW-1?';border-right:2px solid #2d3452':'')+'">'+(v?f0(v):dash)+'</td>';}
     h+='<td style="text-align:right;font-weight:700;border-left:2px solid #2d3452">'+f0(r[B+0]||0)+'</td>';
     h+=pltCovCell(r[B+1]);
+    var sp=i12.map(function(i){return r[SFC_C0+i]||0;});
+    var spT=i12.map(function(i,k){return 'S'+r12[k]+': '+f0(r[SFC_C0+i]||0);}).join(' · ');
+    h+='<td style="text-align:center" title="'+spT+'">'+spark12(sp)+'</td>';
     h+='<td style="text-align:right;font-weight:700">'+f0(r[B+2]||0)+'</td>';
     h+=pltCovCell(r[B+3]);
-    h+='<td style="text-align:right">'+f0(r[9]||0)+'</td>';
+    h+=ocCell(r[0],r[9]);
     h+=pltCovCell(r[B+4]);
     h+='<td style="text-align:right">$'+f0(r[B+5]||0)+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">$'+f0(r[B+6]||0)+'</td>';
@@ -2412,10 +2485,12 @@ function rndSFC(){
     h+='<td style="text-align:right;color:var(--muted)">'+_fmtOCPrice(vinfo)+'</td>';
     h+='</tr>';
     return h;
-  }).join('')||'<tr><td colspan="'+(10+nW+10)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
+  }).join('')||'<tr><td colspan="'+(10+nW+11)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
   var ordTxt='';
   if(SFCF.sortCol!==null){var nmm={};nmm[B+1]='Cob. Real 4w';nmm[B+3]='Cob. Real 12w';nmm[B+4]='Cob. 12w c/tránsito';ordTxt=' · orden: '+(nmm[SFCF.sortCol]||'')+(SFCF.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
-  if(el('sfc-info')) el('sfc-info').innerHTML='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+' sin FC'+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(SFCF.s?' · búsqueda: "'+SFCF.s+'"':'')+ordTxt;
+  var nT=lst.filter(function(r){return r[B+7]==='T';}).length;
+  var mix=(nT&&nT<tot)?' ('+(tot-nT)+' archivo · '+nT+' Terceros e Insumos)':(nT===tot&&tot?' (Terceros e Insumos)':'');
+  if(el('sfc-info')) el('sfc-info').innerHTML='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+' sin FC'+mix+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(SFCF.s?' · búsqueda: "'+SFCF.s+'"':'')+ordTxt;
   var div=el('sfcpag');
   if(!div) return;
   if(pages<=1){div.innerHTML='<span class="pi">'+tot+' SKUs</span>';return;}
@@ -2430,14 +2505,16 @@ function expSFC(){
   var w=SFC.weeks||[], B=sfcB();
   var header=['SKU','Descripción','UNM','Comprador','Stock total','StockCD','Quilicura','Bloqueado','Huechuraba','OC tránsito']
     .concat(w.map(function(k){return 'Cons S'+k+(k===SFC.sem?' (en curso)':'');}))
-    .concat(['ΣReal 4w','Cob. Real 4w','ΣReal 12w','Cob. Real 12w','OC tránsito','Cob. 12w c/transito','$Stock','$Transito','Ult. Proveedor','Precio ult. OC','Moneda']);
+    .concat(['ΣReal 4w','Cob. Real 4w','ΣReal 12w','Cob. Real 12w','OC tránsito','Cob. 12w c/transito','$Stock','$Transito','Ult. Proveedor','Precio ult. OC','Moneda','Origen']);
   var vm=window._vendorMap||(window._vendorMap=_buildVendorMap());
   var lst=sfcFilter();
-  // Mismo orden que la tabla en pantalla (OC tránsito se repite antes de la cob. c/tránsito)
+  // Mismo orden que la tabla en pantalla (OC tránsito se repite antes de la cob. c/tránsito).
+  // La Tendencia 12w no se exporta: es un gráfico y sus 12 valores ya van en las columnas Cons S*.
   var aoa=[header].concat(lst.map(function(r){
     var vi=vm[r[0]]||null;
     return r.slice(0,B+4).concat([r[9],r[B+4],r[B+5],r[B+6],
-      vi?vi.vendor:'', (vi&&vi.price)?vi.price:'', vi?(vi.mon||'CLP'):'']);
+      vi?vi.vendor:'', (vi&&vi.price)?vi.price:'', vi?(vi.mon||'CLP'):'',
+      r[B+7]==='T'?'Terceros e Insumos':'SKU sin FC.xlsx']);
   }));
   try{
     var ws=XLSX.utils.aoa_to_sheet(aoa);var wb=XLSX.utils.book_new();
@@ -5498,6 +5575,45 @@ function ppaCalDetail(){
     + '<th style="text-align:center">Origen LT</th>'
     + '</tr></thead><tbody id="ppa-cal-tb">'+rows+'</tbody></table></div>';
 }
+// Versión estática del detalle del calendario para el HTML exportado: sin JS no hay
+// drill-down por clic, así que se vuelca TODO el universo en una tabla ordenada por
+// semana de emisión (y dentro de cada semana, por plata descendente).
+function _ppaCalExportTable(){
+  var data=(window._ppaCalData||[]).slice(), sem=window._ppaCalSem;
+  if(!data.length) return '';
+  data.forEach(function(x){ x._lim=Math.max(sem, x.qw-x.ltw-PPA_CAL_BUF); });
+  data.sort(function(a,b){ return (a._lim-b._lim)||(b.df-a.df); });
+  var col=function(w){ return w<=sem?'var(--q)':(w<=sem+4?'#E87B2A':(w<=sem+8?'#E8C52A':'#639922')); };
+  var SRC={declarado:['#639922','maestro'],'grupo+origen':['#E8C52A','inferido'],grupo:['#E8C52A','inferido'],
+           'tipo+origen':['#E8C52A','inferido'],'default':['#E24B4A','default']};
+  var prev=null, rows=data.map(function(x){
+    var f=SRC[x.lt_src]||SRC['default'];
+    var low=x.lt_low?' <span style="padding:1px 6px;border-radius:8px;font-size:.57rem;font-weight:800;background:#E24B4A25;color:#E24B4A">baja conf.</span>':'';
+    var nueva=(x._lim!==prev); prev=x._lim;
+    return '<tr>'
+      + '<td style="text-align:center;font-weight:800;color:'+col(x._lim)+(nueva?'':';opacity:.28')+'">S'+x._lim
+      +   (nueva&&x._lim===sem?' <span style="font-weight:600;font-size:.58rem;color:var(--muted)">(o antes)</span>':'')+'</td>'
+      + '<td style="font-family:monospace">'+x.sku+'</td><td>'+x.desc+'</td>'
+      + '<td style="color:var(--muted)">'+x.comp+'</td><td style="color:var(--muted)">'+x.grupo+'</td>'
+      + '<td style="text-align:right">'+f0(x.falta_u)+' <span style="color:var(--muted);font-size:.6rem">'+x.und+'</span></td>'
+      + '<td style="text-align:right;font-weight:700;color:#f0c98a">$'+fMM(x.df)+'</td>'
+      + '<td style="text-align:right"><b style="color:'+col(x.qw)+'">S'+x.qw+'</b></td>'
+      + '<td style="text-align:right">'+f0(x.lt)+' d <span style="color:var(--muted);font-size:.6rem">('+x.ltw+' sem)</span></td>'
+      + '<td style="text-align:center"><span style="padding:1px 6px;border-radius:8px;font-size:.57rem;font-weight:800;background:'+f[0]+'25;color:'+f[0]+'">'+f[1]+'</span>'+low+'</td>'
+      + '</tr>';
+  }).join('');
+  var nLow=data.filter(function(x){return x.lt_low;}).length;
+  return '<div style="margin-top:14px">'
+    + '<div style="font-size:.74rem;font-weight:700;color:#c0caf5;margin-bottom:3px">Detalle por semana de emisión — '+data.length+' SKU</div>'
+    + '<div style="font-size:.62rem;color:var(--muted);margin-bottom:7px">Semana límite = <b>quiebre − lead time − colchón</b>. <b>Origen LT</b>: maestro = declarado en <code>Lead Time MMPP.xlsx</code>; inferido = mediana de su categoría × origen (PARAMETRO.MD B.20.2).'
+    +   (nLow?' <b style="color:var(--q)">'+nLow+' con baja confianza</b> — plazo referencial, conviene confirmar el lead time real antes de comprometer la compra.':'')+'</div>'
+    + '<div class="tw"><table><thead><tr>'
+    + '<th style="text-align:center">Emitir en</th><th>SKU</th><th>Descripción</th><th>Comprador</th><th>Categoría</th>'
+    + '<th style="text-align:right">Falta (u)</th><th style="text-align:right">Déficit $</th>'
+    + '<th style="text-align:right">Quiebra en</th><th style="text-align:right">Lead time</th>'
+    + '<th style="text-align:center">Origen LT</th>'
+    + '</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+}
 function ppaRenderBolsas(host){
   if(!host) return;
   if(!LLEG_PPA || !LLEG_PPA.rows){ host.innerHTML='<div class="cov-sec"><div class="cov-tit">Abastecimiento de bolsas PPA</div><div style="color:var(--muted);padding:10px">Sin plan de llegadas cargado.</div></div>'; return; }
@@ -5716,8 +5832,38 @@ function _doExportPPALight(){
       }
     }
   }catch(e){}
+  // ── Calendario de emisión de OC (B.16.3): adaptación al export estático ─────────
+  // En vivo el calendario se alinea al chartArea con padding en px y el detalle se abre
+  // por clic. En el HTML exportado el gráfico es una imagen escalada (px ya no calzan)
+  // y no hay JS, así que: padding a %, el toggle 1/2 sem pasa a etiqueta y el drill-down
+  // se reemplaza por la tabla completa ordenada por semana de emisión.
+  try{
+    var calWrap=clone.querySelector('#ppa-cal-wrap');
+    if(calWrap){
+      var chw=window._ppaWkCh;
+      if(chw && chw.chartArea && chw.width){
+        calWrap.style.paddingLeft=(chw.chartArea.left/chw.width*100).toFixed(2)+'%';
+        calWrap.style.paddingRight=((chw.width-chw.chartArea.right)/chw.width*100).toFixed(2)+'%';
+      }else{ calWrap.style.paddingLeft='0'; calWrap.style.paddingRight='0'; }
+    }
+    var tg=clone.querySelector('.caltg');
+    if(tg){
+      var lab=document.createElement('span');
+      lab.className='calbadge';
+      lab.textContent=PPA_CAL_BUF+' semana'+(PPA_CAL_BUF>1?'s':'');
+      tg.parentNode.replaceChild(lab,tg);
+    }
+    var det=clone.querySelector('#ppa-cal-dt');
+    if(det){
+      var tbl=document.createElement('div');
+      tbl.innerHTML=_ppaCalExportTable();
+      det.parentNode.replaceChild(tbl,det);
+    }
+  }catch(e){}
   var introEl=document.getElementById('ppa-intro');
   var body=(introEl?introEl.outerHTML:'')+clone.innerHTML;
+  // Sin clic no hay drill-down: la leyenda ya no debe invitar a hacerlo.
+  body=body.split('. Clic para el detalle.').join('; el detalle va en la tabla siguiente.');
   // Remapeo oscuro -> claro. Orden: específicos antes que genéricos; el color de
   // borde light (#dfe4ec) es distinto al gris de texto para evitar colisiones.
   var reps=[
@@ -5744,7 +5890,8 @@ function _doExportPPALight(){
     ['#9fc0ea','#2563eb'],
     ['#6ea8ff','#2563eb'],
     ['#4a536e','#94a3b8'],
-    ['#8892b0','#64748b']
+    ['#8892b0','#64748b'],
+    ['#E8C52A','#C9A800']                        // amarillo semáforo: ilegible sobre blanco
   ];
   reps.forEach(function(p){ body=body.split(p[0]).join(p[1]); });
   var hoy=new Date();
@@ -5779,6 +5926,22 @@ function _doExportPPALight(){
     + '.cov-row tbody tr.cov-tot td{font-weight:700;background:#eef2f7;border-top:1px solid #dfe4ec}'
     + '.cov-pill{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle}'
     + '.cov-detail{display:none}'  // los drill-down van cerrados en el export
+    // Calendario de emisión de OC — versión clara. Sin esto las casillas heredaban
+    // cero estilo en el export y se apilaban una debajo de otra.
+    + '.calw{display:flex;gap:4px;align-items:stretch}'
+    + '.calk{flex:1 1 0;min-width:0;background:#f8fafc;border:1px solid #dfe4ec;border-top:3px solid #dfe4ec;'
+    +   'border-radius:7px;padding:6px 2px 5px;text-align:center;overflow:hidden;box-sizing:border-box}'
+    + '.calk .cw2{font-size:.55rem;font-weight:700;color:#64748b;line-height:1}'
+    + '.calk .cn{font-size:1.05rem;font-weight:900;line-height:1.2;color:#0f172a}'
+    + '.calk .cv{font-size:.52rem;font-weight:700;line-height:1;white-space:nowrap}'
+    + '.calk.vac{background:#ffffff}.calk.vac .cn{color:#cbd5e1}.calk.vac .cw2{color:#94a3b8}'
+    + '.calk.hoy{position:relative}'
+    + '.calk.hoy:after{content:"HOY";position:absolute;top:-1px;left:50%;transform:translateX(-50%);'
+    +   'background:var(--q);color:#fff;font-size:.42rem;font-weight:800;padding:0 4px;border-radius:0 0 5px 5px;letter-spacing:.3px}'
+    + '.calk.hoy .cw2{margin-top:5px}'
+    + '.calbadge{display:inline-block;background:#eef2f7;border:1px solid #dfe4ec;border-radius:7px;'
+    +   'padding:2px 9px;font-size:.65rem;font-weight:700;color:#334155}'
+    + '@media(max-width:820px){#ppa-cal-wrap{padding:0!important}.calw{flex-wrap:wrap}.calk{flex:0 0 calc(16.66% - 4px)}}'
     + '@media(max-width:820px){.cov-row{grid-template-columns:1fr}}';
   var full='<!doctype html><html lang="es"><head><meta charset="utf-8">'
     + '<meta name="viewport" content="width=device-width,initial-scale=1">'
