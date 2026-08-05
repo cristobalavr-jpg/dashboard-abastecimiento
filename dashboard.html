@@ -183,6 +183,35 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .mc-dd[data-nc="Sí"]{border-color:var(--s);background:rgba(55,138,221,.10)}
 /* Comentario comprador · tabla Detalle < 2 Sem (Terceros e Insumos · B.11) */
 .tic-com-cell{min-width:200px;max-width:280px}
+/* Clasificación de stock muerto / descontinuado (Inmovilizados · B.6.1) */
+.dead-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 7px}
+.dead-cnt{font-size:.66rem;color:var(--muted)}
+.dead-chk{font-size:.66rem;color:var(--muted);display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.dead-q{background:#0f1117;border:1px solid var(--border);border-radius:5px;color:#e2e8f0;font-size:.67rem;padding:4px 9px;width:250px;font-family:inherit}
+.dead-q::placeholder{color:#5b647e}
+.dead-q:focus{outline:none;border-color:#6366f1;background:#12151f}
+.dead-q:not(:placeholder-shown){border-color:#6366f1;background:rgba(99,102,241,.08)}
+.dead-q::-webkit-search-cancel-button{cursor:pointer;filter:invert(.6)}
+.dead-help{font-size:.62rem;color:#6366f1;cursor:pointer;border:1px solid rgba(99,102,241,.45);border-radius:5px;padding:2px 7px;background:rgba(99,102,241,.10);user-select:none}
+.dead-help:hover{background:rgba(99,102,241,.22)}
+.dead-helpbox{display:none;background:rgba(55,138,221,.06);border:1px solid rgba(55,138,221,.25);border-radius:7px;padding:9px 12px;margin:0 0 8px;font-size:.68rem;color:#a4cef0;line-height:1.6}
+.dead-helpbox.show{display:block}
+.dead-helpbox b{color:#e2e8f0}
+.dead-helpbox .dh-op{display:inline-block;border-radius:4px;padding:0 5px;font-weight:700;font-size:.65rem}
+.dead-tw{max-height:460px;overflow-y:auto}
+.dead-tw thead th{position:sticky;top:0;z-index:2;background:#1a1f2e}
+.dead-dd{background:#0f1117;border:1px solid var(--border);border-radius:5px;color:#e2e8f0;font-size:.66rem;padding:3px 5px;width:100%;cursor:pointer}
+.dead-dd:focus{outline:none;border-color:#6366f1}
+.dead-dd option{background:#0f1117 !important;color:#e2e8f0 !important}
+.dead-dd[data-d="Mermar"]{border-color:var(--q);background:rgba(226,75,74,.10);color:#ffb4b3}
+.dead-dd[data-d="Plan de Acción"]{border-color:var(--rT);background:rgba(232,123,42,.10);color:#f5c08a}
+.dead-dd[data-d="Próximo a utilizar"]{border-color:var(--n);background:rgba(99,153,34,.10);color:#c3e59a}
+.dead-dd:disabled{background:#1a1f2e;color:var(--muted);cursor:not-allowed;border-style:dashed}
+.dead-com{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid var(--border);border-radius:5px;color:#e2e8f0;font-size:.65rem;padding:3px 6px;font-family:inherit}
+.dead-com::placeholder{color:#5b647e}
+.dead-com:focus{outline:none;border-color:#6366f1;background:#12151f}
+.dead-com:disabled{background:#1a1f2e;color:var(--muted);cursor:not-allowed;border-style:dashed}
+.dead-meta{font-size:.57rem;color:var(--muted);margin-top:2px;min-height:9px}
 .tic-com-inp{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid var(--border);border-radius:5px;color:#e2e8f0;font-size:.66rem;padding:4px 7px;font-family:inherit}
 .tic-com-inp::placeholder{color:#5b647e}
 .tic-com-inp:focus{outline:none;border-color:#6366f1;background:#12151f}
@@ -692,9 +721,9 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
       <div class="hint">capital_exc = (cob_actual − 10) × consumo_4w × precio_unit · solo SKUs con cob &gt; 10 sem</div>
     </div>
     <div class="cb">
-      <div class="ct">$ stock por grupo apilado · Activo / Slow / Muerto · clic ver SKUs</div>
+      <div class="ct">$ stock por grupo apilado · Activo / Slow / Muerto / Descontinuado · clic ver SKUs</div>
       <div class="cw" style="height:240px"><canvas id="cROT" style="cursor:pointer"></canvas></div>
-      <div class="hint">Activo = rot ≥6×/año · Slow = rot &lt;6×/año · Muerto = sin consumo 8 sem</div>
+      <div class="hint">Activo = rot ≥6×/año · Slow = rot &lt;6×/año · Muerto = sin consumo 8 sem · Descontinuado = muerto marcado como «no se vuelve a usar»</div>
     </div>
   </div>
   <div class="cb" style="margin-bottom:12px">
@@ -706,19 +735,41 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
     <div class="cb">
       <div class="ct">Distribución del stock por velocidad de rotación (%$ valor)</div>
       <div class="cw" style="height:230px"><canvas id="cROTbk"></canvas></div>
-      <div class="hint">Rápido ≥26× · Normal 12-26× · Lento 6-12× · Slow &lt;6× · Muerto = 8 sem sin mov.</div>
+      <div class="hint">Rápido ≥26× · Normal 12-26× · Lento 6-12× · Slow &lt;6× · Muerto = 8 sem sin mov. · Descontinuado = muerto clasificado como «no se vuelve a usar»</div>
     </div>
     <div class="cb" style="padding:8px 10px">
       <div class="ct" style="margin-bottom:6px">Detalle por grupo · cobertura financiera <button class="xls-btn" onclick="expXls('cap-tbl','capital_por_grupo')" style="float:right;background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:5px;padding:1px 6px;font-size:.62rem;cursor:pointer">📥 Excel</button></div>
       <div style="max-height:240px;overflow-y:auto"><table style="font-size:.66rem"><thead><tr><th style="padding:4px 5px">Grupo</th><th style="padding:4px 5px;text-align:right">SKUs</th><th style="padding:4px 5px;text-align:right">$Sob.</th><th style="padding:4px 5px;text-align:right">$Exc.</th><th style="padding:4px 5px;text-align:right">%</th></tr></thead><tbody id="cap-tbl"></tbody></table></div>
     </div>
   </div>
-  <div class="stt">🪦 Stock muerto — sin movimiento en las últimas 8 semanas <button class="xls-btn" onclick="expXls('rot-dead','stock_muerto')" style="float:right;background:#1D9E7530;color:#1D9E75;border:1px solid #1D9E75;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
-  <div class="tw" style="margin-bottom:14px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>$Valor</th><th>Cons.8w</th></tr></thead><tbody id="rot-dead"></tbody></table></div>
+  <div class="stt">🪦 Stock muerto — sin movimiento en las últimas 8 semanas <button class="xls-btn" onclick="expDead('muerto')" style="float:right;background:#1D9E7530;color:#1D9E75;border:1px solid #1D9E75;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
+  <div class="dead-bar">
+    <button id="dead-lock" class="mc-lock" onclick="mcToggleEdit()">🔒 Modo consulta</button>
+    <input type="search" id="dead-q" class="dead-q" placeholder="🔍 Buscar SKU o descripción…" oninput="deadRender()" onsearch="deadRender()" autocomplete="off">
+    <span id="dead-cnt" class="dead-cnt">—</span>
+    <label class="dead-chk"><input type="checkbox" id="dead-solo-sc" onchange="deadRender()"> Solo sin clasificar</label>
+    <span class="dead-help" onclick="deadHelp()">ⓘ cómo se usa</span>
+  </div>
+  <div class="dead-helpbox" id="dead-helpbox">
+    <b>Para qué es esta tabla.</b> El sistema marca como <b>stock muerto</b> todo SKU con stock y sin un solo consumo real en 8 semanas. Ahí se mezclan dos cosas muy distintas: material <b>estacional</b> que va a volver a rotar, y material que <b>ya no se va a usar nunca más</b>. Eso no está en SAP — lo sabes tú. Esta tabla es donde lo declaras.<br>
+    <b>Cómo se usa.</b> 1) Botón <b>🔒 Identifícate para clasificar</b> (tu nombre + el PIN de Mermas). 2) Elige el destino en la columna <b>Muerto</b>. 3) Escribe el comentario y presiona <b>Enter</b> (o haz clic fuera) — ahí recién se guarda.<br>
+    <span class="dh-op" style="background:rgba(226,75,74,.18);color:#ffb4b3">Mermar</span> dar de baja, pérdida total &nbsp;·&nbsp;
+    <span class="dh-op" style="background:rgba(232,123,42,.18);color:#f5c08a">Plan de Acción</span> no se usará en planta pero se intenta recuperar valor (devolución a proveedor, venta, reformulación) &nbsp;·&nbsp;
+    <span class="dh-op" style="background:rgba(99,153,34,.18);color:#c3e59a">Próximo a utilizar</span> estacional, vuelve a rotar<br>
+    <b>Qué pasa al clasificar.</b> Los dos primeros mueven el SKU a la tabla <b>⛔ Stock descontinuado</b> de más abajo y lo descuentan del KPI de Stock muerto; los KPIs, los gráficos y la tabla por grupo de arriba se recalculan al instante. <i>Próximo a utilizar</i> lo deja aquí. Para deshacer, vuelve a dejar el destino en «— sin clasificar —».<br>
+    <b>Lo ve todo el mundo</b> (si el indicador dice <span style="color:var(--n)">● nube</span>): la clasificación se guarda en el servidor con tu nombre y la fecha, y aparece para cualquiera que abra el DA.
+    <span style="display:block;margin-top:6px"><span class="dead-help" onclick="deadHelp()">✕ cerrar</span></span>
+  </div>
+  <div class="tw dead-tw" style="margin-bottom:14px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>$Valor</th><th title="Volumen consumido en las últimas 8 semanas">Cons.8w</th><th style="min-width:165px">Muerto</th><th style="min-width:200px">Comentario</th></tr></thead><tbody id="rot-dead"></tbody></table></div>
+
+  <div class="stt">⛔ Stock descontinuado — clasificado como «no se volverá a utilizar» <button class="xls-btn" onclick="expDead('desc')" style="float:right;background:#E24B4A30;color:#E24B4A;border:1px solid #E24B4A;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
+  <div class="dead-bar"><span id="desc-cnt" class="dead-cnt">—</span></div>
+  <div class="hint" style="margin:-3px 0 7px">Subconjunto del stock muerto marcado como <b>Mermar</b> o <b>Plan de Acción</b> — no vuelve al consumo normal. Para devolverlo a stock muerto, cambia el destino a «Próximo a utilizar» o déjalo sin clasificar.</div>
+  <div class="tw dead-tw" style="margin-bottom:14px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>$Valor</th><th title="Volumen consumido en las últimas 8 semanas">Cons.8w</th><th style="min-width:165px">Muerto</th><th style="min-width:200px">Comentario</th></tr></thead><tbody id="rot-desc"></tbody></table></div>
   <div class="stt">🐌 Slow movers — rotación &lt; 6×/año <button class="xls-btn" onclick="expXls('rot-slow','slow_movers')" style="float:right;background:#E87B2A30;color:#E87B2A;border:1px solid #E87B2A;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="tw" style="margin-bottom:14px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>$Valor</th><th>Rot.</th><th>Días</th></tr></thead><tbody id="rot-slow"></tbody></table></div>
   <div class="stt">Detalle por grupo · velocidad rotación</div>
-  <div class="tw"><table><thead><tr><th>Grupo</th><th>Tipo</th><th>SKUs</th><th>Rot. med.</th><th>Días inv. med.</th><th>$Valor total</th><th>Slow</th><th>Muerto</th><th>$Atrapado</th></tr></thead><tbody id="rot-tbl"></tbody></table></div>
+  <div class="tw"><table><thead><tr><th>Grupo</th><th>Tipo</th><th>SKUs</th><th>Rot. med.</th><th>Días inv. med.</th><th>$Valor total</th><th>Slow</th><th title="Sin movimiento 8 sem, sin veredicto de baja">Muerto</th><th title="Muertos clasificados como Mermar / Plan de Acción">Descont.</th><th>$Atrapado</th></tr></thead><tbody id="rot-tbl"></tbody></table></div>
 </div>
 
 <div id="t5" class="pg">
@@ -3635,6 +3686,7 @@ function mcToggleEdit(){
   if(MC_EDIT){
     MC_EDIT = false; localStorage.setItem(MC_LS_EDIT,'0'); mcUpdLockUI();
     if(MC_CUR_SEM != null) opSemDet(MC_CUR_SEM);
+    if(typeof deadRender==='function') deadRender();   // bloquea los controles de stock muerto
     mcNotif('Modo consulta');
   } else {
     el('mc-pinInput').value=''; el('mc-userSel').value=MC_USUARIO||'';
@@ -3652,6 +3704,7 @@ function mcSubmitPin(){
   localStorage.setItem(MC_LS_EDIT,'1');
   mcClosePin(); mcUpdLockUI();
   if(MC_CUR_SEM != null) opSemDet(MC_CUR_SEM);
+  if(typeof deadRender==='function') deadRender();   // habilita los controles de stock muerto
   mcNotif('Modo edición activado — '+MC_USUARIO);
 }
 function mcExportCsv(){
@@ -3672,6 +3725,231 @@ document.addEventListener('keydown', function(e){
   if(e.key==='Enter' && el('mc-pinModal') && el('mc-pinModal').classList.contains('show')) mcSubmitPin();
 });
 
+// ── Clasificación de stock muerto → Stock Descontinuado (ver PARAMETRO.MD B.6.1) ──
+// Capa manual sobre el bucket automático `rot_bucket==='muerto'` (sin consumo real en las
+// últimas 8 sem). Cada SKU muerto se cataloga con un DESTINO; los destinos que declaran que
+// el SKU no vuelve al consumo normal lo reclasifican como "Stock descontinuado", que se
+// descuenta del stock muerto en KPIs, gráficos y tabla por grupo.
+// Persistencia en la nube: Apps Script + Google Sheet (mismo patrón que Mermas / Comentarios TI).
+// ⬇️ Pegar la URL /exec del Web App tras desplegar apps_script_stock_muerto.gs.
+//    Vacío = modo solo-local (cada navegador ve su propia clasificación).
+var DEAD_BACKEND_URL = '';
+var DEAD_PIN  = '1234';             // el backend revalida este PIN (sincronizar con el .gs)
+var DEAD_LS   = 'dead_clasif_v1';
+var DEAD_OK   = false;
+var DEAD_OPTS = ['Mermar','Plan de Acción','Próximo a utilizar'];
+// Destinos que significan "no se volverá a utilizar" → pasan a Stock descontinuado.
+// Cambiar este mapa es lo único que hay que tocar para reasignar un destino a la otra categoría.
+var DEAD_DESC = {'Mermar':1, 'Plan de Acción':1};
+var DEAD_COL  = {'Mermar':'#E24B4A','Plan de Acción':'#E87B2A','Próximo a utilizar':'#639922'};
+var DEADC = (function(){ try{ return JSON.parse(localStorage.getItem(DEAD_LS)||'{}'); }catch(e){ return {}; } })();
+function deadSaveLS(){ try{ localStorage.setItem(DEAD_LS, JSON.stringify(DEADC)); }catch(e){} }
+function deadRec(sku){ return DEADC[String(sku)] || null; }
+function deadDestino(sku){ var r=deadRec(sku); return (r && r.destino) || ''; }
+function deadIsDesc(sku){ return !!DEAD_DESC[deadDestino(sku)]; }
+
+// ── Backend ──
+function deadBackendLoad(){
+  if(!DEAD_BACKEND_URL) return Promise.resolve(false);
+  return fetch(DEAD_BACKEND_URL+'?v='+Date.now(), {method:'GET'})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(j && j.ok && j.dead){
+        DEADC = {};
+        Object.keys(j.dead).forEach(function(sku){
+          var c = j.dead[sku];
+          DEADC[sku] = {destino:c.destino||'', coment:c.coment||'', usuario:c.usuario||'', ts:mcNormalizeTs(c.ts)};
+        });
+        deadSaveLS(); DEAD_OK = true; return true;
+      }
+      return false;
+    })
+    .catch(function(e){ console.warn('[dead] GET fail', e); return false; });
+}
+function deadBackendSave(sku, destino, coment, usuario){
+  if(!DEAD_BACKEND_URL) return Promise.resolve({ok:false, offline:true});
+  var body = JSON.stringify({pin:DEAD_PIN, action:'save', sku:String(sku),
+                             destino:destino||'', coment:coment||'', usuario:usuario||''});
+  // text/plain evita el preflight CORS (Apps Script no responde OPTIONS)
+  return fetch(DEAD_BACKEND_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:body})
+    .then(function(r){ return r.json(); })
+    .catch(function(e){ console.warn('[dead] POST fail', e); return {ok:false, error:String(e)}; });
+}
+
+// ── Agregación: cuánto del stock muerto está clasificado y cuánto es descontinuado ──
+// Se calcula sobre el universo VIGENTE (respeta filtro de comprador y toggle PPA), por eso
+// el ajuste es coherente con el ROT que devuelve effROT().
+function deadSplit(){
+  var out = {n:0, val:0, byG:{}, byD:{}, nD:{}, n_tot:0, val_tot:0, n_clasif:0, val_clasif:0};
+  (curSkus()||[]).forEach(function(s){
+    if(s.rot_bucket!=='muerto') return;
+    var v = s.val||0;
+    out.n_tot++; out.val_tot += v;
+    var d = deadDestino(s.sku);
+    if(d){ out.n_clasif++; out.val_clasif += v; out.byD[d]=(out.byD[d]||0)+v; out.nD[d]=(out.nD[d]||0)+1; }
+    if(DEAD_DESC[d]){ out.n++; out.val += v; out.byG[s.grupo]=(out.byG[s.grupo]||0)+v; }
+  });
+  return out;
+}
+
+// Panel de ayuda (clic en «ⓘ cómo se usa»). Antes era un title= nativo: había que
+// adivinar que se hacía hover y el tooltip no se veía en la práctica.
+function deadHelp(){
+  var b = el('dead-helpbox'); if(!b) return;
+  b.classList.toggle('show');
+  if(b.classList.contains('show')) b.scrollIntoView({block:'nearest', behavior:'smooth'});
+}
+
+// ── Tablas ──
+// Normaliza para buscar: minúsculas y sin tildes (así "ALMIDON" encuentra "ALMIDÓN").
+// El rango de tildes va como RegExp construido con escapes ASCII (no como literal con
+// caracteres combinantes crudos) para que no dependa de cómo se guarde el archivo.
+var _DEAD_ACC = new RegExp('[\\u0300-\\u036f]', 'g');
+function _deadNorm(t){
+  var s = String(t==null?'':t).toLowerCase();
+  try{ s = s.normalize('NFD').replace(_DEAD_ACC, ''); }catch(e){}
+  return s;
+}
+function deadQuery(){
+  var q = el('dead-q'); return q ? _deadNorm(q.value).trim() : '';
+}
+function deadClearQ(){
+  var q = el('dead-q'); if(!q) return;
+  q.value=''; deadRender(); q.focus();
+}
+function deadList(kind){
+  var arr = (curSkus()||[]).filter(function(s){ return s.rot_bucket==='muerto'; });
+  arr = arr.filter(function(s){ return kind==='desc' ? deadIsDesc(s.sku) : !deadIsDesc(s.sku); });
+  var soloSc = el('dead-solo-sc');
+  if(kind==='muerto' && soloSc && soloSc.checked) arr = arr.filter(function(s){ return !deadDestino(s.sku); });
+  // Buscador (sólo tabla de stock muerto): SKU o descripción, por palabras sueltas en
+  // cualquier orden — "bolsa 700" encuentra "BOLSA PP CEN COUS CONF 700G".
+  if(kind==='muerto'){
+    var q = deadQuery();
+    if(q){
+      var terms = q.split(/\s+/).filter(Boolean);
+      arr = arr.filter(function(s){
+        var hay = _deadNorm(s.sku)+' '+_deadNorm(s.desc);
+        return terms.every(function(t){ return hay.indexOf(t)>=0; });
+      });
+    }
+  }
+  return arr.slice().sort(function(a,b){ return (b.val||0)-(a.val||0); });
+}
+function _deadRow(s){
+  var sku = String(s.sku);
+  var rec = deadRec(sku) || {};
+  var dis = MC_EDIT ? '' : ' disabled';
+  var opt = ['<option value="">— sin clasificar —</option>'].concat(DEAD_OPTS.map(function(x){
+    return '<option'+(rec.destino===x?' selected':'')+'>'+x+'</option>';})).join('');
+  var meta = (rec.usuario||rec.ts) ? ((rec.usuario||'—')+(rec.ts?(' · '+rec.ts):'')) : '';
+  var c8 = +(s.c8_real||0);
+  return '<tr data-dsku="'+sku+'">'+
+    '<td style="font-family:monospace;font-size:.68rem">'+sku+'</td>'+
+    '<td>'+_htmlEsc(String(s.desc||'').slice(0,45))+'</td><td>'+(s.tipo||'')+'</td><td>'+(s.grupo||'')+'</td>'+
+    '<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(CC[s.comp]||'#8892b0')+';margin-right:5px;vertical-align:middle"></span>'+(s.comp||'—')+'</td>'+
+    '<td style="text-align:right">'+f0(s.stock||0)+'</td>'+
+    '<td style="text-align:right;font-weight:700">$'+f0(s.val||0)+'</td>'+
+    '<td style="text-align:right;color:var(--muted)">'+f0(c8)+'</td>'+
+    '<td><select class="dead-dd" data-sku="'+sku+'" data-d="'+_htmlEsc(rec.destino||'')+'"'+dis+' onchange="deadOnDest(this)">'+opt+'</select></td>'+
+    '<td><input class="dead-com" data-sku="'+sku+'" type="text" maxlength="180" placeholder="Comentario…" value="'+_htmlEsc(rec.coment||'')+'"'+dis+
+        ' onchange="deadOnCom(this)" onkeydown="if(event.key===\'Enter\')this.blur()">'+
+        '<div class="dead-meta">'+_htmlEsc(meta)+'</div></td>'+
+  '</tr>';
+}
+function deadRender(){
+  var tbM = el('rot-dead'), tbD = el('rot-desc');
+  if(!tbM || !tbD) return;
+  var lM = deadList('muerto'), lD = deadList('desc');
+  var q = deadQuery();
+  var vacioM = q ? ('Ningún SKU muerto coincide con «'+_htmlEsc(el('dead-q').value.trim())+'»'+
+                    ' <span style="color:#6366f1;cursor:pointer;text-decoration:underline" onclick="deadClearQ()">limpiar búsqueda</span>')
+                 : 'Sin stock muerto';
+  tbM.innerHTML = lM.map(_deadRow).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:14px">'+vacioM+'</td></tr>';
+  tbD.innerHTML = lD.map(_deadRow).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:14px">Ningún SKU clasificado como descontinuado todavía</td></tr>';
+  var DS = deadSplit();
+  var pct = DS.val_tot>0 ? (DS.val_clasif/DS.val_tot*100) : 0;
+  var origen = DEAD_BACKEND_URL ? (DEAD_OK ? '<span style="color:var(--n)" title="Clasificación compartida en la nube">● nube</span>'
+                                           : '<span style="color:var(--q)" title="Backend no responde — se guarda solo local">● sin conexión</span>')
+                                : '<span style="color:var(--rT)" title="Sin backend configurado — la clasificación no se comparte">● solo local</span>';
+  var cM = el('dead-cnt');
+  if(cM){
+    // El avance de clasificación se mide SIEMPRE sobre el universo completo; el buscador
+    // y el filtro sólo cambian qué filas se muestran, no la meta.
+    var filtro = '';
+    var soloScOn = el('dead-solo-sc') && el('dead-solo-sc').checked;
+    if(q || soloScOn) filtro = '<b style="color:#8ab4f8">mostrando '+lM.length+'</b> · ';
+    cM.innerHTML = filtro + DS.n_clasif+' de '+DS.n_tot+' SKUs muertos clasificados · $'+fMM(DS.val_clasif)+' de $'+fMM(DS.val_tot)+
+                   ' ('+pct.toFixed(0)+'% del $) · '+origen;
+  }
+  var cD = el('desc-cnt');
+  if(cD){
+    var det = DEAD_OPTS.filter(function(d){return DEAD_DESC[d] && DS.nD[d];})
+                       .map(function(d){return '<span style="color:'+DEAD_COL[d]+'">'+d+': '+DS.nD[d]+' · $'+fMM(DS.byD[d])+'</span>';}).join(' &nbsp;·&nbsp; ');
+    cD.innerHTML = DS.n+' SKUs · $'+fMM(DS.val)+(det?(' &nbsp;—&nbsp; '+det):'');
+  }
+  var lk = el('dead-lock');
+  if(lk){ if(MC_EDIT){ lk.classList.add('on'); lk.innerHTML='✏️ Modo edición — '+(MC_USUARIO||''); }
+          else { lk.classList.remove('on'); lk.innerHTML='🔒 Identifícate para clasificar'; } }
+}
+// ── Edición ──
+function deadOnDest(sel){
+  var sku = sel.getAttribute('data-sku');
+  if(!MC_EDIT){ mcNotif('Identifícate para clasificar (botón 🔒)', false); sel.value = deadDestino(sku); return; }
+  deadSet(sku, {destino: sel.value});
+}
+function deadOnCom(inp){
+  var sku = inp.getAttribute('data-sku');
+  var txt = (inp.value||'').trim();
+  var prev = (deadRec(sku)||{}).coment || '';
+  if(!MC_EDIT){ mcNotif('Identifícate para clasificar (botón 🔒)', false); inp.value = prev; return; }
+  if(txt === prev) return;
+  deadSet(sku, {coment: txt});
+}
+function deadSet(sku, patch){
+  sku = String(sku);
+  var cur = DEADC[sku] ? {destino:DEADC[sku].destino||'', coment:DEADC[sku].coment||'',
+                          usuario:DEADC[sku].usuario||'', ts:DEADC[sku].ts||''} : {destino:'', coment:''};
+  if(patch.destino !== undefined) cur.destino = patch.destino;
+  if(patch.coment  !== undefined) cur.coment  = patch.coment;
+  cur.usuario = MC_USUARIO || cur.usuario || '';
+  cur.ts = new Date().toISOString().slice(0,16).replace('T',' ');
+  if(!cur.destino && !cur.coment) delete DEADC[sku]; else DEADC[sku] = cur;
+  deadSaveLS();
+  buildKpiAv();                       // KPIs + gráficos + ambas tablas (UI optimista)
+  var mk = function(txt){
+    var row = document.querySelector('tr[data-dsku="'+sku+'"]');
+    var m = row && row.querySelector('.dead-meta'); if(m) m.textContent = txt;
+  };
+  mk('⏳ guardando…');
+  deadBackendSave(sku, cur.destino||'', cur.coment||'', cur.usuario).then(function(res){
+    if(res && res.offline){ mk('guardado local · '+(cur.usuario||'—')); mcNotif('Guardado ✓ (local)'); return; }
+    if(res && res.ok){
+      if(res.ts && DEADC[sku]){ DEADC[sku].ts = res.ts; deadSaveLS(); }
+      mk((cur.usuario||'—')+' · '+((DEADC[sku]&&DEADC[sku].ts)||cur.ts));
+      DEAD_OK = true; mcNotif('Guardado en servidor ✓');
+    } else {
+      mk('⚠ error al guardar (queda local)');
+      mcNotif('Error guardando en servidor — guardado solo local', false);
+    }
+  });
+}
+// Export dedicado: table_to_sheet no lee <select>/<input>, así que se arma desde los datos.
+function expDead(kind){
+  var rows = [['SKU','Descripción','Tipo','Grupo','Comprador','Stock','$Valor','Cons.8w','Muerto','Comentario','Usuario','Fecha']];
+  deadList(kind==='desc'?'desc':'muerto').forEach(function(s){
+    var r = deadRec(s.sku) || {};
+    rows.push([String(s.sku), String(s.desc||''), s.tipo||'', s.grupo||'', s.comp||'',
+               Math.round(s.stock||0), Math.round(s.val||0), Math.round(s.c8_real||0),
+               r.destino||'', r.coment||'', r.usuario||'', r.ts||'']);
+  });
+  try{
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Datos');
+    XLSX.writeFile(wb, (kind==='desc'?'stock_descontinuado_':'stock_muerto_')+new Date().toISOString().slice(0,10)+'.xlsx');
+  }catch(e){ alert('Error exportando: '+e.message); }
+}
+
 // ── KPIs AVANZADOS ──
 function buildKpiAv(){
   // Vistas efectivas (filtradas si gCompFilter está set, sino globales).
@@ -3681,10 +3959,19 @@ function buildKpiAv(){
   // KPIs unificados: exceso financiero · slow movers · stock muerto · stock total atrapado
   var dCap=gCompFilter?{}:(DELTAS.CAP||{}); var dRot=gCompFilter?{}:(DELTAS.ROT||{});
   var totalAtrap = (ROT.val_slow||0) + (ROT.val_muerto||0);
+  // Split manual del stock muerto (B.6.1): lo clasificado como "no se vuelve a usar" sale del
+  // bucket muerto y forma la categoría Stock descontinuado. El total muerto+descontinuado no cambia.
+  var DSP     = deadSplit();
+  var vMueRes = Math.max((ROT.val_muerto||0) - DSP.val, 0);
+  var nMueRes = Math.max((ROT.n_muerto||0)  - DSP.n,   0);
+  // La flecha vs. semana anterior sólo aplica mientras no haya clasificación: los snapshots
+  // históricos no conocen el split, comparar contra ellos el residual sería engañoso.
+  var aMue = (DSP.n===0) ? dArrow(dRot.val_muerto,true) : '';
   el('cap-kpis').innerHTML=
     '<div class="kpia-card danger"><div class="kpia-n">$'+fMM(CAP.total)+dArrow(dCap.total,true)+'</div><div class="kpia-l">Capital exceso (&gt;10 sem cob.)</div></div>'+
     '<div class="kpia-card warn"><div class="kpia-n">$'+fMM(ROT.val_slow)+dArrow(dRot.val_slow,true)+'</div><div class="kpia-l">Slow movers ('+ROT.n_slow+' SKUs · rot &lt;'+ROT.umb_slow+'×)</div></div>'+
-    '<div class="kpia-card danger"><div class="kpia-n">$'+fMM(ROT.val_muerto)+dArrow(dRot.val_muerto,true)+'</div><div class="kpia-l">Stock muerto ('+ROT.n_muerto+' SKUs · '+ROT.sem_dead+' sem sin mov.)</div></div>'+
+    '<div class="kpia-card danger" title="Sin consumo real en '+ROT.sem_dead+' semanas y aún sin veredicto de baja (incluye los marcados «Próximo a utilizar»). Total muerto antes del split: $'+fMM(ROT.val_muerto)+' · '+ROT.n_muerto+' SKUs."><div class="kpia-n">$'+fMM(vMueRes)+aMue+'</div><div class="kpia-l">🪦 Stock muerto ('+nMueRes+' SKUs · '+ROT.sem_dead+' sem sin mov.)</div></div>'+
+    '<div class="kpia-card danger" title="SKUs muertos clasificados manualmente como Mermar o Plan de Acción — no vuelven al consumo normal. '+DSP.n_clasif+' de '+DSP.n_tot+' SKUs muertos ya clasificados."><div class="kpia-n">$'+fMM(DSP.val)+'</div><div class="kpia-l">⛔ Stock descontinuado ('+DSP.n+' SKUs · no se vuelve a usar)</div></div>'+
     '<div class="kpia-card"><div class="kpia-n">'+ROT.doh_pond+' días'+dArrow(dRot.doh_pond,true)+'</div><div class="kpia-l">Días inv. ponderados por $ (DOH)</div></div>';
   var capG=CAP.grupos.slice().sort(function(a,b){return b.capital-a.capital;});
   var cC=el('cCAP').getContext('2d');if(window._cCAP)window._cCAP.destroy();
@@ -3800,8 +4087,8 @@ function buildKpiAv(){
            '<td>'+sig+'</td></tr>';}).join('');
 
   // ── Rotación + slow movers + stock muerto ──
-  var BK_LBL={rapido:'Rápido ≥26×',normal:'Normal 12-26×',lento:'Lento 6-12×',slow:'Slow <6×',muerto:'Muerto (8 sem)'};
-  var BK_COL={rapido:'#1D9E75',normal:'#639922',lento:'#E8C52A',slow:'#E87B2A',muerto:'#E24B4A'};
+  var BK_LBL={rapido:'Rápido ≥26×',normal:'Normal 12-26×',lento:'Lento 6-12×',slow:'Slow <6×',muerto:'Muerto (8 sem)',descont:'Descontinuado'};
+  var BK_COL={rapido:'#1D9E75',normal:'#639922',lento:'#E8C52A',slow:'#E87B2A',muerto:'#E24B4A',descont:'#992D2B'};
 
   // rot-kpis consolidado en cap-kpis (Capital Inmovilizado). Mantenemos el render guardado por compatibilidad si el elemento existe.
   if(el('rot-kpis')){
@@ -3809,7 +4096,12 @@ function buildKpiAv(){
   }
 
   // Gráfico 1: distribución del stock por bucket de velocidad ($)
-  var distData=ROT.bucket_dist;
+  // El bucket 'muerto' se parte en muerto residual + descontinuado según la clasificación manual.
+  var distData=(ROT.bucket_dist||[]).map(function(d){
+    if(d.b!=='muerto') return d;
+    return {b:'muerto', n:Math.max((d.n||0)-DSP.n,0), val:Math.max((d.val||0)-DSP.val,0)};
+  });
+  if(DSP.n>0) distData=distData.concat([{b:'descont', n:DSP.n, val:DSP.val}]);
   var cBk=el('cROTbk').getContext('2d');if(window._cROTbk)window._cROTbk.destroy();
   window._cROTbk=new Chart(cBk,{type:'bar',
     data:{labels:distData.map(function(d){return BK_LBL[d.b];}),
@@ -3829,14 +4121,16 @@ function buildKpiAv(){
   function _MM(v){return +(v/1e6).toFixed(2);}
   var ds_act =rotG.map(function(g){return _MM(Math.max(g.val-g.val_slow-g.val_muerto,0));});
   var ds_slow=rotG.map(function(g){return _MM(g.val_slow);});
-  var ds_mue =rotG.map(function(g){return _MM(g.val_muerto);});
+  var ds_mue =rotG.map(function(g){return _MM(Math.max(g.val_muerto-(DSP.byG[g.g]||0),0));});
+  var ds_des =rotG.map(function(g){return _MM(Math.min(DSP.byG[g.g]||0, g.val_muerto));});
   var cR=el('cROT').getContext('2d');if(window._cROT)window._cROT.destroy();
   window._cROT=new Chart(cR,{type:'bar',
     data:{labels:rotG.map(function(g){return g.g;}),
           datasets:[
             {label:'Activo (rot ≥6×)',data:ds_act, backgroundColor:'#1D9E7599',borderColor:'#1D9E75',borderWidth:1,stack:'s'},
             {label:'Slow (<6×)',     data:ds_slow,backgroundColor:'#E87B2A99',borderColor:'#E87B2A',borderWidth:1,stack:'s'},
-            {label:'Muerto (8 sem)', data:ds_mue, backgroundColor:'#E24B4A99',borderColor:'#E24B4A',borderWidth:1,stack:'s'}]},
+            {label:'Muerto (8 sem)', data:ds_mue, backgroundColor:'#E24B4A99',borderColor:'#E24B4A',borderWidth:1,stack:'s'},
+            {label:'Descontinuado',  data:ds_des, backgroundColor:'#992D2BCC',borderColor:'#992D2B',borderWidth:1,stack:'s'}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{labels:{color:'#e2e8f0',font:{size:10},boxWidth:12}},
         tooltip:{callbacks:{label:function(x){return x.dataset.label+': $'+x.raw.toFixed(2)+' MM';}}}},
@@ -3845,10 +4139,13 @@ function buildKpiAv(){
       onClick:function(e,el2){if(el2.length)opKpiDw(rotG[el2[0].index].g,'rot');}}});
 
   // Gráfico 3: scatter SKUs · días inv vs $ valor stock (log-log)
-  var scatRaw=ROT.scatter||[];
-  var BUCK_COL={rapido:'#1D9E75',normal:'#639922',lento:'#E8C52A',slow:'#E87B2A',muerto:'#E24B4A'};
-  var BUCK_LBL={rapido:'Rápido ≥26×',normal:'Normal 12-26×',lento:'Lento 6-12×',slow:'Slow <6×',muerto:'Muerto'};
-  var buckOrder=['rapido','normal','lento','slow','muerto'];
+  // Los muertos ya clasificados como descontinuados se separan en su propia serie.
+  var scatRaw=(ROT.scatter||[]).map(function(p){
+    return (p.bucket==='muerto' && deadIsDesc(p.sku)) ? Object.assign({}, p, {bucket:'descont'}) : p;
+  });
+  var BUCK_COL={rapido:'#1D9E75',normal:'#639922',lento:'#E8C52A',slow:'#E87B2A',muerto:'#E24B4A',descont:'#992D2B'};
+  var BUCK_LBL={rapido:'Rápido ≥26×',normal:'Normal 12-26×',lento:'Lento 6-12×',slow:'Slow <6×',muerto:'Muerto',descont:'Descontinuado'};
+  var buckOrder=['rapido','normal','lento','slow','muerto','descont'];
   var scatDs=buckOrder.map(function(b){
     var pts=scatRaw.filter(function(p){return p.bucket===b;}).map(function(p){
       return {x:Math.max(p.dias,1), y:Math.max(p.val,1), _sku:p};});
@@ -3856,6 +4153,7 @@ function buildKpiAv(){
             backgroundColor:BUCK_COL[b]+'CC',borderColor:BUCK_COL[b],
             borderWidth:1,pointRadius:4,pointHoverRadius:7};
   });
+  scatDs=scatDs.filter(function(d,i){return buckOrder[i]!=='descont' || d.data.length>0;});
   var cSc=el('cSCAT').getContext('2d');if(window._cSCAT)window._cSCAT.destroy();
   window._cSCAT=new Chart(cSc,{type:'scatter',
     data:{datasets:scatDs},
@@ -3887,6 +4185,9 @@ function buildKpiAv(){
 
   // Tabla por grupo
   el('rot-tbl').innerHTML=rotG.map(function(g){
+    var vDes=Math.min(DSP.byG[g.g]||0, g.val_muerto);
+    var nDes=0; (curSkus()||[]).forEach(function(s){ if(s.grupo===g.g && s.rot_bucket==='muerto' && deadIsDesc(s.sku)) nDes++; });
+    var vMue=Math.max(g.val_muerto-vDes,0), nMue=Math.max(g.n_muerto-nDes,0);
     var atrap=g.val_slow+g.val_muerto;
     var pctAtrap=g.val>0?Math.round(atrap/g.val*100):0;
     var sig=pctAtrap>50?'⚠️':pctAtrap>25?'•':'';
@@ -3900,11 +4201,12 @@ function buildKpiAv(){
            '<td style="text-align:right">'+f0(dShow)+' d</td>'+
            '<td style="text-align:right">$'+fMM(g.val)+'</td>'+
            '<td style="text-align:right;color:var(--mT)">'+g.n_slow+' · $'+fMM(g.val_slow)+'</td>'+
-           '<td style="text-align:right;color:var(--q)">'+g.n_muerto+' · $'+fMM(g.val_muerto)+'</td>'+
+           '<td style="text-align:right;color:var(--q)">'+nMue+' · $'+fMM(vMue)+'</td>'+
+           '<td style="text-align:right;color:#c96360">'+(nDes?(nDes+' · $'+fMM(vDes)):'—')+'</td>'+
            '<td style="text-align:right;font-weight:700">$'+fMM(atrap)+' ('+pctAtrap+'%)</td></tr>';
   }).join('');
 
-  // Tablas dedicadas: muerto y slow (top 50)
+  // Tablas dedicadas: muerto/descontinuado (deadRender, universo completo) y slow (top 50)
   function _rotRow(r,withRot){
     return '<tr><td style="font-family:monospace;font-size:.68rem">'+r.sku+'</td>'+
            '<td>'+r.desc+'</td><td>'+r.tipo+'</td><td>'+r.grupo+'</td>'+
@@ -3916,7 +4218,9 @@ function buildKpiAv(){
              : '<td style="text-align:right;color:var(--muted)">'+f0(r.c8_real||0)+'</td>')+
            '</tr>';
   }
-  el('rot-dead').innerHTML=(ROT.top_muerto||[]).map(function(r){return _rotRow(r,false);}).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:14px">Sin stock muerto</td></tr>';
+  // Stock muerto / descontinuado: se renderiza desde el universo completo de SKUs muertos
+  // (no desde ROT.top_muerto, capado a 50) para que TODO SKU muerto sea clasificable.
+  deadRender();
   el('rot-slow').innerHTML=(ROT.top_slow ||[]).map(function(r){return _rotRow(r,true);}).join('') ||'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:14px">Sin slow movers</td></tr>';
 
   // Bloqueados — usa effBLOQ() para respetar toggle PPA y filtro de comprador
@@ -4358,16 +4662,19 @@ function covCalc(skus){
     var c = covCobertura12(s);
     var k = covBucket(c);
     var stock = s.stock||0;
-    var c4real = s.c4_real||0;
-    // Si es "Sin Plan" (sin FC), separar entre con/sin consumo reciente
+    var c8real = s.c8_real||0;   // volumen consumido en las últimas 8 sem (acumulado, no promedio)
+    // Si es "Sin Plan" (sin FC), separar entre con/sin consumo reciente.
+    // Ventana = 8 semanas (misma que define "stock muerto" en Inmovilizados, B.6):
+    // "Sin Plan" queda reservado a SKUs con consumo real 0 en las últimas 8 sem.
     if(k==='Sin Plan'){
       if(stock<=0) return; // sin stock = no aporta capital, descartar
-      if(c4real>0) k = 'Sin Plan c/Consumo'; // consume sin FC = alerta de planificación
+      if(c8real>0) k = 'Sin Plan c/Consumo'; // consume sin FC = alerta de planificación
     }
     var val = s.val||0;
     buckets[k].val += val;
     buckets[k].cnt += 1;
-    buckets[k].items.push({sku:s.sku, desc:s.desc, comp:s.comp, stock:stock, val:val, cob:c, c4_real:c4real});
+    buckets[k].items.push({sku:s.sku, desc:s.desc, comp:s.comp, stock:stock, val:val, cob:c,
+                           c8_real:c8real, c4_real:s.c4_real||0});
   });
   var tot = COV_ORDER.reduce(function(a,k){return a+buckets[k].val;},0);
   return {buckets:buckets, tot:tot};
@@ -4686,14 +4993,16 @@ function covToggleDetail(gid, bucket, items, tbody){
   }
   var rows = sorted.map(function(s){
     var cc = (CC[s.comp]||'#8892b0');
-    var c4r = (s.c4_real==null) ? '<span style="color:var(--muted)">—</span>' : f0(s.c4_real);
+    var c8v = (s.c8_real==null) ? null : +s.c8_real;
+    var c8r = (c8v==null) ? '<span style="color:var(--muted)">—</span>'
+            : (c8v>0 ? f0(c8v) : '<span style="color:var(--q)" title="Sin consumo real en 8 semanas">0</span>');
     return '<tr>'
       + '<td style="font-family:monospace;font-size:.65rem">'+s.sku+'</td>'
       + '<td>'+(s.desc||'')+'</td>'
       + '<td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+cc+';margin-right:5px;vertical-align:middle"></span>'+(s.comp||'—')+'</td>'
       + '<td style="text-align:right">'+f0(s.stock)+'</td>'
       + '<td style="text-align:right">$ '+f0(s.val)+'</td>'
-      + '<td style="text-align:right">'+c4r+'</td>'
+      + '<td style="text-align:right">'+c8r+'</td>'
       + '<td style="text-align:right">'+covFmtCob(s.cob)+'</td>'
       + '</tr>';
   }).join('');
@@ -4703,7 +5012,7 @@ function covToggleDetail(gid, bucket, items, tbody){
     + '<div class="tw"><table><thead><tr>'
     + '<th>SKU</th><th>Descripción</th><th>Comprador</th>'
     + '<th style="text-align:right">Stock</th><th style="text-align:right">Valor Stock</th>'
-    + '<th style="text-align:right" title="Consumo real últimas 4 semanas">Cons. 4w real</th>'
+    + '<th style="text-align:right" title="Volumen consumido (acumulado) en las últimas 8 semanas — misma ventana que define stock muerto">Cons. 8w</th>'
     + '<th style="text-align:right">Cobertura (sem)</th>'
     + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
@@ -4941,7 +5250,7 @@ function ppaItems(codes){
     // se caía del embudo y de la cobertura por categoría, justo los que están en quiebre total.
     var puB=s.pu||0, puO=s.pu_oc||0, puR=puB>0?puB:puO;
     out.push({sku:c, desc:s.desc||(pe?pe.nom:''), comp:s.comp||'—', grupo:s.grupo||'—', und:(pe&&pe.und)||'', stock:s.stock||0, val:s.val||0,
-      oc:s.oc||0, pu:puR, pu_bod:puB, pu_oc:puO, c4_real:s.c4_real||0, cob:cob, demProm:demProm,
+      oc:s.oc||0, pu:puR, pu_bod:puB, pu_oc:puO, c4_real:s.c4_real||0, c8_real:s.c8_real||0, cob:cob, demProm:demProm,
       lt:s.lt||0, ltw:(s.lt>0?Math.ceil(s.lt/7):0), lt_src:s.lt_src||'', lt_low:!!s.lt_low});
   });
   return out;
@@ -4950,7 +5259,9 @@ function ppaBucketize(items){
   var buckets={}; COV_ORDER.forEach(function(k){buckets[k]={val:0,cnt:0,items:[]};});
   items.forEach(function(it){
     var k=covBucket(it.cob);
-    if(k==='Sin Plan'){ if(it.stock<=0) return; if(it.c4_real>0) k='Sin Plan c/Consumo'; }
+    // Ventana de 8 sem, igual que covCalc() — así el bucket y la columna Cons.8w del detalle
+    // compartido (covToggleDetail) cuentan la misma historia.
+    if(k==='Sin Plan'){ if(it.stock<=0) return; if(it.c8_real>0) k='Sin Plan c/Consumo'; }
     buckets[k].val+=it.val; buckets[k].cnt+=1; buckets[k].items.push(it);
   });
   var tot=COV_ORDER.reduce(function(a,k){return a+buckets[k].val;},0);
@@ -6335,6 +6646,8 @@ fetch('data.json?v='+Date.now())
     });
     // Comentarios TI (< 2 sem): carga backend → poda SKUs recuperados → rehidrata inputs abiertos
     ticComBackendLoad().then(function(){ ticComReconcile(); ticComHydrateOpen(); });
+    // Clasificación de stock muerto/descontinuado: hidrata desde la nube y recalcula KPIs+gráficos
+    deadBackendLoad().then(function(loaded){ if(loaded) buildKpiAv(); else deadRender(); });
 
     // Deep-link: si la URL trae #seccion, abrir esa pestaña (datos ya cargados).
     aplicarHash();
