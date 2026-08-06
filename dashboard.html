@@ -3731,9 +3731,9 @@ document.addEventListener('keydown', function(e){
 // el SKU no vuelve al consumo normal lo reclasifican como "Stock descontinuado", que se
 // descuenta del stock muerto en KPIs, gráficos y tabla por grupo.
 // Persistencia en la nube: Apps Script + Google Sheet (mismo patrón que Mermas / Comentarios TI).
-// ⬇️ Pegar la URL /exec del Web App tras desplegar apps_script_stock_muerto.gs.
+// ⬇️ URL /exec del Web App (apps_script_stock_muerto.gs). Conectada 2026-08-05.
 //    Vacío = modo solo-local (cada navegador ve su propia clasificación).
-var DEAD_BACKEND_URL = '';
+var DEAD_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyita36k6hzNo9gPK35IfgE74zRHi7jhoZAyhH0sLrqKNiOjgWX74OcfWCLGEMbalM7/exec';
 var DEAD_PIN  = '1234';             // el backend revalida este PIN (sincronizar con el .gs)
 var DEAD_LS   = 'dead_clasif_v1';
 var DEAD_OK   = false;
