@@ -3737,6 +3737,12 @@ var DEAD_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbyita36k6hzNo9gP
 var DEAD_PIN  = '1234';             // el backend revalida este PIN (sincronizar con el .gs)
 var DEAD_LS   = 'dead_clasif_v1';
 var DEAD_OK   = false;
+// Estado del backend para el indicador. Tri-estado a propósito: el GET a Apps Script tarda
+// ~2-3 s (cadena de redirects), y pintar «sin conexión» en rojo durante esa ventana en cada
+// carga hacía que el comprador reportara una falla inexistente.
+//   'local'    = sin URL configurada        'cargando' = GET en vuelo
+//   'ok'       = respondió                  'fail'     = falló de verdad
+var DEAD_STATE = 'local';
 var DEAD_OPTS = ['Mermar','Plan de Acción','Próximo a utilizar'];
 // Destinos que significan "no se volverá a utilizar" → pasan a Stock descontinuado.
 // Cambiar este mapa es lo único que hay que tocar para reasignar un destino a la otra categoría.
@@ -3750,7 +3756,8 @@ function deadIsDesc(sku){ return !!DEAD_DESC[deadDestino(sku)]; }
 
 // ── Backend ──
 function deadBackendLoad(){
-  if(!DEAD_BACKEND_URL) return Promise.resolve(false);
+  if(!DEAD_BACKEND_URL){ DEAD_STATE='local'; return Promise.resolve(false); }
+  DEAD_STATE = 'cargando'; deadRender();
   return fetch(DEAD_BACKEND_URL+'?v='+Date.now(), {method:'GET'})
     .then(function(r){ return r.json(); })
     .then(function(j){
@@ -3760,11 +3767,11 @@ function deadBackendLoad(){
           var c = j.dead[sku];
           DEADC[sku] = {destino:c.destino||'', coment:c.coment||'', usuario:c.usuario||'', ts:mcNormalizeTs(c.ts)};
         });
-        deadSaveLS(); DEAD_OK = true; return true;
+        deadSaveLS(); DEAD_OK = true; DEAD_STATE='ok'; return true;
       }
-      return false;
+      DEAD_STATE='fail'; return false;
     })
-    .catch(function(e){ console.warn('[dead] GET fail', e); return false; });
+    .catch(function(e){ console.warn('[dead] GET fail', e); DEAD_STATE='fail'; return false; });
 }
 function deadBackendSave(sku, destino, coment, usuario){
   if(!DEAD_BACKEND_URL) return Promise.resolve({ok:false, offline:true});
@@ -3869,9 +3876,13 @@ function deadRender(){
   tbD.innerHTML = lD.map(_deadRow).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:14px">Ningún SKU clasificado como descontinuado todavía</td></tr>';
   var DS = deadSplit();
   var pct = DS.val_tot>0 ? (DS.val_clasif/DS.val_tot*100) : 0;
-  var origen = DEAD_BACKEND_URL ? (DEAD_OK ? '<span style="color:var(--n)" title="Clasificación compartida en la nube">● nube</span>'
-                                           : '<span style="color:var(--q)" title="Backend no responde — se guarda solo local">● sin conexión</span>')
-                                : '<span style="color:var(--rT)" title="Sin backend configurado — la clasificación no se comparte">● solo local</span>';
+  var ORIGEN = {
+    ok:       '<span style="color:var(--n)" title="Clasificación compartida en la nube">● nube</span>',
+    cargando: '<span style="color:var(--muted)" title="Consultando el servidor…">◌ conectando…</span>',
+    fail:     '<span style="color:var(--q)" title="Backend no responde — se guarda solo local">● sin conexión</span>',
+    local:    '<span style="color:var(--rT)" title="Sin backend configurado — la clasificación no se comparte">● solo local</span>'
+  };
+  var origen = ORIGEN[DEAD_BACKEND_URL ? DEAD_STATE : 'local'] || ORIGEN.local;
   var cM = el('dead-cnt');
   if(cM){
     // El avance de clasificación se mide SIEMPRE sobre el universo completo; el buscador
