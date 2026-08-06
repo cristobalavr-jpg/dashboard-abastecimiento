@@ -433,13 +433,21 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 #rs-host .astrip{margin-top:14px;padding-top:13px;border-top:1px solid rgba(45,52,82,.9)}
 #rs-host .sig{margin-top:14px;padding:11px 14px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.3);border-left:3px solid #6366f1;border-radius:8px;font-size:.75rem;color:#b3bde0;line-height:1.55}
 #rs-host .sig b{color:#fff}
-#rs-host .chw{position:relative}
-#rs-host .chline{position:absolute;width:1px;background:rgba(255,255,255,.4);display:none;pointer-events:none;z-index:4}
-#rs-host .chtip{position:absolute;top:2px;display:none;background:#0d1120;border:1px solid #6366f1;border-radius:7px;padding:7px 11px;font-size:.66rem;line-height:1.45;color:#c9d3e8;pointer-events:none;white-space:nowrap;z-index:5;box-shadow:0 8px 24px rgba(0,0,0,.6)}
-#rs-host .chtip b{color:#fff;font-weight:800}
-#rs-host .chtip .tw2{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:800}
-#rs-host .chtip .tv{font-size:.9rem;font-weight:900;color:#fff}
-#rs-host .chtip .tx{color:#9fabc6}
+/* Motor de tooltip con crosshair. Nace en el Resumen (rsLine/rsCols) y lo reusan las
+   sparklines de Histórico de Inventarios → Por categoría (#ih-cats-grid). El manejador
+   es delegado y genérico (rsTip): basta emitir rect[data-tip][data-cx] dentro de .chw */
+#rs-host .chw,#ih-cats-grid .chw{position:relative}
+#rs-host .chline,#ih-cats-grid .chline{position:absolute;width:1px;background:rgba(255,255,255,.4);display:none;pointer-events:none;z-index:4}
+#rs-host .chtip,#ih-cats-grid .chtip{position:absolute;top:2px;display:none;background:#0d1120;border:1px solid #6366f1;border-radius:7px;padding:7px 11px;font-size:.66rem;line-height:1.45;color:#c9d3e8;pointer-events:none;white-space:nowrap;z-index:5;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+#rs-host .chtip b,#ih-cats-grid .chtip b{color:#fff;font-weight:800}
+#rs-host .chtip .tw2,#ih-cats-grid .chtip .tw2{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:800}
+#rs-host .chtip .tv,#ih-cats-grid .chtip .tv{font-size:.9rem;font-weight:900;color:#fff}
+#rs-host .chtip .tx,#ih-cats-grid .chtip .tx{color:#9fabc6}
+/* La sparkline mide 38px: el tooltip va DEBAJO para no tapar la línea que se inspecciona.
+   La tarjeta sube de z-index al hover para que no la pisen las tarjetas siguientes. */
+#ih-cats-grid .chtip{top:100%;margin-top:5px;white-space:normal;max-width:230px}
+#ih-cats-grid .ihcard:hover{z-index:6}
+#ih-cats-grid .ihcard{position:relative}
 @media(max-width:900px){#rs-host .hero,#rs-host .two,#rs-host .duo,#rs-host .mgrid{grid-template-columns:1fr}
   #rs-host .hv{border-right:none;border-bottom:1px solid rgba(45,52,82,.9);padding-right:0;padding-bottom:12px}}
 
@@ -608,6 +616,13 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
         </div>
         <div class="cw" id="ih-cw" style="height:280px"><canvas id="cIHist"></canvas></div>
         <div id="ih-cats-grid" style="display:none;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px"></div>
+        <div style="font-size:.63rem;color:var(--muted);margin-top:7px;line-height:1.45">
+          <span style="background:#3b2f6b;color:#c4b5fd;border:1px solid #5b4b9e;border-radius:3px;padding:0 4px;font-size:.55rem;font-weight:700">XLS</span>
+          Entre <b>sep-2025 y mar-2026</b> el valor de varias categor&#237;as viene del Excel <b>Stocks Pre-Mobidic</b> (un dato por mes),
+          porque en ese periodo la base MOBIDIC ten&#237;a categor&#237;as contaminadas. Efectos esperados: la l&#237;nea es <b>plana dentro de cada mes</b>
+          y hay <b>escalones en los cambios de mes</b>. Desde <b>abr-2026</b> la serie vuelve a ser 100% MOBIDIC &#8212; no leas la tendencia
+          a trav&#233;s del empalme W14&#8594;W15 2026.
+        </div>
       </div>
       <div class="stt" style="margin-top:8px">
         Variaci&#243;n entre semanas
@@ -3163,8 +3178,9 @@ function ihBuildChart(){
         grid:{color:'#2d3452'}}}}});
 }
 
-// Sparkline SVG (autoescala a su propio min/max) para las tarjetas por categoría
-function ihSparkline(vals,color){
+// Sparkline SVG (autoescala a su propio min/max) para las tarjetas por categoría.
+// `meta` (opcional) = {sems, cat, flags} → agrega zonas de hover con tooltip semana/monto.
+function ihSparkline(vals,color,meta){
   var pts=[]; vals.forEach(function(v,i){if(v!=null)pts.push([i,v]);});
   if(pts.length<2){return '<svg viewBox="0 0 100 40" preserveAspectRatio="none" style="width:100%;height:38px"></svg>';}
   var xs=pts.map(function(p){return p[0];}),ys=pts.map(function(p){return p[1];});
@@ -3179,10 +3195,36 @@ function ihSparkline(vals,color){
   var line=P.join(' ');
   var area='0,40 '+line+' 100,40';
   var end=P[P.length-1].split(',');
-  return '<svg viewBox="0 0 100 40" preserveAspectRatio="none" style="width:100%;height:38px;overflow:visible">'+
-    '<polygon points="'+area+'" fill="'+color+'" fill-opacity="0.12"/>'+
+  var g='<polygon points="'+area+'" fill="'+color+'" fill-opacity="0.12"/>'+
     '<polyline points="'+line+'" fill="none" stroke="'+color+'" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>'+
-    '<circle cx="'+end[0]+'" cy="'+end[1]+'" r="2.6" fill="'+color+'"/></svg>';
+    '<circle cx="'+end[0]+'" cy="'+end[1]+'" r="2.6" fill="'+color+'"/>';
+  // Zonas de hover: un rect por punto, ancho = paso entre puntos. El tooltip lo pinta
+  // rsTip() (manejador delegado, sección Resumen) leyendo data-tip/data-cx.
+  var hit='';
+  if(meta&&meta.sems){
+    var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
+    var bw=100/Math.max(1,pts.length-1);
+    pts.forEach(function(p,k){
+      var i=p[0],v=p[1],cx=parseFloat(P[k].split(',')[0]);
+      var s=meta.sems[i]||{};
+      var prev=k>0?pts[k-1][1]:null, d=(prev!=null)?(v-prev):null;
+      // Convención inventario: baja = verde (menos capital), sube = rojo
+      var dCol=(d==null||Math.abs(d)<1e-6)?'#9fabc6':(d>0?'#E24B4A':'#1D9E75');
+      var tip='<div class="tw2">'+esc(meta.cat)+'</div>'+
+        '<div class="tv">$'+fMM(v)+'</div>'+
+        '<div class="tx">W'+esc(s.sem)+(s.fecha?(' &middot; '+esc(s.fecha)):'')+'</div>'+
+        (d!=null?('<div class="tx" style="color:'+dCol+'">'+
+                  (Math.abs(d)<1e-6?'sin cambio':((d>0?'&#9650; +':'&#9660; -')+'$'+fMM(Math.abs(d))))+
+                  ' vs. dato anterior</div>'):'')+
+        ((meta.flags&&meta.flags[i])?'<div class="tx" style="color:#c4b5fd">XLS &middot; valor mensual del Excel Pre-Mobidic</div>':'');
+      hit+='<rect x="'+Math.max(0,cx-bw/2).toFixed(2)+'" y="0" width="'+bw.toFixed(2)+'" height="40"'+
+           ' fill="transparent" style="cursor:crosshair" data-cx="'+cx.toFixed(3)+
+           '" data-tip="'+tip.replace(/"/g,'&quot;')+'"></rect>';
+    });
+  }
+  var svg='<svg viewBox="0 0 100 40" preserveAspectRatio="none" style="width:100%;height:38px;overflow:visible">'+g+hit+'</svg>';
+  if(!hit) return svg;
+  return '<div class="chw">'+svg+'<div class="chline" style="top:0;bottom:0"></div><div class="chtip"></div></div>';
 }
 
 function ihBuildCatsGrid(sems){
@@ -3191,14 +3233,16 @@ function ihBuildCatsGrid(sems){
   sems.forEach(function(s){(s.cats||[]).forEach(function(c){catSet[c.label]=true;});});
   var catLabels=Object.keys(catSet);
   var cards=catLabels.map(function(lbl){
-    var series=sems.map(function(s){
+    var series=[],flags=[];
+    sems.forEach(function(s){
       var c=(s.cats||[]).find(function(x){return x.label===lbl;});
-      return c?c.val:null;
+      series.push(c?c.val:null);
+      flags.push((c&&c.x)?1:0);   // dato del Excel Pre-Mobidic (B.21)
     });
     var present=series.filter(function(v){return v!=null;});
     var first=present.length?present[0]:0, last=present.length?present[present.length-1]:0;
     var dv=last-first, dpct=first>0?(dv/first*100):(last>0?100:0);
-    return {lbl:lbl,series:series,first:first,last:last,dv:dv,dpct:dpct,absDv:Math.abs(dv)};
+    return {lbl:lbl,series:series,flags:flags,first:first,last:last,dv:dv,dpct:dpct,absDv:Math.abs(dv)};
   }).sort(function(a,b){return b.absDv-a.absDv;});
   var html=cards.map(function(r){
     // Convención inventario: baja = verde (menos capital), sube = ámbar/rojo (más capital)
@@ -3206,12 +3250,12 @@ function ihBuildCatsGrid(sems){
     var col=flat?'var(--muted)':(up?'var(--rT)':'var(--n)');
     var arrow=flat?'→':(up?'↑':'↓'), sign=r.dv>=0?'+':'';
     var esc=r.lbl.replace(/&/g,'&amp;').replace(/</g,'&lt;');
-    return '<div style="background:#161b2e;border:1px solid #2d3452;border-radius:8px;padding:9px 10px">'+
+    return '<div class="ihcard" style="background:#161b2e;border:1px solid #2d3452;border-radius:8px;padding:9px 10px">'+
       '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-bottom:5px">'+
         '<span style="font-size:.68rem;font-weight:600;color:#c0caf5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+esc+'">'+esc+'</span>'+
         '<span style="font-size:.7rem;font-weight:700;color:'+col+';white-space:nowrap">'+arrow+' '+sign+r.dpct.toFixed(1)+'%</span>'+
       '</div>'+
-      ihSparkline(r.series,flat?'#8892b0':(up?'#E24B4A':'#1D9E75'))+
+      ihSparkline(r.series,flat?'#8892b0':(up?'#E24B4A':'#1D9E75'),{sems:sems,cat:r.lbl,flags:r.flags})+
       '<div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);margin-top:4px">'+
         '<span>$'+fMM(r.first)+' → $'+fMM(r.last)+'</span>'+
         '<span style="color:'+col+';font-weight:600">'+sign+'$'+fMM(Math.abs(r.dv))+'</span>'+
@@ -3230,8 +3274,9 @@ function ihBuildComp(){
   }
   var semA=sems[idxA],semB=sems[idxB];
   el('ih-comp-lbl').textContent='W'+semA.sem+' ('+semA.fecha+') → W'+semB.sem+' ('+semB.fecha+')';
-  var cA={};(semA.cats||[]).forEach(function(c){cA[c.label]=c.val;});
-  var cB={};(semB.cats||[]).forEach(function(c){cB[c.label]=c.val;});
+  // xA/xB: categoría cuyo valor viene del Excel 'Stocks Pre-Mobidic' (sep-25 → mar-26)
+  var cA={},xA={};(semA.cats||[]).forEach(function(c){cA[c.label]=c.val;if(c.x)xA[c.label]=1;});
+  var cB={},xB={};(semB.cats||[]).forEach(function(c){cB[c.label]=c.val;if(c.x)xB[c.label]=1;});
   var allLbls=Object.keys(Object.assign({},cA,cB));
   var stored=(HIST_INV.deltas||[]).find(function(d){return d.de===semA.sem&&d.a===semB.sem;})||null;
   window._ihStoredDelta=stored;
@@ -3256,11 +3301,12 @@ function ihBuildComp(){
     var hasD=(catObjA&&catObjA.d&&catObjA.d.length)||(catObjB&&catObjB.d&&catObjB.d.length);
     var esc=lbl.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     var btn=(catStored||hasD)?'<button onclick="ihShowMovers(\''+esc+'\')" style="background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:4px;padding:1px 7px;font-size:.62rem;cursor:pointer">Ver SKUs</button>':'<span style="color:var(--muted);font-size:.65rem">—</span>';
-    return {lbl:lbl,va:va,vb:vb,dv:dv,dpct:dpct,col:col,sign:sign,btn:btn,absDv:Math.abs(dv)};
+    var xTag=(xA[lbl]||xB[lbl])?' <span title="Valor mensual tomado del Excel Stocks Pre-Mobidic (sep-2025 a mar-2026): en ese periodo la base MOBIDIC tenía categorías contaminadas. El detalle por SKU sigue siendo el crudo MOBIDIC y no cuadra con este monto." style="background:#3b2f6b;color:#c4b5fd;border:1px solid #5b4b9e;border-radius:3px;padding:0 4px;font-size:.55rem;font-weight:700;vertical-align:middle">XLS</span>':'';
+    return {lbl:lbl,va:va,vb:vb,dv:dv,dpct:dpct,col:col,sign:sign,btn:btn,xTag:xTag,absDv:Math.abs(dv)};
   }).sort(function(a,b){return b.absDv-a.absDv;});
   rows.forEach(function(r){
     html+='<tr>'+
-      '<td colspan="2">'+r.lbl+'</td>'+
+      '<td colspan="2">'+r.lbl+r.xTag+'</td>'+
       '<td style="text-align:right;color:var(--muted)">$'+fMM(r.va)+'</td>'+
       '<td style="text-align:right;color:var(--muted)">$'+fMM(r.vb)+'</td>'+
       '<td style="text-align:right;color:'+r.col+';font-weight:700">'+r.sign+'$'+fMM(Math.abs(r.dv))+(r.dv<0?' ↓':r.dv>0?' ↑':'')+'</td>'+
@@ -3303,7 +3349,11 @@ function ihShowMovers(label){
   if(!sorted||!sorted.length) return;
   el('ih-drw-title').textContent='Top movimientos SKU — '+label;
   var cobMap=window._pltCobMap||(window._pltCobMap=_buildPltCobMap());
-  var html='<table style="width:100%;font-size:.7rem"><thead><tr style="background:#232840">'+
+  // Si el monto de la categoría vino del Excel Pre-Mobidic, el detalle SKU es el crudo
+  // MOBIDIC del periodo contaminado: sirve para ver qué se movió, no para cuadrar el total.
+  var _cx=function(s){var c=(s.cats||[]).find(function(x){return x.label===label;});return c&&c.x;};
+  var html=(_cx(semA)||_cx(semB))?'<div style="background:#2a2352;border:1px solid #5b4b9e;color:#c4b5fd;border-radius:6px;padding:6px 9px;font-size:.66rem;margin-bottom:8px">⚠️ El monto de <b>'+label+'</b> en este periodo (sep-2025 a mar-2026) viene del Excel <b>Stocks Pre-Mobidic</b>. El detalle por SKU de abajo es el crudo MOBIDIC y <b>no suma ese monto</b> — úsalo sólo para identificar qué SKU se movió.</div>':'';
+  html+='<table style="width:100%;font-size:.7rem"><thead><tr style="background:#232840">'+
     '<th style="padding:4px 8px">SKU</th><th style="padding:4px 8px">Descripción</th>'+
     '<th style="padding:4px 8px;text-align:right">$ Sem. A</th>'+
     '<th style="padding:4px 8px;text-align:right">$ Sem. B</th>'+
