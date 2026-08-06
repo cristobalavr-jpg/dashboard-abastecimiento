@@ -31,3 +31,9 @@ jobs:
           path: .
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # Pages tarda >10 min en reportar "succeeded" en este repo aunque el
+          # contenido ya este servido. Con el default (600000) el action cancela
+          # un deploy que en realidad quedo aplicado. 30 min de margen.
+          timeout: 1800000
+          error_count: 20
