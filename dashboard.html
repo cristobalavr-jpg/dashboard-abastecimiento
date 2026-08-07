@@ -554,7 +554,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div style="background:rgba(201,120,36,.07);border:1px solid rgba(201,120,36,.28);border-radius:7px;padding:7px 11px;margin-bottom:8px;font-size:.66rem;color:#e0b183">
     Todos los SKUs <b>sin forecast</b> en SumExpl, que por eso no aparecen en «consumo real vs FC». Dos universos disjuntos: el archivo manual <b id="sfc-file">SKU sin FC.xlsx</b> (mayormente insumos ZINS; <b>Comprador</b> = el del propio archivo, no el maestro SKU_por_Comprador) y el universo de <b>Terceros e Insumos</b> (ZIME), cargado como <b>HECTOR</b>. Sin FC la única cobertura posible es por <b>consumo real</b>: stock ÷ promedio semanal de las últimas <b>4</b> y <b>12 semanas completas</b>. La <b>semana en curso está excluida</b> de ambas sumas (va parcial y inflaría la cobertura); se muestra igual, marcada con •. Ojo: el consumo de los ZIME se mide por <b>despacho desde el CD (mov. 601)</b>, no por consumo de planta. <b>OC tránsito</b> abre el detalle de las OC al hacer clic. Columnas con <span style="opacity:.6">⇅</span> ordenan al hacer clic.
   </div>
-  <div class="fr"><input type="text" class="si" id="sfcs" placeholder="Buscar por SKU o descripción..." oninput="sSFC(this.value)" style="width:320px"></div>
+  <div class="fr"><input type="text" class="si" id="sfcs" placeholder="Buscar por SKU o descripción..." oninput="sSFC(this.value)" style="width:320px"><input type="text" class="si" id="sfcoc" placeholder="Filtrar por N° de OC..." oninput="sSFCOC(this.value)" title="Muestra solo los SKU con una OC en tránsito cuyo N° de documento contenga el texto ingresado" style="width:220px"></div>
   <div class="tw" style="margin-bottom:6px;max-height:74vh;overflow:auto"><table id="sfc-table"><thead id="sfcth"></thead><tbody id="sfctb"></tbody></table></div>
   <div class="pag" id="sfcpag"></div>
   </div>
@@ -564,7 +564,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.25);border-radius:7px;padding:7px 11px;margin-bottom:8px;font-size:.66rem;color:#a4b4ce">
     Cruza stock por bodega y OC en tránsito con <b>consumo real semanal (últimas 12 sem)</b> y <b>FC semanal (próximas 12 sem)</b>. <b>Desv. %</b> = (ΣFC 4w − ΣReal 4w)/ΣReal 4w (Real 4w excluye la semana en curso): <span style="color:var(--mT)">+</span> = FC sobreestima (riesgo merma), <span style="color:var(--q)">−</span> = FC subestima (riesgo quiebre). <b>Cob.</b> en semanas. <b>OC tránsito</b> abre el detalle de las OC al hacer clic. Respeta filtro global de comprador y toggle Excluir PPA.
   </div>
-  <div class="fr"><input type="text" class="si" id="plts" placeholder="Buscar por SKU o descripción..." oninput="sPLT(this.value)" style="width:320px"></div>
+  <div class="fr"><input type="text" class="si" id="plts" placeholder="Buscar por SKU o descripción..." oninput="sPLT(this.value)" style="width:320px"><input type="text" class="si" id="pltoc" placeholder="Filtrar por N° de OC..." oninput="sPLTOC(this.value)" title="Muestra solo los SKU con una OC en tránsito cuyo N° de documento contenga el texto ingresado" style="width:220px"></div>
   <div class="tw" style="margin-bottom:6px;max-height:74vh;overflow:auto"><table id="plt-table"><thead id="pltth"></thead><tbody id="plttb"></tbody></table></div>
   <div class="pag" id="pltpag"></div>
   </div>
@@ -2014,7 +2014,7 @@ function rndFCW(){
 // Layout fila PLT: 0=sku 1=desc 2=um 3=comp 4=stock 5=scd 6=sq 7=blq 8=sh 9=oc
 //   10..21=cons12(12) 22..34=fc(13, incl. sem en curso) 35=fc4_sum 36=real4_sum 37=desv_pct
 //   38=cob_fc4 39=fc12_sum 40=cob_fc12 41=cob_fc12_oc 42=val_stock 43=val_oc
-var PLTF={s:'',p:1,sortCol:null,sortDir:1}; // sortCol = índice de columna de cobertura
+var PLTF={s:'',oc:'',p:1,sortCol:null,sortDir:1}; // sortCol = índice de columna de cobertura · oc = filtro por N° de OC
 var PLT_PER=50;
 var PLT_C0=10, PLT_F0=22; // offsets de las columnas semanales
 // Columnas congeladas (sticky left): sku, desc, um, comp, stock total
@@ -2029,9 +2029,12 @@ function pltFilter(){
   if(ppaActive()) lst=lst.filter(function(r){return !isPPA(r[0]);});
   var q=(PLTF.s||'').toLowerCase().trim();
   if(q) lst=lst.filter(function(r){return (r[0]||'').toString().toLowerCase().indexOf(q)>=0||(r[1]||'').toLowerCase().indexOf(q)>=0;});
+  var qo=(PLTF.oc||'').toLowerCase().trim();
+  if(qo) lst=lst.filter(function(r){return ocMatch(r[0],qo);});
   return lst;
 }
 function sPLT(v){PLTF.s=v;PLTF.p=1;rndPLT();}
+function sPLTOC(v){PLTF.oc=v;PLTF.p=1;rndPLT();}
 function gPPLT(p){PLTF.p=p;rndPLT();}
 // Orden por columna de cobertura (37=FC4w, 39=FC12w, 40=12w c/tránsito). Ciclo: asc → desc → sin orden.
 function pltSort(col){
@@ -2106,6 +2109,24 @@ function ocLines(sku){
   var s=String(sku);
   return OCM.rows.filter(function(r){return String(r[3])===s && Number(r[16]||0)!==0;})
     .sort(function(a,b){return String(b[6]||'').localeCompare(String(a[6]||''));});
+}
+// Índice SKU → N° de documentos de compra con cantidad pendiente (mismo universo que ocLines,
+// para que lo que filtra la casilla "Filtrar por N° de OC" sea exactamente lo que muestra el popup).
+function _ocDocMap(){
+  if(window._ocDocIdx) return window._ocDocIdx;
+  var m={};
+  if(OCM&&OCM.rows) OCM.rows.forEach(function(r){
+    if(Number(r[16]||0)===0) return;
+    var sku=String(r[3]||'').trim(); if(!sku) return;
+    (m[sku]||(m[sku]=[])).push(String(r[0]||'').toLowerCase());
+  });
+  return (window._ocDocIdx=m);
+}
+function ocMatch(sku,q){
+  if(!q) return true;
+  var d=_ocDocMap()[String(sku)]; if(!d) return false;
+  for(var i=0;i<d.length;i++) if(d[i].indexOf(q)>=0) return true;
+  return false;
 }
 function ocCell(sku,v,extra){
   var n=Number(v||0);
@@ -2409,7 +2430,7 @@ function rndPLT(){
   }).join('')||'<tr><td colspan="'+(10+nC+nF+12)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
   var ordTxt='';
   if(PLTF.sortCol!==null){var nm={38:'Cob. FC 4w',40:'Cob. FC 12w',41:'Cob. 12w c/tránsito'}[PLTF.sortCol]||'';ordTxt=' · orden: '+nm+(PLTF.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
-  var info='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(PLTF.s?' · búsqueda: "'+PLTF.s+'"':'')+ordTxt;
+  var info='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(PLTF.s?' · búsqueda: "'+PLTF.s+'"':'')+(PLTF.oc?' · OC: "'+PLTF.oc+'"':'')+ordTxt;
   if(el('plt-info')) el('plt-info').innerHTML=info;
   // Paginación (50 por página)
   var div=el('pltpag');
@@ -2443,7 +2464,7 @@ function expPLT(){
 // Layout fila SFC: 0=sku 1=desc 2=um 3=comp 4=stock 5=scd 6=sq 7=blq 8=sh 9=oc
 //   10..(9+nW)=consumo real semanal · B=10+nW:
 //   B+0=ΣReal4 B+1=CobReal4 B+2=ΣReal12 B+3=CobReal12 B+4=CobReal12 c/OC B+5=$stock B+6=$tránsito
-var SFCF={s:'',p:1,sortCol:null,sortDir:1};
+var SFCF={s:'',oc:'',p:1,sortCol:null,sortDir:1};
 var SFC_PER=50, SFC_C0=10, SFC_HH=28;
 var SFC_FZ=[{w:66,left:0},{w:190,left:66},{w:42,left:256},{w:90,left:298},{w:82,left:388}];
 function sfcB(){return SFC_C0+((SFC&&SFC.weeks)?SFC.weeks.length:0);} // offset del bloque resumen
@@ -2455,9 +2476,12 @@ function sfcFilter(){
   if(gCompFilter) lst=lst.filter(function(r){return r[3]===gCompFilter;});
   var q=(SFCF.s||'').toLowerCase().trim();
   if(q) lst=lst.filter(function(r){return (r[0]||'').toString().toLowerCase().indexOf(q)>=0||(r[1]||'').toLowerCase().indexOf(q)>=0;});
+  var qo=(SFCF.oc||'').toLowerCase().trim();
+  if(qo) lst=lst.filter(function(r){return ocMatch(r[0],qo);});
   return lst;
 }
 function sSFC(v){SFCF.s=v;SFCF.p=1;rndSFC();}
+function sSFCOC(v){SFCF.oc=v;SFCF.p=1;rndSFC();}
 function gPSFC(p){SFCF.p=p;rndSFC();}
 function sfcSort(col){
   if(SFCF.sortCol!==col){SFCF.sortCol=col;SFCF.sortDir=1;}
@@ -2556,7 +2580,7 @@ function rndSFC(){
   if(SFCF.sortCol!==null){var nmm={};nmm[B+1]='Cob. Real 4w';nmm[B+3]='Cob. Real 12w';nmm[B+4]='Cob. 12w c/tránsito';ordTxt=' · orden: '+(nmm[SFCF.sortCol]||'')+(SFCF.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
   var nT=lst.filter(function(r){return r[B+7]==='T';}).length;
   var mix=(nT&&nT<tot)?' ('+(tot-nT)+' archivo · '+nT+' Terceros e Insumos)':(nT===tot&&tot?' (Terceros e Insumos)':'');
-  if(el('sfc-info')) el('sfc-info').innerHTML='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+' sin FC'+mix+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(SFCF.s?' · búsqueda: "'+SFCF.s+'"':'')+ordTxt;
+  if(el('sfc-info')) el('sfc-info').innerHTML='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+' sin FC'+mix+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(SFCF.s?' · búsqueda: "'+SFCF.s+'"':'')+(SFCF.oc?' · OC: "'+SFCF.oc+'"':'')+ordTxt;
   var div=el('sfcpag');
   if(!div) return;
   if(pages<=1){div.innerHTML='<span class="pi">'+tot+' SKUs</span>';return;}
@@ -6682,7 +6706,7 @@ fetch('data.json?v='+Date.now())
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
     TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;SFC=_D.SFC||null;PPAP=_D.PPAP||null;LUXO=_D.LUXO||null;LLEG_PPA=_D.LLEG_PPA||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;CONAN=_D.CONSUMO_ANUAL||null;COVPTI=_D.COV_PTIMP||null;COV_HIST=_D.COV_HIST||null;RESUMEN=_D.RESUMEN||null;
-    window._vendorMap=null;window._pltCobMap=null;
+    window._vendorMap=null;window._pltCobMap=null;window._ocDocIdx=null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
     var _h=document.getElementById('hsem-txt');
