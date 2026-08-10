@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Abastecimiento — Semana 32 · 2026</title>
-<meta property="og:title" content="Dashboard Abastecimiento — Semana 32 · 2026">
+<title>Dashboard Abastecimiento — Semana 33 · 2026</title>
+<meta property="og:title" content="Dashboard Abastecimiento — Semana 33 · 2026">
 <meta property="og:description" content="Supply Chain · KPIs de inventario, mermas, capital inmovilizado, desviación de forecast y bloqueado">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
@@ -95,6 +95,28 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .pkc.s{background:rgba(55,138,221,.12);border-color:rgba(55,138,221,.45)}.pkc.s .pkn,.pkc.s .pkl{color:var(--s)}
 .pkc.c5{background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.45)}.pkc.c5 .pkn,.pkc.c5 .pkl{color:var(--v)}
 .pkc.so{background:rgba(36,120,201,.12);border-color:rgba(36,120,201,.45)}.pkc.so .pkn,.pkc.so .pkl{color:var(--so)}
+/* Chip de criticidad productiva en el drill-down del Comparativo (B.19.5 / B.20.3).
+   Escala de severidad propia: NO reutiliza los colores de cobertura (q/r/m/n/s) porque
+   no es un estado de stock — un SKU crítico puede estar perfectamente abastecido. */
+/* Dos chips = dos columnas visuales. Sin ancho fijo el de proveedor arranca donde
+   termina el de criticidad ("Crítico" vs "Bajo" vs "s/rol prod." miden distinto) y la
+   columna se ve dentada. Slots fijos: cada chip siempre empieza en la misma x. */
+.crw{display:flex;align-items:center;gap:5px}
+.crw>.crc{flex:0 0 74px;text-align:center;margin:0}
+.crw>.svc{flex:0 0 76px;text-align:center;margin:0}
+.crc{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.63rem;font-weight:800;letter-spacing:.02em;white-space:nowrap;border:1px solid}
+.crc.ph,.svc.ph{border-color:transparent;background:transparent}
+.crc.C{color:#e0576f;background:rgba(224,87,111,.14);border-color:rgba(224,87,111,.5)}
+.crc.N{color:#d9a441;background:rgba(217,164,65,.13);border-color:rgba(217,164,65,.42)}
+.crc.B{color:#6e7a99;background:rgba(110,122,153,.12);border-color:rgba(110,122,153,.35)}
+.crc.X{color:#7c8db5;background:transparent;border-color:rgba(124,141,181,.32);font-weight:600;font-style:italic}
+/* Sustituibilidad (B.7.9.6): nº de proveedores validados, en la misma celda. Más tenue
+   que el chip de criticidad — es el eje que MATIZA, no el titular. */
+.svc{display:inline-block;padding:1px 6px;border-radius:4px;font-size:.58rem;font-weight:700;white-space:nowrap;border:1px solid;vertical-align:middle}
+.svc.s1{color:#e08a57;background:rgba(224,138,87,.12);border-color:rgba(224,138,87,.45)}
+.svc.s2{color:#c9b45a;background:rgba(201,180,90,.10);border-color:rgba(201,180,90,.38)}
+.svc.sm{color:#5aa88a;background:rgba(90,168,138,.10);border-color:rgba(90,168,138,.36)}
+.svc.s0{color:#7c8db5;background:transparent;border-color:rgba(124,141,181,.28);font-weight:600;font-style:italic}
 /* Mini tarjetas KPI dentro de "Comparativo por Comprador" (B.19.4) — mismo lenguaje visual
    que las tarjetas grandes de arriba, en tamaño de celda y clicables (abren el detalle). */
 .mkc{display:inline-flex;align-items:center;justify-content:center;min-width:42px;padding:4px 9px;border-radius:6px;font-size:.8rem;font-weight:800;line-height:1.15;cursor:pointer;border:1px solid rgba(128,128,128,.25);background:rgba(0,0,0,.18);transition:transform .1s,filter .1s;user-select:none}
@@ -961,7 +983,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 
 
 // ── GLOBAL DATA NAMESPACE ───────────────────────────────────────────────────
-var R,SD,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT,SFC,INVCAT,HIST_INV,CONAN,COVPTI,COV_HIST,RESUMEN;
+var R,SD,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT,SFC,INVCAT,HIST_INV,CONAN,COVPTI,COV_HIST,RESUMEN,CRITM;
 var gCompFilter='';  // filtro global de comprador
 // Filtro global PPA (Pan de Pascua). Por defecto ON — replica el contrato histórico de B.9 reporte diario.
 var PPA_SET = new Set();
@@ -1807,6 +1829,57 @@ function kpCob(r,i){
   if(i===12 && (r[8]||0)<=0 && (r[11]||0)>0) return '0.00';
   return '—';
 }
+// ── Criticidad productiva en el drill-down (índices 20-23 de SD, ver B.19.5) ──
+// 20=code C|N|B|X · 21=exp_pct (% de producción comprometida) · 22=pt_n (PT distintos)
+// 23=sl (nivel de servicio con que el modelo dimensiona la banda).
+// 'X' = el SKU no participa en órdenes de fabricación: su quiebre no detiene una línea,
+// es venta perdida o servicio interno. NO es "criticidad baja" — es criticidad no
+// evaluable, y el modelo de Stock Óptimo ni siquiera usa este eje para él (fija el NS
+// por origen). Mostrarlo como "Bajo" invitaría a desabastecerlo a propósito.
+var CRLBL={C:'Crítico',N:'Medio',B:'Bajo',X:'s/rol prod.'};
+// Rango de severidad: menor = más crítico, para que el PRIMER clic en la columna deje
+// arriba lo que hay que mirar primero. 'X' al final: no es lo menos crítico, es lo no
+// evaluable, y no debe competir por la atención con un 'Bajo' medido.
+var CRORD={C:0,N:1,B:2,X:3};
+// Segundo eje, en la MISMA celda: proveedores validados en ME2M (B.7.9.6). El impacto
+// dice cuánto se cae si el SKU falta; la sustituibilidad dice qué tan fácil es evitarlo.
+// Un «Crítico» con 3 proveedores es un problema de compras; un «Crítico» con 1 es un
+// problema de continuidad operacional. Separados, cada eje decide mal.
+// null = el SKU no tiene OC en la ventana de ME2M · 0 = tiene OC pero ninguna con
+// recompra (compra única): NO es lo mismo, y por eso no comparten etiqueta.
+var SVLBL={0:'sin recompra',1:'exclusivo',2:'2 prov.'};
+function svCell(n){
+  // Slot siempre presente, aunque venga vacío: si se omitiera, la fila sin dato colapsaría
+  // el ancho y desalinearía la columna respecto de las que sí lo traen.
+  if(n===null||n===undefined) return '<span class="svc ph"></span>';
+  var k=(n>=3)?'m':String(n);
+  var lbl=(n>=3)?(n+' prov.'):SVLBL[n];
+  var t={0:'Tiene OC pero ningún proveedor con recompra: una sola compra, sin fuente consolidada.',
+         1:'Mono-fuente: un único proveedor validado. Su falla no tiene plan B inmediato.',
+         2:'Dos proveedores validados: hay alternativa homologada.'}[n]
+        || (n+' proveedores validados: fuente múltiple, riesgo de continuidad bajo.');
+  t+=' Validado = ≥2 OC en fechas distintas y ≥5% del volumen comprado del SKU (ME2M); '+
+     'una OC aislada de bajo volumen es muestra o prueba industrial, no homologación.';
+  return '<span class="svc s'+k+'" title="'+t+'">'+lbl+'</span>';
+}
+function crCell(r){
+  var c=r[20], sv=svCell(r[24]), ch;
+  if(!c){
+    ch='<span class="crc ph" style="color:#5a627d">—</span>';
+  }else{
+    var ex=r[21], pn=r[22], sl=r[23], t;
+    if(c==='X'){
+      t='No participa en órdenes de fabricación (mercadería de reventa o insumo indirecto). '+
+        'Su nivel de servicio lo fija el origen, no la criticidad productiva.';
+    }else{
+      t='Compromete el '+(ex!==null&&ex!==undefined?Number(ex).toFixed(2):'?')+'% de la producción'+
+        ' · presente en '+(pn||0)+' producto(s) terminado(s) distinto(s)';
+    }
+    if(sl) t+=' · NS objetivo '+(sl*100).toFixed(0)+'%';
+    ch='<span class="crc '+c+'" title="'+t+'">'+CRLBL[c]+'</span>';
+  }
+  return '<span class="crw">'+ch+sv+'</span>';
+}
 function kpiRows(comp,key){
   var rows=(SD[comp]&&SD[comp][key])?SD[comp][key].slice():[];
   // Respetar el toggle global PPA (Pan de Pascua). SD[comp][key] viene precalculado
@@ -1840,9 +1913,17 @@ function kpopRender(){
   head.innerHTML='<tr>'+KPOP.cols.map(function(c,i){
     var act=(KPOP.sc===i);
     var ar=act?(KPOP.sd===1?' ▲':' ▼'):(c.s?' <span style="opacity:.45">⇅</span>':'');
-    return '<th style="'+TH+';text-align:'+(c.n?'right':'left')+(c.s?';cursor:pointer':'')+
+    // Por defecto el encabezado sigue a `c.n` (numérica → derecha), que es lo correcto
+    // mientras la celda también lo siga. Las columnas que rompen esa relación —ordenan
+    // por un valor numérico pero pintan contenido alineado a la izquierda, como
+    // Criticidad·Prov.— declaran `ha` (alineación propia) y `hw` (ancho del bloque de
+    // contenido) para centrar el título sobre los chips en vez de sobre la celda entera.
+    var hal=c.ha||(c.n?'right':'left');
+    var lbl=c.hw?('<span style="display:inline-block;width:'+c.hw+'px;text-align:center">'+c.h+ar+'</span>')
+                :(c.h+ar);
+    return '<th style="'+TH+';text-align:'+hal+(c.s?';cursor:pointer':'')+
            (act?';color:#c0caf5':'')+'"'+(c.s?' onclick="kpopSort('+i+')"':'')+
-           (c.t?' title="'+c.t+'"':'')+'>'+c.h+ar+'</th>';
+           (c.t?' title="'+c.t+'"':'')+'>'+lbl+'</th>';
   }).join('')+'</tr>';
   body.innerHTML=rows.map(function(r){
     return '<tr style="border-bottom:1px solid rgba(45,52,82,.4)">'+KPOP.cols.map(function(c){
@@ -1901,6 +1982,20 @@ function opKpi(comp,key){
     {h:'Descripción',n:false,s:true, v:function(r){return r[1];},
        f:function(r){return r[1]+(((r[11]||0)>0)?'':' <span style="font-size:.6rem;font-weight:800;color:#d99a52;background:rgba(201,120,36,.14);border:1px solid rgba(201,120,36,.45);border-radius:4px;padding:1px 5px;margin-left:5px;white-space:nowrap">sin FC</span>');}},
     {h:'UNM',        n:false,s:false,v:function(r){return r[18]||'';}, f:function(r){return r[18]||'—';}},
+    // Criticidad productiva: ordena por severidad (Crítico→Bajo), no alfabéticamente,
+    // que es como el planificador prioriza a quién atender primero dentro del bucket.
+    // Dos ejes en una columna, y el orden los respeta en cascada: primero la severidad
+    // del impacto, y dentro de cada nivel primero lo mono-fuente. Un Crítico exclusivo
+    // encabeza la lista; un Crítico con 3 proveedores validados no debería competir con él.
+    // ha/hw: el título se centra sobre el bloque de chips (74+5+76 = 155 px), no sobre la
+    // celda. Ordena por valor numérico pero su contenido va a la izquierda, así que sin
+    // esto el encabezado se iría a la derecha y quedaría desalineado de sus propios datos.
+    {h:'Criticidad · Prov.', n:true, s:true, st:';text-align:left', ha:'left', hw:155,
+       t:'Dos ejes. Impacto: cuánta producción se cae si el SKU falta (explosión COOIS). Proveedores: cuántas fuentes validadas tiene en ME2M — validado = ≥2 OC en fechas distintas y ≥5% del volumen (una OC aislada es muestra o prueba, no homologación).',
+       v:function(r){ if(!r[20]&&r[24]===null) return null;
+         var a=r[20]?CRORD[r[20]]:3, n=r[24];
+         var b=(n===1)?0:(n===0?1:(n===2?2:(n>=3?3:4)));
+         return a*10+b; }, f:crCell},
     {h:'Comprador',  n:false,s:true, v:function(r){return r[4];},
        f:function(r){return '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(CC[r[4]]||'#8892b0')+';margin-right:5px;vertical-align:middle"></span>'+r[4];}},
     {h:'Stock total',n:true, s:true, v:function(r){return kpVal(r,8);}, f:function(r){return f0(r[8]);}},
@@ -1910,7 +2005,16 @@ function opKpi(comp,key){
   if(key==='c5') cols.push(mk('Cob. 4w c/tránsito',13,'var(--v)','(Stock + OC) ÷ FC promedio semanal 4 sem — es la métrica que define este bucket'));
   cols.push(mk('Cob. FC 12w',        19,'#c0caf5','Stock ÷ FC promedio semanal de las próximas 12 sem (sin OC en tránsito)'));
   cols.push(mk('Cob. 12w c/tránsito',14,'var(--so)','(Stock + OC) ÷ FC promedio semanal de las próximas 12 sem'));
-  KPOP={rows:rows,cols:cols,title:comp+' — '+lbl,def:DEFS[key]||'',col:CC[comp]||'#fff',sc:null,sd:1};
+  // La criticidad no la calcula este pipeline: se lee de stock_optimo.json, que se
+  // regenera aparte. Se declara su fecha para que no se lea como dato de hoy.
+  var nota=DEFS[key]||'';
+  if(CRITM&&CRITM.generado){
+    nota+='<div style="margin-top:5px;font-size:.66rem;color:#6e7a99">'+
+      'Criticidad productiva: impacto sobre las unidades de producto terminado si el SKU falta '+
+      '(explosión COOIS) · calculada al '+CRITM.generado+
+      (CRITM.sem?(' · SEM '+CRITM.sem):'')+'</div>';
+  }
+  KPOP={rows:rows,cols:cols,title:comp+' — '+lbl,def:nota,col:CC[comp]||'#fff',sc:null,sd:1};
   kpopShow();
 }
 
@@ -6705,7 +6809,7 @@ fetch('data.json?v='+Date.now())
     R=_D.R;SD=_D.SD;G=_D.G;GR=_D.GR;GD=_D.GD;
     TM=_D.TM;TA=_D.TA;TC=_D.TC;DC=_D.DC;TP=_D.TP;
     CAP=_D.CAP;BIAS=_D.BIAS;ROT=_D.ROT;SD2=_D.SD2;SKUS=_D.SKUS||[];BLOQ=_D.BLOQ;SEM=_D.SEM;
-    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;SFC=_D.SFC||null;PPAP=_D.PPAP||null;LUXO=_D.LUXO||null;LLEG_PPA=_D.LLEG_PPA||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;CONAN=_D.CONSUMO_ANUAL||null;COVPTI=_D.COV_PTIMP||null;COV_HIST=_D.COV_HIST||null;RESUMEN=_D.RESUMEN||null;
+    TI=_D.TI||null;FCW=_D.FCW||null;OCM=_D.OCM||null;PLT=_D.PLT||null;SFC=_D.SFC||null;PPAP=_D.PPAP||null;LUXO=_D.LUXO||null;LLEG_PPA=_D.LLEG_PPA||null;INVCAT=_D.INVCAT||null;HIST_INV=_D.HIST_INV||null;CONAN=_D.CONSUMO_ANUAL||null;COVPTI=_D.COV_PTIMP||null;COV_HIST=_D.COV_HIST||null;RESUMEN=_D.RESUMEN||null;CRITM=_D.CRIT_META||null;
     window._vendorMap=null;window._pltCobMap=null;window._ocDocIdx=null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
