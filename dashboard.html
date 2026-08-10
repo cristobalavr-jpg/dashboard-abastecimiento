@@ -1041,7 +1041,10 @@ function aggR(skus){
   skus.forEach(function(s){
     var c=s.comp; if(!out[c]) return;
     out[c].valor_stock += s.val||0;
-    if((s.c4||0)>0) out[c].skus += 1;
+    // `sin_stock_sap` (granel/maxisaco/IBC sin stock en SAP, B.7.9.7) queda fuera del
+    // denominador igual que en Python. Si no, al activar un filtro el rollup se recalcula
+    // aquí y "SKUs c/FC" saltaría respecto de R —el mismo tipo de divergencia que B.7.9.3.
+    if((s.c4||0)>0 && s.alerta!=='sin_stock_sap') out[c].skus += 1;
     var a=s.alerta;
     if(a && out[c][a]!==undefined) out[c][a] += 1;
     if(s.a_coc5) out[c].coc5 += 1;
@@ -1358,7 +1361,7 @@ function showQSub(name){
   var m=map[name]; if(m){ var ifr=document.getElementById(m[0]); if(ifr) ifr.src=m[1]+'?v='+Date.now(); }
 }
 function kpill(c,l){return '<span class="kpill kp'+c+'">'+l+'</span>';}
-function pAlerta(a){var m={quiebre:'q Quiebre',riesgo:'r Riesgo',monitorear:'m Monitorear',normal:'n Normal',sobrestock:'s Sobrestock',sin_fc:'sf Sin FC'};var p=(m[a]||'sf ?').split(' ');return kpill(p[0],p.slice(1).join(' '));}
+function pAlerta(a){var m={quiebre:'q Quiebre',riesgo:'r Riesgo',monitorear:'m Monitorear',normal:'n Normal',sobrestock:'s Sobrestock',sin_fc:'sf Sin FC',sin_stock_sap:'sf Granel s/stock SAP'};var p=(m[a]||'sf ?').split(' ');return kpill(p[0],p.slice(1).join(' '));}
 
 // ── RESUMEN ──
 // ══════════════════════ RESUMEN (B.19) ══════════════════════
@@ -6470,9 +6473,14 @@ var TIC_MACRO_CFG = {
 };
 // Detección de productos importados por palabra clave en la descripción (B.11)
 var TIC_IMPORT_KW = ['VENESSA','VASO','TAPA'];
+// Excepciones: SKU que matchean una palabra clave pero son NACIONALES (confirmado por el comprador)
+var TIC_IMPORT_EXC = {'500055':1,'500146':1,'500147':1,'500157':1};
 function ticIsImportado(s){
+  if(TIC_IMPORT_EXC[s.sku]) return false;
   var d=(s.desc||'').toUpperCase();
-  return TIC_IMPORT_KW.some(function(kw){ return d.indexOf(kw)>=0; });
+  // La palabra clave debe INICIAR palabra (evita falsos positivos tipo PORTAVASOS vs VASO).
+  // Sufijos sí matchean (VASOS, TAPAS) porque sólo se ancla el inicio.
+  return TIC_IMPORT_KW.some(function(kw){ return new RegExp('(^|[^A-Z0-9])'+kw).test(d); });
 }
 // Estado del toggle "Excluir importados" (persistido) — default OFF (incluye importados)
 var ticExclImp = (function(){ try{ return localStorage.getItem('tic_excl_imp')==='1'; }catch(e){ return false; } })();
