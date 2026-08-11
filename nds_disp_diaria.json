@@ -1,17 +1,14 @@
 {
- "generado": "2026-08-10T11:02:03",
+ "generado": "2026-08-11T09:55:48",
  "dias": [
   {
    "fecha": "2025-12-30",
-   "disp": 93.8,
-   "n_solic": 448,
-   "n_cero": 28,
-   "n_excl_granel": 19,
+   "disp": 94.8,
+   "n_solic": 458,
+   "n_cero": 24,
+   "n_excl_granel": 9,
+   "n_anom_neg": 5,
    "skus_cero": [
-    {
-     "sku": "300045",
-     "desc": "LEVADURA PASTA 500"
-    },
     {
      "sku": "300071",
      "desc": "NUEZ MOSCADA POLVO"
@@ -37,14 +34,6 @@
      "desc": "PIMENTON ROJO ENTERO"
     },
     {
-     "sku": "300201",
-     "desc": "HIELO"
-    },
-    {
-     "sku": "300218",
-     "desc": "HARINA FUERZA GRA ESPONJA"
-    },
-    {
      "sku": "300247",
      "desc": "COLORANTE GLASE ROJO NAVIDAD"
     },
@@ -67,10 +56,6 @@
     {
      "sku": "300506",
      "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
-    },
-    {
-     "sku": "300557",
-     "desc": "ALCOHOL CEREAL NEUTRO IBC"
     },
     {
      "sku": "400039",
@@ -125,19 +110,12 @@
   },
   {
    "fecha": "2026-01-06",
-   "disp": 94.4,
-   "n_solic": 429,
-   "n_cero": 24,
-   "n_excl_granel": 18,
+   "disp": 95.4,
+   "n_solic": 438,
+   "n_cero": 20,
+   "n_excl_granel": 9,
+   "n_anom_neg": 4,
    "skus_cero": [
-    {
-     "sku": "300039",
-     "desc": "SAL EXTRA FINA"
-    },
-    {
-     "sku": "300045",
-     "desc": "LEVADURA PASTA 500"
-    },
     {
      "sku": "300125",
      "desc": "FRUTILLA"
@@ -179,10 +157,6 @@
      "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
     },
     {
-     "sku": "300557",
-     "desc": "ALCOHOL CEREAL NEUTRO IBC"
-    },
-    {
      "sku": "400183",
      "desc": "ETIQ CAST VOLCAN CHOCOLATE 05.22"
     },
@@ -193,10 +167,6 @@
     {
      "sku": "400206",
      "desc": "ETIQ CAST MENDOCINO X3 (RAUCO) 01.23"
-    },
-    {
-     "sku": "400284",
-     "desc": "ETIQ SATO LOTE/CONSUMIR_CRISME (ROLLO)"
     },
     {
      "sku": "400291",
@@ -231,14 +201,15 @@
   },
   {
    "fecha": "2026-01-13",
-   "disp": 94.3,
-   "n_solic": 440,
-   "n_cero": 25,
-   "n_excl_granel": 18,
+   "disp": 95.1,
+   "n_solic": 449,
+   "n_cero": 22,
+   "n_excl_granel": 9,
+   "n_anom_neg": 5,
    "skus_cero": [
     {
-     "sku": "300045",
-     "desc": "LEVADURA PASTA 500"
+     "sku": "300062",
+     "desc": "MANTEQUILLA BARRA (GRANEL)"
     },
     {
      "sku": "300123",
@@ -247,10 +218,6 @@
     {
      "sku": "300157",
      "desc": "ALMIDON CLEARAM CH-20"
-    },
-    {
-     "sku": "300257",
-     "desc": "HARINA INTEGRAL TRIGO BLANCO MAX"
     },
     {
      "sku": "300306",
@@ -275,10 +242,6 @@
     {
      "sku": "300506",
      "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
-    },
-    {
-     "sku": "300557",
-     "desc": "ALCOHOL CEREAL NEUTRO IBC"
     },
     {
      "sku": "400083",
@@ -317,10 +280,6 @@
      "desc": "ETIQ CAST LOGO NAVIDAD 11.24"
     },
     {
-     "sku": "400374",
-     "desc": "PP ETIQ. PRODUCTO CALIPSO 80X100MM"
-    },
-    {
      "sku": "400448",
      "desc": "PP ETIQ. VERDE CLARO 80x100MM"
     },
@@ -341,19 +300,12 @@
   },
   {
    "fecha": "2026-01-20",
-   "disp": 96.5,
-   "n_solic": 453,
-   "n_cero": 16,
-   "n_excl_granel": 18,
+   "disp": 97.4,
+   "n_solic": 462,
+   "n_cero": 12,
+   "n_excl_granel": 9,
+   "n_anom_neg": 5,
    "skus_cero": [
-    {
-     "sku": "300045",
-     "desc": "LEVADURA PASTA 500"
-    },
-    {
-     "sku": "300201",
-     "desc": "HIELO"
-    },
     {
      "sku": "300318",
      "desc": "CILANTRO FRESCO"
@@ -383,10 +335,6 @@
      "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
     },
     {
-     "sku": "300557",
-     "desc": "ALCOHOL CEREAL NEUTRO IBC"
-    },
-    {
      "sku": "400083",
      "desc": "FILM BOPP35 210MM"
     },
@@ -397,10 +345,6 @@
     {
      "sku": "400331",
      "desc": "THERMAL TRANSFER RIBBON BLACK 30MMX700M"
-    },
-    {
-     "sku": "400345",
-     "desc": "ETIQ CAST LOGO NAVIDAD 11.24"
     },
     {
      "sku": "400492",
@@ -415,15 +359,12 @@
   },
   {
    "fecha": "2026-01-27",
-   "disp": 96.0,
-   "n_solic": 446,
-   "n_cero": 18,
-   "n_excl_granel": 19,
+   "disp": 96.5,
+   "n_solic": 456,
+   "n_cero": 16,
+   "n_excl_granel": 9,
+   "n_anom_neg": 4,
    "skus_cero": [
-    {
-     "sku": "300045",
-     "desc": "LEVADURA PASTA 500"
-    },
     {
      "sku": "300123",
      "desc": "PALTA"
@@ -451,10 +392,6 @@
     {
      "sku": "300506",
      "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
-    },
-    {
-     "sku": "300557",
-     "desc": "ALCOHOL CEREAL NEUTRO IBC"
     },
     {
      "sku": "400284",
@@ -497,26 +434,15 @@
   },
   {
    "fecha": "2026-02-03",
-   "disp": 95.7,
-   "n_solic": 446,
-   "n_cero": 19,
-   "n_excl_granel": 19,
+   "disp": 96.5,
+   "n_solic": 456,
+   "n_cero": 16,
+   "n_excl_granel": 9,
+   "n_anom_neg": 5,
    "skus_cero": [
-    {
-     "sku": "300045",
-     "desc": "LEVADURA PASTA 500"
-    },
     {
      "sku": "300215",
      "desc": "CITRIFI 200"
-    },
-    {
-     "sku": "300218",
-     "desc": "HARINA FUERZA GRA ESPONJA"
-    },
-    {
-     "sku": "300291",
-     "desc": "ALBAHACA FRESCA"
     },
     {
      "sku": "300328",
@@ -583,18 +509,15 @@
   },
   {
    "fecha": "2026-02-10",
-   "disp": 96.5,
-   "n_solic": 482,
-   "n_cero": 17,
-   "n_excl_granel": 20,
+   "disp": 97.0,
+   "n_solic": 493,
+   "n_cero": 15,
+   "n_excl_granel": 9,
+   "n_anom_neg": 4,
    "skus_cero": [
     {
      "sku": "300013",
      "desc": "PP CARDAMOMO"
-    },
-    {
-     "sku": "300045",
-     "desc": "LEVADURA PASTA 500"
     },
     {
      "sku": "300111",
@@ -603,10 +526,6 @@
     {
      "sku": "300155",
      "desc": "ESPINACA PICADA"
-    },
-    {
-     "sku": "300257",
-     "desc": "HARINA INTEGRAL TRIGO BLANCO MAX"
     },
     {
      "sku": "300291",
@@ -661,22 +580,15 @@
   },
   {
    "fecha": "2026-02-17",
-   "disp": 96.6,
-   "n_solic": 474,
-   "n_cero": 16,
-   "n_excl_granel": 19,
+   "disp": 97.1,
+   "n_solic": 484,
+   "n_cero": 14,
+   "n_excl_granel": 9,
+   "n_anom_neg": 3,
    "skus_cero": [
-    {
-     "sku": "300045",
-     "desc": "LEVADURA PASTA 500"
-    },
     {
      "sku": "300097",
      "desc": "SUCRALOSA GRANULADA POLVO"
-    },
-    {
-     "sku": "300257",
-     "desc": "HARINA INTEGRAL TRIGO BLANCO MAX"
     },
     {
      "sku": "300328",
@@ -735,15 +647,12 @@
   },
   {
    "fecha": "2026-02-24",
-   "disp": 96.3,
-   "n_solic": 482,
-   "n_cero": 18,
-   "n_excl_granel": 18,
+   "disp": 96.5,
+   "n_solic": 491,
+   "n_cero": 17,
+   "n_excl_granel": 9,
+   "n_anom_neg": 3,
    "skus_cero": [
-    {
-     "sku": "300045",
-     "desc": "LEVADURA PASTA 500"
-    },
     {
      "sku": "300318",
      "desc": "CILANTRO FRESCO"
@@ -817,15 +726,12 @@
   },
   {
    "fecha": "2026-03-03",
-   "disp": 95.1,
-   "n_solic": 474,
-   "n_cero": 23,
-   "n_excl_granel": 20,
+   "disp": 95.7,
+   "n_solic": 484,
+   "n_cero": 21,
+   "n_excl_granel": 10,
+   "n_anom_neg": 3,
    "skus_cero": [
-    {
-     "sku": "300045",
-     "desc": "LEVADURA PASTA 500"
-    },
     {
      "sku": "300169",
      "desc": "PEPINOS"
@@ -869,10 +775,6 @@
     {
      "sku": "300506",
      "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
-    },
-    {
-     "sku": "400054",
-     "desc": "FILM BOPP TPTE 300X0,035"
     },
     {
      "sku": "400215",
@@ -919,15 +821,12 @@
   },
   {
    "fecha": "2026-03-10",
-   "disp": 95.5,
-   "n_solic": 448,
-   "n_cero": 20,
-   "n_excl_granel": 18,
+   "disp": 96.1,
+   "n_solic": 457,
+   "n_cero": 18,
+   "n_excl_granel": 9,
+   "n_anom_neg": 4,
    "skus_cero": [
-    {
-     "sku": "300045",
-     "desc": "LEVADURA PASTA 500"
-    },
     {
      "sku": "300155",
      "desc": "ESPINACA PICADA"
@@ -969,10 +868,6 @@
      "desc": "PAPEL CALUGA BLCO. 71X42"
     },
     {
-     "sku": "400205",
-     "desc": "ETIQ CAST BROWNIE (RAUCO) 12.22"
-    },
-    {
      "sku": "400235",
      "desc": "ETIQ CAST MUFFIN CHOCO NEGRO P2 11.23"
     },
@@ -1009,10 +904,11 @@
   },
   {
    "fecha": "2026-03-17",
-   "disp": 95.2,
-   "n_solic": 480,
-   "n_cero": 23,
-   "n_excl_granel": 19,
+   "disp": 95.7,
+   "n_solic": 490,
+   "n_cero": 21,
+   "n_excl_granel": 9,
+   "n_anom_neg": 4,
    "skus_cero": [
     {
      "sku": "300029",
@@ -1037,10 +933,6 @@
     {
      "sku": "300291",
      "desc": "ALBAHACA FRESCA"
-    },
-    {
-     "sku": "300295",
-     "desc": "INTENS FRESHNES NG"
     },
     {
      "sku": "300314",
@@ -1069,10 +961,6 @@
     {
      "sku": "400123",
      "desc": "ESTUCHE CART DD SW MIGA AVE PALTA 07.21"
-    },
-    {
-     "sku": "400205",
-     "desc": "ETIQ CAST BROWNIE (RAUCO) 12.22"
     },
     {
      "sku": "400234",
@@ -1111,18 +999,15 @@
   },
   {
    "fecha": "2026-03-24",
-   "disp": 96.9,
-   "n_solic": 447,
-   "n_cero": 14,
-   "n_excl_granel": 18,
+   "disp": 97.1,
+   "n_solic": 456,
+   "n_cero": 13,
+   "n_excl_granel": 9,
+   "n_anom_neg": 3,
    "skus_cero": [
     {
      "sku": "300216",
      "desc": "ESTABILIZANTE BIZCOCHO"
-    },
-    {
-     "sku": "300257",
-     "desc": "HARINA INTEGRAL TRIGO BLANCO MAX"
     },
     {
      "sku": "300328",
@@ -1177,10 +1062,11 @@
   },
   {
    "fecha": "2026-03-31",
-   "disp": 95.4,
-   "n_solic": 455,
-   "n_cero": 21,
-   "n_excl_granel": 18,
+   "disp": 95.7,
+   "n_solic": 464,
+   "n_cero": 20,
+   "n_excl_granel": 9,
+   "n_anom_neg": 2,
    "skus_cero": [
     {
      "sku": "300065",
@@ -1235,10 +1121,6 @@
      "desc": "ETIQ CAST MUFFIN CHOCO NEGRO P2 11.23"
     },
     {
-     "sku": "400272",
-     "desc": "FILM CAST MINI BROWNIE  (IND)  05.24"
-    },
-    {
      "sku": "400291",
      "desc": "BOLSA CAS MIGA G BCO 05.24 PEBD40"
     },
@@ -1271,14 +1153,19 @@
   },
   {
    "fecha": "2026-04-07",
-   "disp": 96.6,
-   "n_solic": 476,
-   "n_cero": 16,
-   "n_excl_granel": 20,
+   "disp": 96.5,
+   "n_solic": 487,
+   "n_cero": 17,
+   "n_excl_granel": 9,
+   "n_anom_neg": 2,
    "skus_cero": [
     {
      "sku": "300035",
      "desc": "ESENCIA NAT NARANJITA CAKE LQ-147"
+    },
+    {
+     "sku": "300057",
+     "desc": "HARINA FUERZA GRANEL"
     },
     {
      "sku": "300087",
@@ -1345,15 +1232,12 @@
   },
   {
    "fecha": "2026-04-14",
-   "disp": 97.5,
-   "n_solic": 473,
-   "n_cero": 12,
-   "n_excl_granel": 20,
+   "disp": 97.9,
+   "n_solic": 483,
+   "n_cero": 10,
+   "n_excl_granel": 10,
+   "n_anom_neg": 2,
    "skus_cero": [
-    {
-     "sku": "300123",
-     "desc": "PALTA"
-    },
     {
      "sku": "300128",
      "desc": "OREGANO ENTERO"
@@ -1361,10 +1245,6 @@
     {
      "sku": "300216",
      "desc": "ESTABILIZANTE BIZCOCHO"
-    },
-    {
-     "sku": "300338",
-     "desc": "PALMITO RODAJA 400"
     },
     {
      "sku": "300503",
@@ -1403,10 +1283,11 @@
   },
   {
    "fecha": "2026-04-21",
-   "disp": 96.1,
-   "n_solic": 507,
-   "n_cero": 20,
-   "n_excl_granel": 20,
+   "disp": 96.3,
+   "n_solic": 517,
+   "n_cero": 19,
+   "n_excl_granel": 10,
+   "n_anom_neg": 1,
    "skus_cero": [
     {
      "sku": "300005",
@@ -1435,10 +1316,6 @@
     {
      "sku": "300318",
      "desc": "CILANTRO FRESCO"
-    },
-    {
-     "sku": "300338",
-     "desc": "PALMITO RODAJA 400"
     },
     {
      "sku": "300428",
@@ -1493,10 +1370,11 @@
   },
   {
    "fecha": "2026-04-28",
-   "disp": 96.2,
-   "n_solic": 496,
-   "n_cero": 19,
-   "n_excl_granel": 19,
+   "disp": 96.4,
+   "n_solic": 506,
+   "n_cero": 18,
+   "n_excl_granel": 9,
+   "n_anom_neg": 1,
    "skus_cero": [
     {
      "sku": "300123",
@@ -1513,10 +1391,6 @@
     {
      "sku": "300318",
      "desc": "CILANTRO FRESCO"
-    },
-    {
-     "sku": "300338",
-     "desc": "PALMITO RODAJA 400"
     },
     {
      "sku": "300428",
@@ -1579,10 +1453,11 @@
   },
   {
    "fecha": "2026-05-05",
-   "disp": 97.1,
-   "n_solic": 486,
+   "disp": 97.2,
+   "n_solic": 496,
    "n_cero": 14,
-   "n_excl_granel": 19,
+   "n_excl_granel": 9,
+   "n_anom_neg": 0,
    "skus_cero": [
     {
      "sku": "300037",
@@ -1645,10 +1520,11 @@
   },
   {
    "fecha": "2026-05-12",
-   "disp": 95.6,
-   "n_solic": 504,
-   "n_cero": 22,
-   "n_excl_granel": 20,
+   "disp": 95.9,
+   "n_solic": 514,
+   "n_cero": 21,
+   "n_excl_granel": 10,
+   "n_anom_neg": 1,
    "skus_cero": [
     {
      "sku": "300035",
@@ -1665,10 +1541,6 @@
     {
      "sku": "300351",
      "desc": "ESENCIA MIEL M138300-00 CRAMER"
-    },
-    {
-     "sku": "300387",
-     "desc": "WRAP ICING"
     },
     {
      "sku": "300428",
@@ -1744,9 +1616,10 @@
   {
    "fecha": "2026-05-19",
    "disp": 96.6,
-   "n_solic": 465,
+   "n_solic": 474,
    "n_cero": 16,
-   "n_excl_granel": 18,
+   "n_excl_granel": 9,
+   "n_anom_neg": 1,
    "skus_cero": [
     {
      "sku": "300128",
@@ -1817,10 +1690,11 @@
   },
   {
    "fecha": "2026-05-26",
-   "disp": 96.1,
-   "n_solic": 493,
+   "disp": 96.2,
+   "n_solic": 503,
    "n_cero": 19,
-   "n_excl_granel": 19,
+   "n_excl_granel": 9,
+   "n_anom_neg": 1,
    "skus_cero": [
     {
      "sku": "300174",
@@ -1903,11 +1777,16 @@
   },
   {
    "fecha": "2026-06-02",
-   "disp": 97.9,
-   "n_solic": 467,
-   "n_cero": 10,
-   "n_excl_granel": 17,
+   "disp": 97.7,
+   "n_solic": 476,
+   "n_cero": 11,
+   "n_excl_granel": 8,
+   "n_anom_neg": 0,
    "skus_cero": [
+    {
+     "sku": "300062",
+     "desc": "MANTEQUILLA BARRA (GRANEL)"
+    },
     {
      "sku": "300228",
      "desc": "ESENCIA VANIFLOR 206187"
@@ -1953,10 +1832,11 @@
   },
   {
    "fecha": "2026-06-09",
-   "disp": 95.8,
-   "n_solic": 502,
+   "disp": 95.9,
+   "n_solic": 512,
    "n_cero": 21,
-   "n_excl_granel": 20,
+   "n_excl_granel": 10,
+   "n_anom_neg": 0,
    "skus_cero": [
     {
      "sku": "300006",
@@ -2047,10 +1927,11 @@
   },
   {
    "fecha": "2026-06-16",
-   "disp": 97.0,
-   "n_solic": 503,
-   "n_cero": 15,
-   "n_excl_granel": 18,
+   "disp": 97.3,
+   "n_solic": 512,
+   "n_cero": 14,
+   "n_excl_granel": 9,
+   "n_anom_neg": 2,
    "skus_cero": [
     {
      "sku": "300036",
@@ -2075,10 +1956,6 @@
     {
      "sku": "300506",
      "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
-    },
-    {
-     "sku": "300554",
-     "desc": "PISTACHO CUBO"
     },
     {
      "sku": "400043",
@@ -2118,9 +1995,10 @@
   {
    "fecha": "2026-06-23",
    "disp": 97.3,
-   "n_solic": 513,
+   "n_solic": 523,
    "n_cero": 14,
-   "n_excl_granel": 19,
+   "n_excl_granel": 9,
+   "n_anom_neg": 2,
    "skus_cero": [
     {
      "sku": "300014",
@@ -2183,11 +2061,16 @@
   },
   {
    "fecha": "2026-06-30",
-   "disp": 96.3,
-   "n_solic": 485,
-   "n_cero": 18,
-   "n_excl_granel": 17,
+   "disp": 96.0,
+   "n_solic": 494,
+   "n_cero": 20,
+   "n_excl_granel": 8,
+   "n_anom_neg": 0,
    "skus_cero": [
+    {
+     "sku": "300062",
+     "desc": "MANTEQUILLA BARRA (GRANEL)"
+    },
     {
      "sku": "300157",
      "desc": "ALMIDON CLEARAM CH-20"
@@ -2219,6 +2102,10 @@
     {
      "sku": "300506",
      "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "300521",
+     "desc": "HARINA DEBIL GRANEL"
     },
     {
      "sku": "300529",
@@ -2265,10 +2152,11 @@
   },
   {
    "fecha": "2026-07-07",
-   "disp": 96.9,
-   "n_solic": 487,
+   "disp": 97.0,
+   "n_solic": 497,
    "n_cero": 15,
-   "n_excl_granel": 20,
+   "n_excl_granel": 10,
+   "n_anom_neg": 1,
    "skus_cero": [
     {
      "sku": "300005",
@@ -2335,10 +2223,11 @@
   },
   {
    "fecha": "2026-07-14",
-   "disp": 96.4,
-   "n_solic": 503,
-   "n_cero": 18,
-   "n_excl_granel": 20,
+   "disp": 96.7,
+   "n_solic": 513,
+   "n_cero": 17,
+   "n_excl_granel": 10,
+   "n_anom_neg": 2,
    "skus_cero": [
     {
      "sku": "300006",
@@ -2347,10 +2236,6 @@
     {
      "sku": "300111",
      "desc": "CEBOLLA PICADA CUBO"
-    },
-    {
-     "sku": "300123",
-     "desc": "PALTA"
     },
     {
      "sku": "300125",
@@ -2417,10 +2302,11 @@
   },
   {
    "fecha": "2026-07-21",
-   "disp": 97.4,
-   "n_solic": 503,
-   "n_cero": 13,
-   "n_excl_granel": 19,
+   "disp": 97.7,
+   "n_solic": 513,
+   "n_cero": 12,
+   "n_excl_granel": 9,
+   "n_anom_neg": 2,
    "skus_cero": [
     {
      "sku": "300035",
@@ -2451,10 +2337,6 @@
      "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
     },
     {
-     "sku": "300557",
-     "desc": "ALCOHOL CEREAL NEUTRO IBC"
-    },
-    {
      "sku": "400043",
      "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
     },
@@ -2479,10 +2361,11 @@
   },
   {
    "fecha": "2026-07-28",
-   "disp": 96.6,
-   "n_solic": 501,
-   "n_cero": 17,
-   "n_excl_granel": 18,
+   "disp": 97.1,
+   "n_solic": 511,
+   "n_cero": 15,
+   "n_excl_granel": 8,
+   "n_anom_neg": 3,
    "skus_cero": [
     {
      "sku": "300035",
@@ -2525,10 +2408,6 @@
      "desc": "KIWI PELADO"
     },
     {
-     "sku": "300557",
-     "desc": "ALCOHOL CEREAL NEUTRO IBC"
-    },
-    {
      "sku": "400043",
      "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
     },
@@ -2547,29 +2426,18 @@
     {
      "sku": "400529",
      "desc": "ETIQ CAST QUEQUE CHOC NARANJA 04,25"
-    },
-    {
-     "sku": "400663",
-     "desc": "BOLSA KING MOLDE HI LOW 03.26 PEBD40"
     }
    ],
    "origen": "snapshot_semanal"
   },
   {
    "fecha": "2026-08-10",
-   "disp": 96.3,
-   "n_solic": 460,
-   "n_cero": 17,
-   "n_excl_granel": 18,
+   "disp": 97.2,
+   "n_solic": 470,
+   "n_cero": 13,
+   "n_excl_granel": 8,
+   "n_anom_neg": 6,
    "skus_cero": [
-    {
-     "sku": "300001",
-     "desc": "ACEITE CON TOCOFEROL TAMBOR"
-    },
-    {
-     "sku": "300111",
-     "desc": "CEBOLLA PICADA CUBO"
-    },
     {
      "sku": "300184",
      "desc": "CEBOLLINES"
@@ -2593,14 +2461,6 @@
     {
      "sku": "300506",
      "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
-    },
-    {
-     "sku": "300554",
-     "desc": "PISTACHO CUBO"
-    },
-    {
-     "sku": "300557",
-     "desc": "ALCOHOL CEREAL NEUTRO IBC"
     },
     {
      "sku": "400043",
@@ -2629,6 +2489,68 @@
     {
      "sku": "400571",
      "desc": "FILM CAST BROOKIE (PACK4) 05.25"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-08-11",
+   "disp": 97.2,
+   "n_solic": 460,
+   "n_cero": 13,
+   "n_excl_granel": 8,
+   "n_anom_neg": 3,
+   "skus_cero": [
+    {
+     "sku": "300184",
+     "desc": "CEBOLLINES"
+    },
+    {
+     "sku": "300189",
+     "desc": "ESENCIA VAINILLA 242568"
+    },
+    {
+     "sku": "300305",
+     "desc": "SABORIZANTE POLLO EN POLVO"
+    },
+    {
+     "sku": "300306",
+     "desc": "ESPINACA EN POLVO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400054",
+     "desc": "FILM BOPP TPTE 300X0,035"
+    },
+    {
+     "sku": "400083",
+     "desc": "FILM BOPP35 210MM"
+    },
+    {
+     "sku": "400489",
+     "desc": "ETIQ CAST SW HAMBURGUESA CHEDDAR 03.25"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400495",
+     "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    },
+    {
+     "sku": "400665",
+     "desc": "BOLSA KING PROTEÍNA INTEGRAL 04.26 PEBD4"
     }
    ]
   }
