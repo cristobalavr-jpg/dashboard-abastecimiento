@@ -95,6 +95,36 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .pkc.s{background:rgba(55,138,221,.12);border-color:rgba(55,138,221,.45)}.pkc.s .pkn,.pkc.s .pkl{color:var(--s)}
 .pkc.c5{background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.45)}.pkc.c5 .pkn,.pkc.c5 .pkl{color:var(--v)}
 .pkc.so{background:rgba(36,120,201,.12);border-color:rgba(36,120,201,.45)}.pkc.so .pkn,.pkc.so .pkl{color:var(--so)}
+/* ── Tarjetas de perfil de riesgo (B.19.6) ──
+   Van a la DERECHA de las tarjetas de estado y separadas por un divisor: no son un
+   bucket más de cobertura. Las de la izquierda responden "¿cómo está el stock hoy?";
+   éstas responden "¿qué tan grave es que falte y qué tan fácil es reemplazarlo?".
+   Mezclarlas en la misma fila invitaría a sumarlas, y no son sumables entre sí. */
+.pkwrap{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin-bottom:14px}
+.pkwrap .pkr{margin-bottom:0}
+.pkgap{flex:0 0 26px}
+.pkgap i{display:block;width:1px;height:100%;margin:0 auto;background:linear-gradient(180deg,transparent,rgba(128,128,128,.35),transparent)}
+.pkbig{display:flex;flex-direction:column;justify-content:center;gap:7px;padding:9px 14px;border-radius:8px;background:rgba(0,0,0,.18);border:1px solid rgba(128,128,128,.25);cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
+.pkbig:hover{border-color:rgba(160,170,210,.55);background:rgba(255,255,255,.03)}
+.pkbt{display:flex;align-items:baseline;gap:8px;font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);white-space:nowrap}
+.pkbt b{font-size:1.05rem;font-weight:900;color:#e6ebff;letter-spacing:0}
+.pkbr{display:flex;flex-wrap:wrap;gap:5px}
+.pkbc{display:flex;flex-direction:column;align-items:center;gap:1px;padding:3px 8px;border-radius:5px;border:1px solid;cursor:pointer;transition:filter .12s,transform .1s;min-width:58px}
+.pkbc:hover{filter:brightness(1.35);transform:translateY(-1px)}
+.pkbc .v{font-size:.92rem;font-weight:900;line-height:1}
+.pkbc .k{font-size:.53rem;font-weight:700;opacity:.85;white-space:nowrap;line-height:1}
+.pkbc.z{opacity:.3;cursor:default}.pkbc.z:hover{filter:none;transform:none}
+/* Misma paleta que los chips .crc/.svc del drill-down: la tarjeta y el detalle tienen
+   que leerse como el mismo eje, no como dos escalas distintas. */
+.pkbc.k-C{color:#e0576f;background:rgba(224,87,111,.14);border-color:rgba(224,87,111,.5)}
+.pkbc.k-N{color:#d9a441;background:rgba(217,164,65,.13);border-color:rgba(217,164,65,.42)}
+.pkbc.k-B{color:#8b96b5;background:rgba(110,122,153,.12);border-color:rgba(110,122,153,.35)}
+.pkbc.k-X{color:#7c8db5;background:transparent;border-color:rgba(124,141,181,.32)}
+.pkbc.k-D,.pkbc.p-D{color:#5f6a86;background:transparent;border-color:rgba(95,106,134,.3)}
+.pkbc.p-1{color:#e08a57;background:rgba(224,138,87,.12);border-color:rgba(224,138,87,.45)}
+.pkbc.p-0{color:#7c8db5;background:transparent;border-color:rgba(124,141,181,.28)}
+.pkbc.p-2{color:#c9b45a;background:rgba(201,180,90,.10);border-color:rgba(201,180,90,.38)}
+.pkbc.p-m{color:#5aa88a;background:rgba(90,168,138,.10);border-color:rgba(90,168,138,.36)}
 /* Chip de criticidad productiva en el drill-down del Comparativo (B.19.5 / B.20.3).
    Escala de severidad propia: NO reutiliza los colores de cobertura (q/r/m/n/s) porque
    no es un estado de stock — un SKU crítico puede estar perfectamente abastecido. */
@@ -133,6 +163,10 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .mkc.sf{background:rgba(201,120,36,.14);border-color:rgba(201,120,36,.45);color:#d99a52}
 /* % del bucket sobre los SKUs c/FC del comprador — a la derecha de cada tarjeta */
 .mkp{font-size:.63rem;font-weight:700;color:var(--muted);margin-left:6px;white-space:nowrap}
+/* Fila de totales del Comparativo. Números planos (no tarjetas): el drill-down de un
+   total mezclaría compradores y perdería el dueño de cada SKU, que es justo lo que la
+   tabla existe para mostrar. Para ver el detalle transversal están las tarjetas B.19.6. */
+#ctf td{font-weight:800;color:#c8d2f0;border-top:2px solid var(--border);background:rgba(99,102,241,.06);padding-top:7px;padding-bottom:7px}
 .fr{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
 .sb{background:#232840;border:1px solid var(--border);border-radius:5px;padding:5px 11px;color:var(--muted);font-size:.71rem;cursor:pointer;transition:all .15s}
 .sb.active,.sb:hover:not(.active){background:#6366f1;border-color:#6366f1;color:#fff}
@@ -487,7 +521,11 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 #llegppa-table .vbtn.active{background:#2478c930;border-color:#2478c9;color:#5fb1ea}
 </style>
 <div id="t1" class="pg">
-  <div class="pkr" id="pkpis"></div>
+  <div class="pkwrap">
+    <div class="pkr" id="pkpis"></div>
+    <div class="pkgap" id="pkgap" style="display:none"><i></i></div>
+    <div class="pkr" id="pkpis2" style="margin-bottom:0"></div>
+  </div>
 
   <!-- Comparativo por Comprador — trasladado desde Resumen (B.19) -->
   <div class="stt">Comparativo por Comprador</div>
@@ -498,8 +536,8 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
     (Héctor: universo de Terceros e Insumos · resto: archivo <i>SKU sin FC.xlsx</i>).
   </div>
   <div class="tw" style="margin-bottom:14px"><table>
-    <thead><tr><th>Comprador</th><th>SKUs c/FC</th><th style="color:#d99a52">SKUs sin/FC</th><th style="color:var(--q)">Quiebre</th><th style="color:var(--rT)">Riesgo</th><th style="color:var(--mT)">Monitorear</th><th style="color:var(--n)">Normal</th><th style="color:var(--s)">Sobrestock</th><th style="color:var(--v)">Cob.c/OC&lt;5</th><th style="color:var(--so)">SobOC&gt;20</th><th>$Stock (MM)</th></tr></thead>
-    <tbody id="ctb"></tbody></table></div>
+    <thead><tr><th>Comprador</th><th>SKUs c/FC</th><th style="color:#d99a52">SKUs sin/FC</th><th style="color:var(--q)">Quiebre</th><th style="color:var(--rT)">Riesgo</th><th style="color:var(--mT)">Monitorear</th><th style="color:var(--n)">Normal</th><th style="color:var(--s)">Sobrestock</th><th style="color:var(--v)">Cob.c/OC&lt;5</th><th style="color:var(--so)">SobOC&gt;20</th><th title="Stock valorizado de TODOS los SKU ZMPR + ZEMP del comprador, con y sin forecast — no es el $ de la columna SKUs c/FC. Los ZINS/ZIME de Terceros e Insumos quedan fuera de este universo, así que el stock sin FC de Héctor no se refleja aquí.">$Stock (MM) <span style="opacity:.45;font-weight:400">ⓘ</span></th></tr></thead>
+    <tbody id="ctb"></tbody><tfoot id="ctf"></tfoot></table></div>
 
   <!-- Las pastillas "Alertas — Stock actual insuficiente", "Cobertura c/OC < 5 semanas" y
        "Sobrestock c/OC > 20 semanas" se eliminaron el 2026-08-03: la misma información se
@@ -1795,6 +1833,34 @@ function buildResumen(){
       '<td style="white-space:nowrap">'+mkc(c,'so',rv.sob_oc,    'so','SobOC>'+((UMBRALES[c]||UMBRALES.DEFAULT).sob_oc), den)+'</td>'+
       '<td>$'+fMM(rv.valor_stock)+'</td></tr>';
   }).join('');
+  // ── Fila de totales ──
+  // Los buckets q/r/m/n/s particionan el universo c/FC de CADA comprador, así que la
+  // suma por columna no duplica nada. Ojo con la lectura horizontal: SKUs c/FC y
+  // SKUs sin/FC son universos distintos y se solapan en unos pocos SKU (un SKU con FC
+  // parcial puede estar en la lista manual), por lo que su suma NO es el total de SKU
+  // gestionados — cada total vale para su propia columna. c5 y SobOC tampoco son
+  // sumables con los cinco estados: son cortes transversales sobre el mismo universo.
+  var tf=el('ctf');
+  if(tf){
+    var T={skus:0,nsf:0,quiebre:0,riesgo:0,monitorear:0,normal:0,sobrestock:0,coc5:0,sob_oc:0,valor_stock:0};
+    compsShow.forEach(function(c){
+      var rv=effR(c);
+      T.skus+=rv.skus||0; T.nsf+=sinFcRows(c).length;
+      ['quiebre','riesgo','monitorear','normal','sobrestock','coc5','sob_oc','valor_stock']
+        .forEach(function(k){T[k]+=rv[k]||0;});
+    });
+    var tden=T.skus||0;
+    var tc=function(v,color){
+      return '<td style="color:'+color+'">'+f0(Math.round(v))+
+             (tden&&Math.round(v)?'<span class="mkp">'+Math.round(v/tden*100)+'%</span>':'')+'</td>';
+    };
+    tf.innerHTML='<tr><td>TOTAL'+(gCompFilter?' ('+gCompFilter+')':' · '+compsShow.length+' compradores')+'</td>'+
+      '<td title="Suma de los SKU con forecast de todos los compradores mostrados">'+f0(T.skus)+'</td>'+
+      '<td style="color:#d99a52" title="Suma de los SKU planificados por consumo real (sin forecast). No es sumable con la columna anterior: son universos distintos con solape parcial.">'+f0(T.nsf)+'</td>'+
+      tc(T.quiebre,'var(--q)')+tc(T.riesgo,'var(--rT)')+tc(T.monitorear,'var(--mT)')+
+      tc(T.normal,'var(--n)')+tc(T.sobrestock,'var(--s)')+tc(T.coc5,'var(--v)')+tc(T.sob_oc,'var(--so)')+
+      '<td title="Universo distinto al de las columnas de SKU: todos los ZMPR + ZEMP, con y sin forecast.">$'+fMM(T.valor_stock)+'</td></tr>';
+  }
   // El Resumen es la vista del area completa: no depende del filtro de comprador.
   try{ rsRender(); }catch(e){ console.error('Resumen:', e); }
 }
@@ -1933,7 +1999,36 @@ function kpopRender(){
       return '<td style="padding:6px 9px;text-align:'+(c.n?'right':'left')+(c.st||'')+'">'+c.f(r)+'</td>';
     }).join('')+'</tr>';
   }).join('');
+  KPOP._r=rows;   // el Excel exporta EXACTAMENTE lo que se está viendo, en el mismo orden
   var n=el('kpop-n'); if(n) n.textContent=rows.length+' SKUs';
+}
+// Exportación del popup a Excel. Las celdas se pintan con HTML (chips de criticidad,
+// puntos de color); para la planilla se toma su texto plano. En columnas numéricas se
+// exporta el VALOR crudo, no el formateado: un "1.234" es-CL en Excel se leería como
+// 1,234. Los centinelas 999 ("sin FC") no son números reales y bajan como su texto ("—").
+function kpopTxt(h){
+  var d=document.createElement('div'); d.innerHTML=String(h);
+  return (d.textContent||'').replace(/\s+/g,' ').trim();
+}
+function kpopExp(){
+  var rows=KPOP._r||KPOP.rows;
+  if(!rows||!rows.length){alert('No hay filas que exportar.');return;}
+  var aoa=[KPOP.cols.map(function(c){return c.h;})].concat(rows.map(function(r){
+    return KPOP.cols.map(function(c){
+      var t=kpopTxt(c.f(r));
+      if(c.n){
+        var v=c.v(r);
+        if(typeof v==='number'&&isFinite(v)&&v<999&&/^-?[\d.,]+$/.test(t)) return v;
+      }
+      return t;
+    });
+  }));
+  try{
+    var ws=XLSX.utils.aoa_to_sheet(aoa);
+    var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Detalle');
+    var base=(KPOP.xls||kpopTxt(KPOP.title)).replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_|_$/g,'').toLowerCase();
+    XLSX.writeFile(wb,(base||'detalle')+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  }catch(e){alert('Error exportando: '+e.message);}
 }
 function kpopShow(){
   var ov=el('kpi-pop-ov'); if(ov) ov.remove();
@@ -1943,7 +2038,9 @@ function kpopShow(){
         '<div><div style="font-size:.9rem;font-weight:700;color:'+KPOP.col+'">'+KPOP.title+'</div>'+
         '<div style="font-size:.72rem;color:#8892b0;margin-top:4px">'+KPOP.def+'</div>'+
         '<div style="font-size:.7rem;color:#8892b0;margin-top:2px" id="kpop-n"></div></div>'+
-        '<button onclick="document.getElementById(\'kpi-pop-ov\').remove()" style="background:none;border:1px solid #2d3452;border-radius:5px;color:#8892b0;cursor:pointer;padding:3px 9px;font-size:.75rem;margin-left:12px;flex-shrink:0">✕ Cerrar</button>'+
+        '<div style="display:flex;gap:8px;align-items:center;margin-left:12px;flex-shrink:0">'+
+        '<button onclick="kpopExp()" style="background:#1D9E7530;border:1px solid #1D9E75;border-radius:5px;color:#1D9E75;cursor:pointer;padding:3px 9px;font-size:.75rem;white-space:nowrap">📥 Excel</button>'+
+        '<button onclick="document.getElementById(\'kpi-pop-ov\').remove()" style="background:none;border:1px solid #2d3452;border-radius:5px;color:#8892b0;cursor:pointer;padding:3px 9px;font-size:.75rem">✕ Cerrar</button></div>'+
       '</div>'+
       '<div style="flex:1;overflow:auto;padding:0">'+
         '<table style="width:100%;border-collapse:collapse;font-size:.72rem"><thead id="kpop-th"></thead><tbody id="kpop-tb"></tbody></table>'+
@@ -2039,6 +2136,122 @@ function sinFcRows(comp){
   });
   return out;
 }
+
+// ══════════ Tarjetas de perfil de riesgo: Criticidad y Proveedores (B.19.6) ══════════
+// Responden una pregunta distinta a las tarjetas de estado: no "¿cómo está el stock?"
+// sino "¿qué pasa si falta y qué tan fácil es reemplazarlo?". Un SKU Crítico mono-fuente
+// en Normal es más urgente de gestionar que un Bajo con 3 proveedores en Riesgo.
+//
+// Universo = EXACTAMENTE el del Comparativo por Comprador (SKUs c/FC): los cinco buckets
+// de estado (q/r/m/n/s) particionan df_fc en Python, así que su unión reconstruye el
+// universo sin duplicar. Se deduplica igual por SKU por seguridad (un SKU pertenece a un
+// solo comprador y a un solo bucket, pero la garantía la da el dato, no el código).
+// Respeta el filtro global de comprador y el toggle PPA — vía kpiRows(), la misma puerta
+// que usa el drill-down, para que los números nunca diverjan.
+var CR_ORD2=['C','N','B','X','-'];
+var CR_TXT={C:'Crítico',N:'Medio',B:'Bajo',X:'s/rol prod.','-':'sin dato'};
+var CR_TIP={
+  C:'Su quiebre compromete un porcentaje alto de la producción comprometida (explosión COOIS multinivel).',
+  N:'Impacto productivo intermedio.',
+  B:'Participa en producción, pero su falta compromete un volumen menor.',
+  X:'No participa en órdenes de fabricación (reventa o insumo indirecto): su quiebre no detiene una línea. NO es criticidad baja — es criticidad no evaluable.',
+  '-':'SKU sin criticidad calculada en stock_optimo.json (alta reciente o fuera del universo del modelo).'};
+var SV_ORD2=['1','0','2','m','-'];
+var SV_TXT={'1':'Exclusivo','0':'Sin recompra','2':'2 prov.','m':'3+ prov.','-':'Sin OC'};
+var SV_TIP={
+  '1':'Mono-fuente: un único proveedor validado. Su falla no tiene plan B inmediato.',
+  '0':'Tiene OC en la ventana ME2M pero ningún proveedor con recompra: compra única, sin fuente consolidada.',
+  '2':'Dos proveedores validados: hay alternativa homologada.',
+  'm':'Tres o más proveedores validados: riesgo de continuidad bajo.',
+  '-':'Sin OC en la ventana de ME2M — no hay evidencia de compra para evaluar la fuente.'};
+function crKey2(r){ return r[20]||'-'; }
+function svKey2(r){ var n=r[24]; if(n===null||n===undefined) return '-'; return (n>=3)?'m':String(n); }
+function critUniv(){
+  var comps=gCompFilter?[gCompFilter]:COMPS, seen={}, out=[];
+  comps.forEach(function(c){
+    ['q','r','m','n','s'].forEach(function(k){
+      kpiRows(c,k).forEach(function(r){ if(seen[r[0]]) return; seen[r[0]]=1; out.push(r); });
+    });
+  });
+  return out;
+}
+function rndCritCards(){
+  var host=el('pkpis2'); if(!host) return;
+  var gap=el('pkgap');
+  var u=critUniv();
+  if(!u.length){ host.innerHTML=''; if(gap) gap.style.display='none'; return; }
+  if(gap) gap.style.display='';
+  var mc={}, ms={};
+  CR_ORD2.forEach(function(k){mc[k]=0;}); SV_ORD2.forEach(function(k){ms[k]=0;});
+  u.forEach(function(r){ mc[crKey2(r)]++; ms[svKey2(r)]++; });
+  var chip=function(dim,k,n,cls,lbl,tip){
+    var z=n?'':' z';
+    return '<span class="pkbc '+cls+z+'" title="'+lbl+' — '+n+' SKU. '+tip+' (clic: ver detalle)"'+
+      (n?' onclick="event.stopPropagation();opCrit(\''+dim+'\',\''+k+'\')"':'')+
+      '><span class="v">'+f0(n)+'</span><span class="k">'+lbl+'</span></span>';
+  };
+  host.innerHTML=
+    '<div class="pkbig" onclick="opCrit(\'cr\',\'\')" title="Criticidad productiva de los '+u.length+' SKU con forecast. Clic: ver el detalle completo.">'+
+      '<div class="pkbt">Criticidad productiva <b>'+f0(u.length)+'</b> <span style="font-weight:600;letter-spacing:.2px">SKU c/FC</span></div>'+
+      '<div class="pkbr">'+CR_ORD2.map(function(k){
+        return chip('cr',k,mc[k],'k-'+(k==='-'?'D':k),CR_TXT[k],CR_TIP[k]);
+      }).join('')+'</div>'+
+    '</div>'+
+    '<div class="pkbig" onclick="opCrit(\'sv\',\'\')" title="Proveedores validados en ME2M de los '+u.length+' SKU con forecast. Clic: ver el detalle completo.">'+
+      '<div class="pkbt">Cantidad de proveedores <b>'+f0(u.length)+'</b> <span style="font-weight:600;letter-spacing:.2px">SKU c/FC</span></div>'+
+      '<div class="pkbr">'+SV_ORD2.map(function(k){
+        return chip('sv',k,ms[k],'p-'+(k==='-'?'D':k),SV_TXT[k],SV_TIP[k]);
+      }).join('')+'</div>'+
+    '</div>';
+}
+// Detalle de las tarjetas. dim='cr' (criticidad) | 'sv' (proveedores); key='' = todo.
+function opCrit(dim,key){
+  var rows=critUniv();
+  var isCr=(dim==='cr');
+  if(key) rows=rows.filter(function(r){ return (isCr?crKey2(r):svKey2(r))===key; });
+  var lbl=key?(isCr?CR_TXT[key]:SV_TXT[key]):'todos los grados';
+  var ttl=(isCr?'Criticidad productiva':'Cantidad de proveedores')+' — '+lbl+
+          (gCompFilter?' · '+gCompFilter:'');
+  var def=(isCr
+      ? 'Impacto sobre las unidades de producto terminado si el SKU falta (explosión COOIS multinivel, stock_optimo.json).'
+      : 'Proveedores validados en ME2M: ≥2 OC en fechas distintas y ≥5% del volumen comprado del SKU. Una OC aislada de bajo volumen es muestra o prueba industrial, no homologación.')+
+    ' Universo = SKUs con forecast del Comparativo por Comprador'+(ppaActive()?' (excluyendo PPA)':'')+'.'+
+    (key?'':' Ordenado por '+(isCr?'severidad':'fuente más frágil')+'.');
+  if(isCr&&CRITM&&CRITM.generado){
+    def+='<div style="margin-top:5px;font-size:.66rem;color:#6e7a99">Criticidad calculada al '+CRITM.generado+
+         (CRITM.sem?(' · SEM '+CRITM.sem):'')+'</div>';
+  }
+  var cols=[
+    {h:'SKU',        n:false,s:true, v:function(r){return r[0];}, f:function(r){return r[0];}},
+    {h:'Descripción',n:false,s:true, v:function(r){return r[1];}, f:function(r){return r[1];}},
+    {h:'UNM',        n:false,s:false,v:function(r){return r[18]||'';}, f:function(r){return r[18]||'—';}},
+    {h:'Grupo',      n:false,s:true, v:function(r){return r[3]||'';}, f:function(r){return r[3]||'—';}},
+    {h:'Criticidad · Prov.', n:true, s:true, st:';text-align:left', ha:'left', hw:155,
+       t:'Impacto: cuánta producción se cae si el SKU falta. Proveedores: fuentes validadas en ME2M.',
+       v:function(r){ var a=r[20]?CRORD[r[20]]:3, n=r[24];
+         var b=(n===1)?0:(n===0?1:(n===2?2:(n>=3?3:4)));
+         return isCr?(a*10+b):(b*10+a); }, f:crCell},
+    {h:'Estado',     n:false,s:true, v:function(r){return ALRTORD[r[15]]!==undefined?ALRTORD[r[15]]:9;},
+       f:function(r){return '<span class="mkc '+(ALRTCLS[r[15]]||'')+'" style="cursor:default;min-width:0;font-size:.66rem;padding:2px 7px">'+(r[15]||'—')+'</span>';}},
+    {h:'Comprador',  n:false,s:true, v:function(r){return r[4];},
+       f:function(r){return '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(CC[r[4]]||'#8892b0')+';margin-right:5px;vertical-align:middle"></span>'+r[4];}},
+    {h:'Stock total',n:true, s:true, v:function(r){return kpVal(r,8);}, f:function(r){return f0(r[8]);}},
+    {h:'OC tránsito',n:true, s:true, v:function(r){return kpVal(r,9);}, f:function(r){return f0(r[9]);}},
+    {h:'Cob. FC 4w', n:true, s:true, t:'Stock ÷ FC promedio semanal de las próximas 4 sem (sin OC)',
+       v:function(r){return kpVal(r,12);}, f:function(r){return kpCob(r,12);}, st:';color:#c0caf5'},
+    {h:'Cob. FC 12w',n:true, s:true, t:'Stock ÷ FC promedio semanal de las próximas 12 sem (sin OC)',
+       v:function(r){return kpVal(r,19);}, f:function(r){return kpCob(r,19);}, st:';color:#c0caf5'}
+  ];
+  KPOP={rows:rows,cols:cols,title:ttl,def:def,col:(isCr?'#e0576f':'#5aa88a'),
+        sc:key?null:4, sd:1,
+        xls:(isCr?'criticidad':'proveedores')+(key?'_'+lbl.replace(/[^a-zA-Z0-9]+/g,'_'):'')};
+  kpopShow();
+}
+// El estado de cobertura acompaña al perfil de riesgo: sin él, "Crítico exclusivo" no
+// dice si hay que actuar HOY. Orden = urgencia, no alfabético.
+var ALRTORD={quiebre:0,riesgo:1,monitorear:2,normal:3,sobrestock:4};
+var ALRTCLS={quiebre:'q',riesgo:'r',monitorear:'m',normal:'n',sobrestock:'s'};
+
 // ── PLANIFICADORES ──
 var aPlan='';
 function updPlan(){
@@ -2059,6 +2272,7 @@ function updPlan(){
       '<span style="font-size:.62rem;color:inherit;opacity:.8;margin-top:2px">'+pct+'%</span>'+
     '</div>';
   }).join('');
+  try{ rndCritCards(); }catch(e){ console.error('Tarjetas criticidad:', e); }
   if(typeof rndPLT==='function') rndPLT();
   if(typeof rndSFC==='function') rndSFC();
   if(typeof rndPPAP==='function') rndPPAP();
