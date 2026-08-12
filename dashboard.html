@@ -125,6 +125,19 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .pkbc.p-0{color:#7c8db5;background:transparent;border-color:rgba(124,141,181,.28)}
 .pkbc.p-2{color:#c9b45a;background:rgba(201,180,90,.10);border-color:rgba(201,180,90,.38)}
 .pkbc.p-m{color:#5aa88a;background:rgba(90,168,138,.10);border-color:rgba(90,168,138,.36)}
+/* ── Leyenda de indicadores (B.19.7) ──
+   Va SIEMPRE abierta, no dentro de una pastilla: una leyenda que hay que ir a buscar no
+   la lee nadie, y esta sección la abre gente que no es del área. Compactada 2026-08-12:
+   sólo los dos ejes y sus grados; el método y las advertencias viven en el `title` del
+   encabezado de cada columna, que no consume alto. */
+.lgd{background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.22);border-radius:9px;padding:9px 14px;margin-bottom:14px}
+.lgd-g{display:grid;grid-template-columns:1fr 1fr;gap:8px 26px}
+@media(max-width:900px){.lgd-g{grid-template-columns:1fr}}
+.lgd-t{font-size:.7rem;font-weight:800;color:#c8d2f0;margin-bottom:1px;cursor:help}
+.lgd-s{font-size:.62rem;color:var(--muted);line-height:1.45;margin-bottom:5px}
+.lgd-r{display:flex;align-items:center;gap:9px;padding:1px 0;font-size:.66rem;color:#a9b4d0;line-height:1.35}
+.lgd-r>span:first-child{flex:0 0 92px;text-align:center}
+.lgd-r b{color:#d4dcf5;font-weight:700}
 /* Chip de criticidad productiva en el drill-down del Comparativo (B.19.5 / B.20.3).
    Escala de severidad propia: NO reutiliza los colores de cobertura (q/r/m/n/s) porque
    no es un estado de stock — un SKU crítico puede estar perfectamente abastecido. */
@@ -526,6 +539,10 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
     <div class="pkgap" id="pkgap" style="display:none"><i></i></div>
     <div class="pkr" id="pkpis2" style="margin-bottom:0"></div>
   </div>
+
+  <!-- Leyenda de indicadores (B.19.7) — SIEMPRE visible: explica de una vez las tarjetas
+       de arriba, los colores del Comparativo y los chips del drill-down. -->
+  <div class="lgd" id="lgd"></div>
 
   <!-- Comparativo por Comprador — trasladado desde Resumen (B.19) -->
   <div class="stt">Comparativo por Comprador</div>
@@ -2252,6 +2269,68 @@ function opCrit(dim,key){
 var ALRTORD={quiebre:0,riesgo:1,monitorear:2,normal:3,sobrestock:4};
 var ALRTCLS={quiebre:'q',riesgo:'r',monitorear:'m',normal:'n',sobrestock:'s'};
 
+// ══════════ Leyenda de indicadores (B.19.7) ══════════
+// La sección la abre gente que no es del área (gerencia, planta, comercial) y hasta ahora
+// tenía que deducir qué significa "Monitorear" o "Crítico" desde el color. Dos ejes, dos
+// columnas, y el porcentaje de criticidad SIEMPRE traducido a unidades: "5% de la
+// producción" no le dice nada a nadie; "82.000 unidades por semana" sí.
+//
+// Producción de referencia: sale de CRIT_META (payload). El fallback corresponde al
+// modelo generado el 2026-08-07 (52.624.618 uds de PT final en 32 semanas de COOIS) y
+// sólo actúa hasta el próximo refresco del pipeline, que ya la trae calculada.
+//
+// Compactada el 2026-08-12 a pedido del usuario: se eliminaron las notas al pie, las dos
+// filas de cortes transversales (Cob.c/OC<5, SobOC), la fila «sin dato» y el desplegable
+// «Cómo se calcula». Las advertencias que vivían ahí —los % no se suman entre SKU, es un
+// techo de severidad y no una pérdida esperada— NO se perdieron: pasaron al `title` de
+// cada encabezado de columna, que no ocupa alto. El detalle completo está en B.7.9.10.
+var LGD_PROD_SEM_FB=1644519;
+function rndLeyenda(){
+  var host=el('lgd'); if(!host) return;
+  var u=UMBRALES[gCompFilter]||UMBRALES.DEFAULT;
+  var meta=(typeof CRITM!=='undefined'&&CRITM)?CRITM:{};
+  var ct=meta.cortes||{};
+  var cx=ct.critico_exp_pct||5, bx=ct.bajo_exp_pct||1, bn=ct.bajo_pt_distintos||3;
+  var cn=ct.critico_pt_distintos||40;
+  var psem=meta.prod_sem||LGD_PROD_SEM_FB;
+  var uds=function(p){ return f0(psem*p/100); };
+  // Fila: chip + texto. El chip es el MISMO componente que pinta la tabla, no una copia
+  // dibujada aparte — si cambia la paleta, la leyenda cambia sola y no queda mintiendo.
+  var rw=function(chip,txt){ return '<div class="lgd-r">'+chip+'<span>'+txt+'</span></div>'; };
+  var est=function(cls,lbl){ return '<span class="mkc '+cls+'" style="cursor:default;min-width:0;font-size:.66rem;padding:2px 7px;width:100%">'+lbl+'</span>'; };
+  var cri=function(cls,lbl){ return '<span class="crc '+cls+'" style="width:100%">'+lbl+'</span>'; };
+
+  // Los avisos de método viven en el `title` del encabezado: no ocupan alto y siguen
+  // a un hover de distancia. Sin esto, compactar sería perder los guardarraíles.
+  var tipA='Los cinco estados son excluyentes: cada SKU está en uno solo. '+
+    'Cob.c/OC<5 y SobOC son cortes transversales — un SKU puede estar en cualquiera de los cinco y además en ésos.'+
+    (gCompFilter?'':' Héctor (Terceros e Insumos) usa umbrales propios por su lead time más largo: 5 / 10 / 20 semanas.');
+  var tipB='Los porcentajes NO se suman entre SKU: casi todo lleva sal y casi todo lleva hielo, y son las mismas unidades. '+
+    'Es un techo de severidad, no una pérdida esperada: asume ausencia total del insumo. Sirve para priorizar, no para proyectar $. '+
+    'Un SKU también entra a Crítico si toca '+cn+'+ productos terminados distintos. '+
+    'No se recalcula en el refresco diario'+(meta.generado?(': modelo del '+meta.generado):'')+'.';
+
+  var A=
+    '<div class="lgd-t" title="'+tipA+'">Estado de cobertura — ¿cuánto stock me queda? <span style="opacity:.45;font-weight:400">ⓘ</span></div>'+
+    '<div class="lgd-s">Semanas de consumo que cubre el stock actual, <b>sin</b> contar las OC en camino.</div>'+
+    rw(est('q','Quiebre'),      '<b>Stock en cero</b> en todas las bodegas.')+
+    rw(est('r','Riesgo'),       'Menos de <b>'+u.riesgo+' semana'+(u.riesgo>1?'s':'')+'</b> de consumo.')+
+    rw(est('m','Monitorear'),   'Entre <b>'+u.riesgo+' y '+u.monitorear_hi+' semanas</b>. Alcanza, pero hay que seguirlo.')+
+    rw(est('n','Normal'),       'Entre <b>'+u.monitorear_hi+' y '+u.sobrestock+' semanas</b>. Situación sana.')+
+    rw(est('s','Sobrestock'),   'Más de <b>'+u.sobrestock+' semanas</b>. Capital inmovilizado de más.');
+
+  var B=
+    '<div class="lgd-t" title="'+tipB+'">Criticidad productiva — ¿qué pasa si falta? <span style="opacity:.45;font-weight:400">ⓘ</span></div>'+
+    '<div class="lgd-s">Producción de <b>producto terminado</b> que se detiene si el SKU no está (explosión de órdenes de fabricación). '+
+      'Total: <b>'+f0(psem)+' uds/semana</b>.</div>'+
+    rw(cri('C','Crítico'),  'Detiene <b>'+cx+'% o más</b> — al menos <b>'+uds(cx)+' uds/semana</b>. Ej.: SAL (95%), HARINA DE FUERZA (76%).')+
+    rw(cri('N','Medio'),    'Entre <b>'+bx+'% y '+cx+'%</b> ('+uds(bx)+' a '+uds(cx)+' uds/semana).')+
+    rw(cri('B','Bajo'),     '<b>'+bx+'% o menos</b> (bajo '+uds(bx)+' uds/semana) y en <b>'+bn+' productos o menos</b>.')+
+    rw(cri('X','s/rol prod.'),'<b>No participa en órdenes de fabricación</b> (reventa o insumo indirecto). No es «poco crítico»: es <b>no evaluable</b>.');
+
+  host.innerHTML='<div class="lgd-g"><div>'+A+'</div><div>'+B+'</div></div>';
+}
+
 // ── PLANIFICADORES ──
 var aPlan='';
 function updPlan(){
@@ -2273,6 +2352,7 @@ function updPlan(){
     '</div>';
   }).join('');
   try{ rndCritCards(); }catch(e){ console.error('Tarjetas criticidad:', e); }
+  try{ rndLeyenda(); }catch(e){ console.error('Leyenda:', e); }
   if(typeof rndPLT==='function') rndPLT();
   if(typeof rndSFC==='function') rndSFC();
   if(typeof rndPPAP==='function') rndPPAP();
