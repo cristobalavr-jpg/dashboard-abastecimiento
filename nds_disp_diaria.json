@@ -1,5 +1,5 @@
 {
- "generado": "2026-08-11T10:21:51",
+ "generado": "2026-08-12T09:49:37",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -2531,6 +2531,64 @@
     {
      "sku": "400054",
      "desc": "FILM BOPP TPTE 300X0,035"
+    },
+    {
+     "sku": "400083",
+     "desc": "FILM BOPP35 210MM"
+    },
+    {
+     "sku": "400489",
+     "desc": "ETIQ CAST SW HAMBURGUESA CHEDDAR 03.25"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400495",
+     "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    },
+    {
+     "sku": "400665",
+     "desc": "BOLSA KING PROTEÍNA INTEGRAL 04.26 PEBD4"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-08-12",
+   "disp": 97.4,
+   "n_solic": 463,
+   "n_cero": 12,
+   "n_excl_granel": 8,
+   "n_anom_neg": 3,
+   "skus_cero": [
+    {
+     "sku": "300184",
+     "desc": "CEBOLLINES"
+    },
+    {
+     "sku": "300305",
+     "desc": "SABORIZANTE POLLO EN POLVO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300348",
+     "desc": "GRANOFIBRA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "300575",
+     "desc": "QUESO MANTECOSO LAMINADO"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
     },
     {
      "sku": "400083",
