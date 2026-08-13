@@ -1,5 +1,5 @@
 {
- "generado": "2026-08-12T09:49:37",
+ "generado": "2026-08-13T10:00:28",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -2609,6 +2609,88 @@
     {
      "sku": "400665",
      "desc": "BOLSA KING PROTEÍNA INTEGRAL 04.26 PEBD4"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-08-13",
+   "disp": 96.2,
+   "n_solic": 472,
+   "n_cero": 18,
+   "n_excl_granel": 8,
+   "n_anom_neg": 5,
+   "skus_cero": [
+    {
+     "sku": "300111",
+     "desc": "CEBOLLA PICADA CUBO"
+    },
+    {
+     "sku": "300134",
+     "desc": "ENELDO"
+    },
+    {
+     "sku": "300160",
+     "desc": "ALBAHACA DESHIDRATADA PICADA"
+    },
+    {
+     "sku": "300184",
+     "desc": "CEBOLLINES"
+    },
+    {
+     "sku": "300233",
+     "desc": "AVELLANA CRUDA PICADA"
+    },
+    {
+     "sku": "300245",
+     "desc": "PIÑA TROZO KG"
+    },
+    {
+     "sku": "300295",
+     "desc": "INTENS FRESHNES NG"
+    },
+    {
+     "sku": "300305",
+     "desc": "SABORIZANTE POLLO EN POLVO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300348",
+     "desc": "GRANOFIBRA"
+    },
+    {
+     "sku": "300416",
+     "desc": "CLEMENTINA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "300529",
+     "desc": "KIWI PELADO"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400083",
+     "desc": "FILM BOPP35 210MM"
+    },
+    {
+     "sku": "400489",
+     "desc": "ETIQ CAST SW HAMBURGUESA CHEDDAR 03.25"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400495",
+     "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
     }
    ]
   }
