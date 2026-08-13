@@ -6428,6 +6428,28 @@ function ppaRenderBolsas(host){
     + '<div class="tw" style="overflow-x:auto"><table style="font-size:.7rem"><thead><tr><th>Cód.</th><th>Nombre bolsa</th>'+wkTh+'</tr></thead><tbody>'+body+'</tbody></table></div>'
     + '<div style="font-size:.62rem;color:var(--muted);margin-top:6px"><span style="background:var(--q);display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:4px"></span>Stock proyectado negativo (quiebre). "•" = semana en curso.</div></div>';
 }
+// ── Sello de trazabilidad del FC de la pestaña PPA ───────────────────────────
+// `plan_ppa.json` se regenera en cada refresco con el MISMO Consolidado que las pastillas
+// de Planificadores (actualizar_dashboard.py). Este sello lo hace verificable a simple
+// vista y grita si ambos quedaran desalineados: en ago-2026 la pestaña estuvo 2 semanas
+// mostrando un FC de julio (S34 de CHIPS DE CHOCOLATE decía 440 kg contra 161 kg reales)
+// porque el JSON era estático y nadie re-corrió el generador. Sin sello, no se nota.
+function ppaFcStamp(){
+  if(!PLAN_PPA) return '';
+  var nx=function(s){return String(s||'').replace(/\.xlsx?$/i,'').trim();};
+  var mio=nx(PLAN_PPA.fuente), plani=nx(PPAP && PPAP.plan_label);
+  var gen=PLAN_PPA.generado||'—';
+  var wk=(PLAN_PPA.weeks&&PLAN_PPA.weeks.length)?('S'+PLAN_PPA.weeks[0]+'–S'+PLAN_PPA.weeks[PLAN_PPA.weeks.length-1]):'—';
+  var mal = plani && mio && plani!==mio;
+  return '<div style="font-size:.6rem;margin-bottom:10px;padding:'+(mal?'7px 10px':'0')+';'
+    + (mal?'background:#3a2a12;border:1px solid #E8C52A;border-radius:8px;color:#E8C52A':'color:var(--muted)')+'">'
+    + (mal?'⚠️ <b>FC desalineado</b> — la pestaña PPA lee <b>'+mio+'</b> y Planificadores <b>'+plani
+          +'</b>. La regeneración diaria de <code>plan_ppa.json</code> falló; revisa el log de '
+          +'<code>actualizar_dashboard.py</code> antes de decidir compras con estos números.'
+        :'Demanda desde <b style="color:#c0caf5">'+(mio||'—')+'</b> · hoja <b>SumExpl</b> · horizonte <b>'+wk
+          +'</b> · explosión regenerada el <b>'+gen+'</b> (mismo FC que Planificadores).')
+    + '</div>';
+}
 function buildPPA(){
   var host=el('ppa-host'); if(!host) return;
   if(!PLAN_PPA){ host.innerHTML='<div style="color:var(--muted);padding:14px">No se pudo cargar el Plan PPA (<code>plan_ppa.json</code>). Corre <code>python Dashboard/generar_plan_ppa.py</code> y recarga.</div>'; return; }
@@ -6542,6 +6564,7 @@ function buildPPA(){
       + '</div>';
   }
   host.innerHTML=''
+    + ppaFcStamp()
     + '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin-bottom:16px">'
     +   kc('#378ADD','$'+fMM(valA),'Stock valorizado PPA','Todo el programa · '+itemsA.length+' SKU')
     +   kc('#38bdf8','$'+fMM(valExcl),'Stock valorizado Exclusivos PPA','Uso exclusivo · '+exclCnt+' SKU · no reutilizable')
