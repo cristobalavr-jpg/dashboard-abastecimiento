@@ -1,5 +1,5 @@
 {
- "generado": "2026-08-13T10:00:28",
+ "generado": "2026-08-14T15:21:54",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -2691,6 +2691,32 @@
     {
      "sku": "400495",
      "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-08-14",
+   "disp": 98.2,
+   "n_solic": 223,
+   "n_cero": 4,
+   "n_excl_granel": 3,
+   "n_anom_neg": 5,
+   "skus_cero": [
+    {
+     "sku": "300134",
+     "desc": "ENELDO"
+    },
+    {
+     "sku": "300160",
+     "desc": "ALBAHACA DESHIDRATADA PICADA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
     }
    ]
   }
