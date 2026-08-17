@@ -591,7 +591,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="plk-pill" onclick="togPlk('ppap')"><span class="plk-ico" id="ico-ppap">▸</span>Plan PPA por SKU — explosión de materia prima vs stock <span id="ppap-info" style="font-size:.65rem;color:var(--muted);font-weight:400;margin-left:4px"></span> <button class="pbtn" onclick="event.stopPropagation();expPPAP()" style="background:#B5762930;color:#d99a4e;border:1px solid #B57629">📥 Excel</button></div>
   <div class="plk-body" id="body-ppap" style="display:none">
   <div style="background:rgba(181,118,41,.07);border:1px solid rgba(181,118,41,.28);border-radius:7px;padding:7px 11px;margin-bottom:8px;font-size:.66rem;color:#d3b48c">
-    Universo = SKUs de la hoja <b>Ex.PPA</b> del <b id="ppap-plan-lbl">Consolidado Explosiones FC</b>. El <b>FC proyectado</b> es el volumen semanal de la hoja <b>SumExpl</b> (FC oficial consolidado): en SKU compartidos con otras líneas incluye <b>toda</b> la demanda, no solo la porción PPA. <b style="color:#e0a869">Semana Quiebre</b> = 1ª semana en que el <b>Stock Total</b> (sin OC) no cubre el FC PPA acumulado desde la semana en curso. <b style="color:#e0a869">Saldo Final</b> = Stock Total + OC tránsito − ΣFC PPA restante (semana en curso → cierre de año); <span style="color:var(--q)">negativo</span> = déficit a comprar, <span style="color:var(--mT)">positivo</span> = sobrante proyectado. <b style="color:#e0a869">Valor Saldo Final</b> = saldo × costo unitario. Columnas con <span style="opacity:.6">⇅</span> ordenan al hacer clic. Respeta el filtro global de comprador.
+    Universo = SKUs de la hoja <b>Ex.PPA</b> del <b id="ppap-plan-lbl">Consolidado Explosiones FC</b>. El <b>FC proyectado</b> es el volumen semanal de la hoja <b>SumExpl</b> (FC oficial consolidado): en SKU compartidos con otras líneas incluye <b>toda</b> la demanda, no solo la porción PPA. <b style="color:#e0a869">Semana Quiebre</b> = 1ª semana en que el <b>Stock Total</b> (sin OC) no cubre el FC PPA acumulado desde la semana en curso. <b style="color:#e0a869">Saldo Final</b> = Stock Total + OC tránsito − ΣFC PPA restante (semana en curso → cierre de año); <span style="color:var(--q)">negativo</span> = déficit a comprar, <span style="color:var(--mT)">positivo</span> = sobrante proyectado. <b style="color:#e0a869">Valor Saldo Final</b> = saldo × costo unitario. <b style="color:#e0a869">ΣFC Plan PPA</b> = volumen total del resto de la temporada (semana en curso → cierre del plan) y <b style="color:#e0a869">Cob. Plan PPA</b> = stock ÷ promedio semanal de ese mismo horizonte. Columnas con <span style="opacity:.6">⇅</span> ordenan al hacer clic. Respeta el filtro global de comprador.
   </div>
   <div class="fr"><input type="text" class="si" id="ppaps" placeholder="Buscar por SKU o descripción..." oninput="sPPAP(this.value)" style="width:320px"></div>
   <div class="tw" style="margin-bottom:6px;max-height:74vh;overflow:auto"><table id="ppap-table"><thead id="ppapth"></thead><tbody id="ppaptb"></tbody></table></div>
@@ -3020,6 +3020,7 @@ function expSFC(){
 // Layout fila: 0..9 scalars (3=comprador, oculto) · 10..21 cons12 · 22..(21+nF) fc ·
 //   B+0 fc4 · B+1 real4 · B+2 desv · B+3 cob4 · B+4 fc12 · B+5 cob12 · B+6 cob12oc ·
 //   B+7 $stock · B+8 $oc · B+9 fc_rest · B+10 semana_quiebre · B+11 saldo · B+12 val_saldo
+//   B+13 cob_rest (stock / prom. semanal del FC restante del plan)
 var PPAP=null, LUXO=null;
 var PPAPF={s:'',p:1,sortCol:null,sortDir:1};
 var LUXOF={s:'',p:1,sortCol:null,sortDir:1};
@@ -3042,8 +3043,11 @@ function planSaldoCell(v,dollar){
   return '<td style="text-align:right;font-weight:700;color:'+col+'" title="'+(v<0?'Déficit — hay que comprar':'Sobrante proyectado al cierre del plan')+'">'+(dollar?'$':'')+f0(v)+'</td>';
 }
 // Config por pastilla (PPA lleva Saldo Final / Valor Saldo Final; Luxo no)
-function _cfgPPAP(){return {D:PPAP,F:PPAPF,showSaldo:true, showComp:false,th:'ppapth',tb:'ppaptb',info:'ppap-info',pag:'ppappag',lbl:'ppap-plan-lbl', sortFn:'ppapSort',pageFn:'gPPPAP'};}
-function _cfgLUXO(){return {D:LUXO,F:LUXOF,showSaldo:false,showComp:true, th:'luxoth',tb:'luxotb',info:'luxo-info',pag:'luxopag',lbl:'luxo-plan-lbl', sortFn:'luxoSort',pageFn:'gPLUXO'};}
+// restCols: la pastilla mide contra TODO el resto de la temporada del plan (ΣFC + cobertura)
+// en vez del horizonte fijo de 12 semanas. PPA sí (la temporada es el horizonte de decisión);
+// Luxo mantiene 12w.
+function _cfgPPAP(){return {D:PPAP,F:PPAPF,showSaldo:true, showComp:false,restCols:true,restLbl:'Plan PPA', th:'ppapth',tb:'ppaptb',info:'ppap-info',pag:'ppappag',lbl:'ppap-plan-lbl', sortFn:'ppapSort',pageFn:'gPPPAP'};}
+function _cfgLUXO(){return {D:LUXO,F:LUXOF,showSaldo:false,showComp:true, restCols:false,th:'luxoth',tb:'luxotb',info:'luxo-info',pag:'luxopag',lbl:'luxo-plan-lbl', sortFn:'luxoSort',pageFn:'gPLUXO'};}
 function planFilter(cfg){
   var D=cfg.D,F=cfg.F;
   if(!D||!D.rows) return [];
@@ -3073,14 +3077,21 @@ function rndPlanPill(cfg){
     ? [['SKU',''],['Descripción',''],['UNM',''],['Comprador','Comprador asignado al SKU'],['Stock total','scd+sq+sh']]
     : [['SKU',''],['Descripción',''],['UNM',''],['Stock total','scd+sq+sh']];
   var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01'],['Huechuraba','Centro 4020'],['OC tránsito','Órdenes de compra en tránsito']];
-  var sentCols=[B+3,B+5,B+6]; // coberturas: sentinela ≥999 = "sin dato" (al final)
+  var sentCols=[B+3,B+5,B+6,B+13]; // coberturas: sentinela ≥999 = "sin dato" (al final)
+  // Horizonte largo: resto de la temporada del plan (PPA) o 12 semanas fijas (Luxo).
+  var cLgS = cfg.restCols ? B+9  : B+4;
+  var cLgC = cfg.restCols ? B+13 : B+5;
+  var lblLgS = cfg.restCols ? 'ΣFC '+cfg.restLbl : 'ΣFC 12w';
+  var lblLgC = cfg.restCols ? 'Cob. '+cfg.restLbl : 'Cob. FC 12w';
+  var tiLgS = cfg.restCols ? 'Suma FC del resto del plan (sem en curso → cierre)' : 'Suma FC próximas 12 sem';
+  var tiLgC = cfg.restCols ? 'stock / prom FC semanal del resto del plan (sem)'   : 'stock / prom FC 12w (sem)';
   var summ=[['Semana Quiebre','1ª semana en que el Stock Total (sin OC) no cubre el FC acumulado desde la semana en curso',B+10,true],
             ['ΣFC 4w','Suma FC próximas 4 sem',B+0,false],
             ['ΣReal 4w','Suma consumo real últimas 4 sem (excl. sem en curso)',B+1,false],
             ['Desv. %','(ΣFC4−ΣReal4)/ΣReal4',B+2,false],
             ['Cob. FC 4w','stock / prom FC 4w (sem)',B+3,true],
-            ['ΣFC 12w','Suma FC próximas 12 sem',B+4,false],
-            ['Cob. FC 12w','stock / prom FC 12w (sem)',B+5,true],
+            [lblLgS,tiLgS,cLgS,false],
+            [lblLgC,tiLgC,cLgC,true],
             ['OC tránsito','Órdenes de compra en tránsito',9,false]];
   if(cfg.showSaldo){
     summ.push(['Saldo Final','Stock Total + OC tránsito − ΣFC total (sem en curso → cierre del plan)',B+11,true]);
@@ -3142,8 +3153,8 @@ function rndPlanPill(cfg){
     h+='<td style="text-align:right">'+f0(r[B+1]||0)+'</td>';
     h+='<td style="text-align:right">'+pltDesv(r[B+2])+'</td>';
     h+=pltCovCell(r[B+3]);
-    h+='<td style="text-align:right;font-weight:700">'+f0(r[B+4]||0)+'</td>';
-    h+=pltCovCell(r[B+5]);
+    h+='<td style="text-align:right;font-weight:700">'+f0(r[cLgS]||0)+'</td>';
+    h+=pltCovCell(r[cLgC]);
     h+='<td style="text-align:right">'+f0(r[9]||0)+'</td>';
     if(cfg.showSaldo){ h+=planSaldoCell(r[B+11],false); h+=planSaldoCell(r[B+12],true); }
     h+=pltCovCell(r[B+6]);
@@ -3156,7 +3167,7 @@ function rndPlanPill(cfg){
     return h;
   }).join('')||'<tr><td colspan="'+(9+nC+nF+(cfg.showSaldo?14:12)+(cfg.showComp?1:0))+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
   var ordTxt='';
-  if(F.sortCol!==null){var nm={};nm[B+10]='Semana Quiebre';nm[B+3]='Cob. FC 4w';nm[B+5]='Cob. FC 12w';nm[B+6]='Cob. 12w c/tránsito';nm[B+11]='Saldo Final';nm[B+12]='Valor Saldo Final';var nn=nm[F.sortCol]||'';ordTxt=' · orden: '+nn+(F.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
+  if(F.sortCol!==null){var nm={};nm[B+10]='Semana Quiebre';nm[B+3]='Cob. FC 4w';nm[cLgC]=lblLgC;nm[B+6]='Cob. 12w c/tránsito';nm[B+11]='Saldo Final';nm[B+12]='Valor Saldo Final';var nn=nm[F.sortCol]||'';ordTxt=' · orden: '+nn+(F.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
   var info='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+' del '+(D.plan_label||'plan')+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(F.s?' · búsqueda: "'+F.s+'"':'')+ordTxt;
   if(el(cfg.info)) el(cfg.info).innerHTML=info;
   var div=el(cfg.pag);
@@ -3171,7 +3182,11 @@ function _expPlan(cfg){
   var D=cfg.D;
   if(!D||!D.rows){alert('Sin plan cargado');return;}
   var cw=D.cons_weeks||[], fw=D.fc_weeks||[], nC=cw.length, nF=fw.length, FC0=10+nC, B=10+nC+nF;
-  var summHdr=['Semana Quiebre','ΣFC 4w','ΣReal 4w','Desv %','Cob FC 4w','ΣFC 12w','Cob FC 12w','OC transito'];
+  var cLgS = cfg.restCols ? B+9  : B+4;
+  var cLgC = cfg.restCols ? B+13 : B+5;
+  var summHdr=['Semana Quiebre','ΣFC 4w','ΣReal 4w','Desv %','Cob FC 4w',
+               cfg.restCols?('SFC '+cfg.restLbl):'ΣFC 12w',
+               cfg.restCols?('Cob '+cfg.restLbl):'Cob FC 12w','OC transito'];
   if(cfg.showSaldo) summHdr=summHdr.concat(['Saldo Final','Valor Saldo Final']);
   summHdr=summHdr.concat(['Cob 12w c/transito','$Stock','$Transito','Ult. Proveedor']);
   var header=['SKU','Descripción','UNM'].concat(cfg.showComp?['Comprador']:[])
@@ -3186,7 +3201,7 @@ function _expPlan(cfg){
     for(var i=0;i<nC;i++) base.push(r[10+i]);
     for(var j=0;j<nF;j++) base.push(r[FC0+j]);
     var sq=(r[B+10]==null?'':r[B+10]);
-    var ex=[sq,r[B+0],r[B+1],r[B+2],r[B+3],r[B+4],r[B+5],r[9]];
+    var ex=[sq,r[B+0],r[B+1],r[B+2],r[B+3],r[cLgS],r[cLgC],r[9]];
     if(cfg.showSaldo) ex=ex.concat([r[B+11],r[B+12]]);
     ex=ex.concat([r[B+6],r[B+7],r[B+8],(vm[r[0]]?vm[r[0]].vendor:'')]);
     return base.concat(ex);
