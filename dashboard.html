@@ -2760,7 +2760,7 @@ function rndPLT(){
   // ── Header de 2 filas: frozen + singles + grupos semanales + resumen ──
   var PLT_SX=10+cw.length+fw.length+9;   // bodega externa: último campo de la fila (A.1.4)
   var froz=[['SKU',''],['Descripción',''],['UNM',''],['Comprador',''],['Stock total','CD + Quilicura + Huechuraba + Bodega Externa']];
-  var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01 (igual que sección Stock bloqueado)'],['Huechuraba','Centro 4020'],['Bod. Externa','Centro 4140 — bodega externa (3PL), almacenes EX01/EX02'],['OC tránsito','Órdenes de compra en tránsito']];
+  var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01 (igual que sección Stock bloqueado)'],['Huechuraba','Centro 4020'],['Bod. Externa','Centro 4140 — bodega externa (3PL), almacén EX01'],['OC tránsito','Órdenes de compra en tránsito']];
   // [label, title, colIndex en la fila, sortable]
   var summ=[['ΣFC 4w','Suma FC próximas 4 sem',35,false],
             ['ΣReal 4w','Suma consumo real últimas 4 sem (excl. sem en curso)',36,false],
@@ -2910,7 +2910,7 @@ function rndSFC(){
   if(el('sfc-file')) el('sfc-file').textContent=SFC.archivo||'SKU sin FC.xlsx';
   // ── Header de 2 filas: frozen + bodegas + semanas de consumo + resumen ──
   var froz=[['SKU',''],['Descripción',''],['UNM',''],['Comprador','Comprador según el archivo SKU sin FC'],['Stock total','CD + Quilicura + Huechuraba + Bodega Externa']];
-  var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01 (igual que sección Stock bloqueado)'],['Huechuraba','Centro 4020'],['Bod. Externa','Centro 4140 — bodega externa (3PL), almacenes EX01/EX02'],['OC tránsito','Órdenes de compra en tránsito']];
+  var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01 (igual que sección Stock bloqueado)'],['Huechuraba','Centro 4020'],['Bod. Externa','Centro 4140 — bodega externa (3PL), almacén EX01'],['OC tránsito','Órdenes de compra en tránsito']];
   // [label, title, colIndex, sortable]
   var summ=[['ΣReal 4w','Suma consumo real últimas 4 sem completas (S'+(r4[0]||'')+'–S'+(r4[r4.length-1]||'')+'), excl. sem en curso',B+0,false],
             ['Cob. Real 4w','stock / prom. semanal de las últimas 4 sem completas',B+1,true],
@@ -3088,7 +3088,7 @@ function rndPlanPill(cfg){
   var froz=cfg.showComp
     ? [['SKU',''],['Descripción',''],['UNM',''],['Comprador','Comprador asignado al SKU'],['Stock total','CD + Quilicura + Huechuraba + Bodega Externa']]
     : [['SKU',''],['Descripción',''],['UNM',''],['Stock total','CD + Quilicura + Huechuraba + Bodega Externa']];
-  var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01'],['Huechuraba','Centro 4020'],['Bod. Externa','Centro 4140 — bodega externa (3PL), almacenes EX01/EX02'],['OC tránsito','Órdenes de compra en tránsito']];
+  var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01'],['Huechuraba','Centro 4020'],['Bod. Externa','Centro 4140 — bodega externa (3PL), almacén EX01'],['OC tránsito','Órdenes de compra en tránsito']];
   var sentCols=[B+3,B+5,B+6,B+13]; // coberturas: sentinela ≥999 = "sin dato" (al final)
   // Horizonte largo: resto de la temporada del plan (PPA) o 12 semanas fijas (Luxo).
   var cLgS = cfg.restCols ? B+9  : B+4;
