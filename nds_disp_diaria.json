@@ -1,5 +1,5 @@
 {
- "generado": "2026-08-17T09:47:52",
+ "generado": "2026-08-18T17:17:28",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -2759,6 +2759,64 @@
     {
      "sku": "400083",
      "desc": "FILM BOPP35 210MM"
+    },
+    {
+     "sku": "400489",
+     "desc": "ETIQ CAST SW HAMBURGUESA CHEDDAR 03.25"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400495",
+     "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-08-18",
+   "disp": 97.6,
+   "n_solic": 505,
+   "n_cero": 12,
+   "n_excl_granel": 8,
+   "n_anom_neg": 3,
+   "skus_cero": [
+    {
+     "sku": "300013",
+     "desc": "PP CARDAMOMO"
+    },
+    {
+     "sku": "300134",
+     "desc": "ENELDO"
+    },
+    {
+     "sku": "300160",
+     "desc": "ALBAHACA DESHIDRATADA PICADA"
+    },
+    {
+     "sku": "300305",
+     "desc": "SABORIZANTE POLLO EN POLVO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300348",
+     "desc": "GRANOFIBRA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400100",
+     "desc": "ETIQ CAST CHAPARRITA 02.21"
     },
     {
      "sku": "400489",
