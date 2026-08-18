@@ -2529,6 +2529,15 @@ function ocMatch(sku,q){
   for(var i=0;i<d.length;i++) if(d[i].indexOf(q)>=0) return true;
   return false;
 }
+// Celda "Bod. Externa" (centro 4140, A.1.4). Se destaca en violeta cuando hay stock:
+// es existencia real que NO está a pie de línea, así que el planificador tiene que
+// verla distinta del stock propio antes de decidir una compra o un traslado.
+function extCell(v,extra){
+  var n=Number(v||0);
+  if(!n) return '<td style="text-align:right;color:var(--muted)'+(extra||'')+'"><span style="color:#3a4566">—</span></td>';
+  return '<td style="text-align:right;color:#b39ddb;font-weight:700'+(extra||'')+
+         '" title="Stock en bodega externa (centro 4140). Incluido en el Stock total y en todas las coberturas.">'+f0(n)+'</td>';
+}
 function ocCell(sku,v,extra){
   var n=Number(v||0);
   if(!n) return '<td style="text-align:right'+(extra||'')+'">'+f0(0)+'</td>';
@@ -2749,8 +2758,9 @@ function rndPLT(){
   var cw=PLT.cons_weeks||[], fw=PLT.fc_weeks||[], sem=PLT.sem;
   var th=el('pltth'), tb=el('plttb');
   // ── Header de 2 filas: frozen + singles + grupos semanales + resumen ──
-  var froz=[['SKU',''],['Descripción',''],['UNM',''],['Comprador',''],['Stock total','scd+sq+sh']];
-  var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01 (igual que sección Stock bloqueado)'],['Huechuraba','Centro 4020'],['OC tránsito','Órdenes de compra en tránsito']];
+  var PLT_SX=10+cw.length+fw.length+9;   // bodega externa: último campo de la fila (A.1.4)
+  var froz=[['SKU',''],['Descripción',''],['UNM',''],['Comprador',''],['Stock total','CD + Quilicura + Huechuraba + Bodega Externa']];
+  var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01 (igual que sección Stock bloqueado)'],['Huechuraba','Centro 4020'],['Bod. Externa','Centro 4140 — bodega externa (3PL), almacenes EX01/EX02'],['OC tránsito','Órdenes de compra en tránsito']];
   // [label, title, colIndex en la fila, sortable]
   var summ=[['ΣFC 4w','Suma FC próximas 4 sem',35,false],
             ['ΣReal 4w','Suma consumo real últimas 4 sem (excl. sem en curso)',36,false],
@@ -2809,6 +2819,7 @@ function rndPLT(){
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[6]||0)+'</td>';
     var blq=r[7]||0;h+='<td style="text-align:right;color:'+(blq>0?'#E8924A;font-weight:700':'var(--muted)')+'" title="Stock bloqueado BL01">'+(blq>0?f0(blq):'<span style="color:#3a4566">—</span>')+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[8]||0)+'</td>';
+    h+=extCell(r[PLT_SX]);
     h+=ocCell(r[0],r[9]);
     for(var i=0;i<nC;i++){var v=r[PLT_C0+i]||0;h+='<td style="text-align:right;background:rgba(99,131,200,.06)'+(i===0?';border-left:2px solid #2d3452':'')+(i===nC-1?';border-right:2px solid #2d3452':'')+'">'+(v?f0(v):'<span style="color:#3a4566">—</span>')+'</td>';}
     for(var j=0;j<nF;j++){var curr=(fw[j]===sem);var fv=r[PLT_F0+j]||0;h+='<td style="text-align:right;background:'+(curr?'rgba(120,220,160,.13)':'rgba(127,200,168,.06)')+(j===nF-1?';border-right:2px solid #2d3452':'')+'">'+(fv?f0(fv):'<span style="color:#3a4566">—</span>')+'</td>';}
@@ -2828,7 +2839,7 @@ function rndPLT(){
     h+='<td style="text-align:right;color:var(--muted)">'+_fmtOCPrice(vinfo)+'</td>';
     h+='</tr>';
     return h;
-  }).join('')||'<tr><td colspan="'+(10+nC+nF+12)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
+  }).join('')||'<tr><td colspan="'+(10+nC+nF+13)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
   var ordTxt='';
   if(PLTF.sortCol!==null){var nm={38:'Cob. FC 4w',40:'Cob. FC 12w',41:'Cob. 12w c/tránsito'}[PLTF.sortCol]||'';ordTxt=' · orden: '+nm+(PLTF.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
   var info='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(PLTF.s?' · búsqueda: "'+PLTF.s+'"':'')+(PLTF.oc?' · OC: "'+PLTF.oc+'"':'')+ordTxt;
@@ -2848,7 +2859,7 @@ function expPLT(){
   var header=['SKU','Descripción','UNM','Comprador','Stock total','StockCD','Quilicura','Bloqueado','Huechuraba','OC tránsito']
     .concat(cw.map(function(w){return 'Cons S'+w;}))
     .concat(fw.map(function(w){return 'FC S'+w;}))
-    .concat(['ΣFC 4w','ΣReal 4w','Desv %','Cob FC 4w','ΣFC 12w','Cob FC 12w','Cob 12w c/transito','$Stock','$Transito','Ult. Proveedor','Precio ult. OC']);
+    .concat(['ΣFC 4w','ΣReal 4w','Desv %','Cob FC 4w','ΣFC 12w','Cob FC 12w','Cob 12w c/transito','$Stock','$Transito','Bod. Externa','Ult. Proveedor','Precio ult. OC']);
   var vm=window._vendorMap||(window._vendorMap=_buildVendorMap());
   var lst=pltFilter();
   var aoa=[header].concat(lst.map(function(r){var vi=vm[r[0]]||null;var row=r.slice();row.push(vi?vi.vendor:'');row.push(vi&&vi.price?vi.price:'');return row;}));
@@ -2898,8 +2909,8 @@ function rndSFC(){
   var r4=SFC.r4_weeks||[], r12=SFC.r12_weeks||[];
   if(el('sfc-file')) el('sfc-file').textContent=SFC.archivo||'SKU sin FC.xlsx';
   // ── Header de 2 filas: frozen + bodegas + semanas de consumo + resumen ──
-  var froz=[['SKU',''],['Descripción',''],['UNM',''],['Comprador','Comprador según el archivo SKU sin FC'],['Stock total','scd+sq+sh']];
-  var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01 (igual que sección Stock bloqueado)'],['Huechuraba','Centro 4020'],['OC tránsito','Órdenes de compra en tránsito']];
+  var froz=[['SKU',''],['Descripción',''],['UNM',''],['Comprador','Comprador según el archivo SKU sin FC'],['Stock total','CD + Quilicura + Huechuraba + Bodega Externa']];
+  var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01 (igual que sección Stock bloqueado)'],['Huechuraba','Centro 4020'],['Bod. Externa','Centro 4140 — bodega externa (3PL), almacenes EX01/EX02'],['OC tránsito','Órdenes de compra en tránsito']];
   // [label, title, colIndex, sortable]
   var summ=[['ΣReal 4w','Suma consumo real últimas 4 sem completas (S'+(r4[0]||'')+'–S'+(r4[r4.length-1]||'')+'), excl. sem en curso',B+0,false],
             ['Cob. Real 4w','stock / prom. semanal de las últimas 4 sem completas',B+1,true],
@@ -2957,6 +2968,7 @@ function rndSFC(){
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[6]||0)+'</td>';
     var blq=r[7]||0;h+='<td style="text-align:right;color:'+(blq>0?'#E8924A;font-weight:700':'var(--muted)')+'" title="Stock bloqueado BL01">'+(blq>0?f0(blq):dash)+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[8]||0)+'</td>';
+    h+=extCell(r[B+8]);                       // bodega externa (A.1.4)
     h+=ocCell(r[0],r[9]);
     for(var i=0;i<nW;i++){var curr=(w[i]===sem);var v=r[SFC_C0+i]||0;
       h+='<td style="text-align:right;background:'+(curr?'rgba(220,180,120,.10)':'rgba(99,131,200,.06)')+(i===0?';border-left:2px solid #2d3452':'')+(i===nW-1?';border-right:2px solid #2d3452':'')+'">'+(v?f0(v):dash)+'</td>';}
@@ -2976,7 +2988,7 @@ function rndSFC(){
     h+='<td style="text-align:right;color:var(--muted)">'+_fmtOCPrice(vinfo)+'</td>';
     h+='</tr>';
     return h;
-  }).join('')||'<tr><td colspan="'+(10+nW+11)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
+  }).join('')||'<tr><td colspan="'+(10+nW+12)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
   var ordTxt='';
   if(SFCF.sortCol!==null){var nmm={};nmm[B+1]='Cob. Real 4w';nmm[B+3]='Cob. Real 12w';nmm[B+4]='Cob. 12w c/tránsito';ordTxt=' · orden: '+(nmm[SFCF.sortCol]||'')+(SFCF.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
   var nT=lst.filter(function(r){return r[B+7]==='T';}).length;
@@ -2996,14 +3008,14 @@ function expSFC(){
   var w=SFC.weeks||[], B=sfcB();
   var header=['SKU','Descripción','UNM','Comprador','Stock total','StockCD','Quilicura','Bloqueado','Huechuraba','OC tránsito']
     .concat(w.map(function(k){return 'Cons S'+k+(k===SFC.sem?' (en curso)':'');}))
-    .concat(['ΣReal 4w','Cob. Real 4w','ΣReal 12w','Cob. Real 12w','OC tránsito','Cob. 12w c/transito','$Stock','$Transito','Ult. Proveedor','Precio ult. OC','Moneda','Origen']);
+    .concat(['ΣReal 4w','Cob. Real 4w','ΣReal 12w','Cob. Real 12w','OC tránsito','Cob. 12w c/transito','$Stock','$Transito','Bod. Externa','Ult. Proveedor','Precio ult. OC','Moneda','Origen']);
   var vm=window._vendorMap||(window._vendorMap=_buildVendorMap());
   var lst=sfcFilter();
   // Mismo orden que la tabla en pantalla (OC tránsito se repite antes de la cob. c/tránsito).
   // La Tendencia 12w no se exporta: es un gráfico y sus 12 valores ya van en las columnas Cons S*.
   var aoa=[header].concat(lst.map(function(r){
     var vi=vm[r[0]]||null;
-    return r.slice(0,B+4).concat([r[9],r[B+4],r[B+5],r[B+6],
+    return r.slice(0,B+4).concat([r[9],r[B+4],r[B+5],r[B+6],r[B+8],
       vi?vi.vendor:'', (vi&&vi.price)?vi.price:'', vi?(vi.mon||'CLP'):'',
       r[B+7]==='T'?'Terceros e Insumos':'SKU sin FC.xlsx']);
   }));
@@ -3074,9 +3086,9 @@ function rndPlanPill(cfg){
   if(el(cfg.lbl)) el(cfg.lbl).textContent=D.plan_label||'Plan';
   var fz=cfg.showComp?PLAN_FZ_COMP:PLAN_FZ;
   var froz=cfg.showComp
-    ? [['SKU',''],['Descripción',''],['UNM',''],['Comprador','Comprador asignado al SKU'],['Stock total','scd+sq+sh']]
-    : [['SKU',''],['Descripción',''],['UNM',''],['Stock total','scd+sq+sh']];
-  var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01'],['Huechuraba','Centro 4020'],['OC tránsito','Órdenes de compra en tránsito']];
+    ? [['SKU',''],['Descripción',''],['UNM',''],['Comprador','Comprador asignado al SKU'],['Stock total','CD + Quilicura + Huechuraba + Bodega Externa']]
+    : [['SKU',''],['Descripción',''],['UNM',''],['Stock total','CD + Quilicura + Huechuraba + Bodega Externa']];
+  var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01'],['Huechuraba','Centro 4020'],['Bod. Externa','Centro 4140 — bodega externa (3PL), almacenes EX01/EX02'],['OC tránsito','Órdenes de compra en tránsito']];
   var sentCols=[B+3,B+5,B+6,B+13]; // coberturas: sentinela ≥999 = "sin dato" (al final)
   // Horizonte largo: resto de la temporada del plan (PPA) o 12 semanas fijas (Luxo).
   var cLgS = cfg.restCols ? B+9  : B+4;
@@ -3145,6 +3157,7 @@ function rndPlanPill(cfg){
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[6]||0)+'</td>';
     var blq=r[7]||0;h+='<td style="text-align:right;color:'+(blq>0?'#E8924A;font-weight:700':'var(--muted)')+'" title="Stock bloqueado BL01">'+(blq>0?f0(blq):'<span style="color:#3a4566">—</span>')+'</td>';
     h+='<td style="text-align:right;color:var(--muted)">'+f0(r[8]||0)+'</td>';
+    h+=extCell(r[B+14]);                      // bodega externa (A.1.4)
     h+='<td style="text-align:right">'+f0(r[9]||0)+'</td>';
     for(var i=0;i<nC;i++){var v=r[10+i]||0;h+='<td style="text-align:right;background:rgba(99,131,200,.06)'+(i===0?';border-left:2px solid #2d3452':'')+(i===nC-1?';border-right:2px solid #2d3452':'')+'">'+(v?f0(v):'<span style="color:#3a4566">—</span>')+'</td>';}
     for(var j=0;j<nF;j++){var curr=(fw[j]===sem);var fv=r[FC0+j]||0;h+='<td style="text-align:right;background:'+(curr?'rgba(220,180,120,.14)':'rgba(200,168,127,.06)')+(j===nF-1?';border-right:2px solid #2d3452':'')+'">'+(fv?f0(fv):'<span style="color:#3a4566">—</span>')+'</td>';}
@@ -3165,7 +3178,7 @@ function rndPlanPill(cfg){
     h+='<td style="color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px" title="'+vend.replace(/"/g,'&quot;')+'">'+(vend||'<span style="color:#3a4566">—</span>')+'</td>';
     h+='</tr>';
     return h;
-  }).join('')||'<tr><td colspan="'+(9+nC+nF+(cfg.showSaldo?14:12)+(cfg.showComp?1:0))+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
+  }).join('')||'<tr><td colspan="'+(10+nC+nF+(cfg.showSaldo?14:12)+(cfg.showComp?1:0))+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
   var ordTxt='';
   if(F.sortCol!==null){var nm={};nm[B+10]='Semana Quiebre';nm[B+3]='Cob. FC 4w';nm[cLgC]=lblLgC;nm[B+6]='Cob. 12w c/tránsito';nm[B+11]='Saldo Final';nm[B+12]='Valor Saldo Final';var nn=nm[F.sortCol]||'';ordTxt=' · orden: '+nn+(F.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
   var info='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+' del '+(D.plan_label||'plan')+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(F.s?' · búsqueda: "'+F.s+'"':'')+ordTxt;
@@ -3190,14 +3203,14 @@ function _expPlan(cfg){
   if(cfg.showSaldo) summHdr=summHdr.concat(['Saldo Final','Valor Saldo Final']);
   summHdr=summHdr.concat(['Cob 12w c/transito','$Stock','$Transito','Ult. Proveedor']);
   var header=['SKU','Descripción','UNM'].concat(cfg.showComp?['Comprador']:[])
-    .concat(['Stock total','StockCD','Quilicura','Bloqueado','Huechuraba','OC tránsito'])
+    .concat(['Stock total','StockCD','Quilicura','Bloqueado','Huechuraba','Bod. Externa','OC tránsito'])
     .concat(cw.map(function(w){return 'Cons S'+w;}))
     .concat(fw.map(function(w){return 'FC S'+w;}))
     .concat(summHdr);
   var vm=window._vendorMap||(window._vendorMap=_buildVendorMap());
   var lst=planFilter(cfg);
   var aoa=[header].concat(lst.map(function(r){
-    var base=[r[0],r[1],r[2]].concat(cfg.showComp?[r[3]||'']:[]).concat([r[4],r[5],r[6],r[7],r[8],r[9]]);
+    var base=[r[0],r[1],r[2]].concat(cfg.showComp?[r[3]||'']:[]).concat([r[4],r[5],r[6],r[7],r[8],r[B+14]||0,r[9]]);
     for(var i=0;i<nC;i++) base.push(r[10+i]);
     for(var j=0;j<nF;j++) base.push(r[FC0+j]);
     var sq=(r[B+10]==null?'':r[B+10]);
