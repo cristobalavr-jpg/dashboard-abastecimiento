@@ -843,6 +843,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 
   <div id="inv-opt" style="display:none">
     <div class="so-lede">Cuánto inventario <b>deberíamos</b> tener por SKU, contra cuánto tenemos. La banda es el diente de sierra del ciclo de reposición: <b>mínimo</b> = colchón de seguridad (justo antes de recibir), <b>máximo</b> = recién recibido el lote, <b>óptimo</b> = el promedio del ciclo, que es la meta de capital. Metodología completa en <code>PARAMETRO.MD</code> B.20.</div>
+    <div id="so-sello" style="margin:-4px 0 12px"></div>
     <div id="so-load" style="color:var(--muted);font-size:.78rem;padding:24px 0">Cargando bandas…</div>
     <div id="so-nodata" style="display:none;color:var(--q);font-size:.78rem;padding:20px 0">⚠️ No se encontró <code>stock_optimo.json</code>. Corre <code>python Dashboard/calcular_stock_optimo.py</code>.</div>
     <div id="so-body" style="display:none">
@@ -1272,6 +1273,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 
 // ── GLOBAL DATA NAMESPACE ───────────────────────────────────────────────────
 var R,SD,G,GR,GD,TM,TA,TC,DC,TP,CAP,BIAS,ROT,SD2,SKUS,BLOQ,SEM,DELTAS,TI,FCW,OCM,PLT,SFC,INVCAT,HIST_INV,CONAN,COVPTI,COV_HIST,RESUMEN,CRITM;
+var DA_FECHA=null;   // fecha de los datos del DA — la usa el sello de Stock Óptimo
 var gCompFilter='';  // filtro global de comprador
 // Filtro global PPA (Pan de Pascua). Por defecto ON — replica el contrato histórico de B.9 reporte diario.
 var PPA_SET = new Set();
@@ -7459,7 +7461,7 @@ function soLoad(){
 function soBuild(){
   el('so-load').style.display='none';
   el('so-body').style.display='';
-  soKpis(); soHero(); soBullet(); soDvg(); soInitFiltros(); soDrawTB(); soDrawTS();
+  soSello(); soKpis(); soHero(); soBullet(); soDvg(); soInitFiltros(); soDrawTB(); soDrawTS();
   soMdesc(); soEjes(); soCeldas(); soDetA(); soSim();
 }
 
@@ -7676,6 +7678,37 @@ function soDrill(cat,org){
   el('so-fest').value=''; el('so-fabc').value=''; el('so-fcom').value=''; el('so-q').value='';
   el('so-ford').value='exceso'; SO_LIM=60; soDrawTS();
   document.querySelector('#so-ts').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ── Sello de vigencia ──────────────────────────────────────────────────
+   Las bandas se recalculan con `Actualizar Bandas Stock Optimo.bat`, aparte de
+   la corrida diaria del DA. Sin este aviso, nadie notaría que los inventarios
+   de al lado son de hoy y las bandas de la semana pasada. */
+function soSello(){
+  var fb = SO.fecha || null, fd = DA_FECHA || null;
+  var d2n = function(f){                       // "dd/mm/yyyy" -> Date
+    if(!f) return null;
+    var p = String(f).split('/');
+    return p.length===3 ? new Date(+p[2], +p[1]-1, +p[0]) : null;
+  };
+  var a = d2n(fb), b = d2n(fd);
+  var dias = (a&&b) ? Math.round((b-a)/86400000) : null;
+  var txt, col, bg, ico;
+  if(dias===null){ txt='Bandas calculadas el '+(fb||'—'); col='#8892b0'; bg='transparent'; ico='';
+  } else if(dias<=0){
+    txt='Bandas y datos del DA a la misma fecha ('+fb+')'; col='#2E9E7A'; bg='rgba(46,158,122,.10)'; ico='✓ ';
+  } else if(dias<=3){
+    txt='Bandas al '+fb+' · datos del DA al '+fd+' ('+dias+' día'+(dias>1?'s':'')+' de desfase)';
+    col='#8892b0'; bg='rgba(136,146,176,.08)'; ico='';
+  } else {
+    txt='Bandas al '+fb+' · datos del DA al '+fd+' — <b>'+dias+' días de desfase</b>. '
+       +'Las cifras de stock de esta subsección no coinciden con «Inventarios Hoy». '
+       +'Corre <code>Actualizar Bandas Stock Óptimo.bat</code> para recalcularlas.';
+    col='#F0A868'; bg='rgba(232,123,42,.10)'; ico='⚠️ ';
+  }
+  el('so-sello').innerHTML =
+    '<div style="display:inline-block;background:'+bg+';border:1px solid '+col+'33;border-left:3px solid '+col
+    +';border-radius:7px;padding:7px 12px;font-size:.71rem;color:'+col+'">'+ico+txt+'</div>';
 }
 
 /* ── Bullet por categoría ── */
@@ -8026,6 +8059,7 @@ fetch('data.json?v='+Date.now())
     window._vendorMap=null;window._pltCobMap=null;window._ocDocIdx=null;
     DELTAS=_D.DELTAS||{R:{},G:{},BIAS:{},ROT:{},CAP:{},BLOQ:{},sem_prev:null,sem_curr:SEM};
 
+    DA_FECHA=_D.FECHA||null;
     var _h=document.getElementById('hsem-txt');
     if(_h){
       var vsT = (DELTAS && DELTAS.sem_prev) ? (' · vs SEM '+DELTAS.sem_prev) : '';
