@@ -71,6 +71,68 @@ tr.ic-subh:hover{background:rgba(99,102,241,.14)}
 .inv-stab{background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:6px 14px;font-size:.78rem;color:#8892b0;cursor:pointer;font-weight:500;transition:color .15s,border-color .15s}
 .inv-stab.active{color:#c0caf5;border-bottom-color:#6366f1}
 .inv-stab:hover:not(.active){color:#a4b4ce}
+/* ── Subseccion Stock Optimo (#inv-opt) ── namespaced para no chocar con nada ── */
+#inv-opt .so-lede{color:var(--muted);font-size:.74rem;margin:6px 0 12px;max-width:104ch}
+#inv-opt .so-lede b{color:#c0caf5}
+#inv-opt .so-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px}
+#inv-opt .so-kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:13px 15px}
+#inv-opt .so-kpi .l{font-size:.61rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+#inv-opt .so-kpi .v{font-size:1.45rem;font-weight:800;color:#fff;margin-top:4px;line-height:1.1}
+#inv-opt .so-kpi .d{font-size:.66rem;color:var(--muted);margin-top:3px}
+#inv-opt .so-kpi.tg{border-color:#6366f1;background:linear-gradient(180deg,#1d2440,#1a1f2e)}
+#inv-opt .so-kpi.lo .v{color:var(--q)} #inv-opt .so-kpi.hi .v{color:var(--s)}
+#inv-opt .so-track{position:relative;height:46px;background:#12162355;border-radius:7px;margin:26px 0 34px}
+#inv-opt .so-band{position:absolute;top:0;height:100%;background:rgba(99,102,241,.26);border-left:2px solid rgba(129,132,255,.95);border-right:2px solid rgba(129,132,255,.95);border-radius:3px}
+#inv-opt .so-bar{position:absolute;top:14px;height:18px;box-shadow:0 0 0 2px var(--card)}
+#inv-opt .so-tgt{position:absolute;top:-4px;height:54px;width:3px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.7)}
+#inv-opt .so-lab{position:absolute;font-size:.63rem;font-weight:700;white-space:nowrap;transform:translateX(-50%)}
+#inv-opt .so-leg{display:flex;gap:15px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:.67rem;color:var(--muted)}
+#inv-opt .so-leg i{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-1px;margin-right:5px;font-style:normal}
+#inv-opt .so-dvrow{display:grid;grid-template-columns:180px 1fr;gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(45,52,82,.4);cursor:pointer;border-radius:5px}
+#inv-opt .so-dvrow:last-child{border-bottom:none}
+#inv-opt .so-dvrow:hover{background:rgba(99,102,241,.09)}
+#inv-opt .so-dvlab{font-size:.72rem;font-weight:600;color:#c0caf5}
+#inv-opt .so-dvlab small{display:block;color:var(--muted);font-weight:400;font-size:.63rem}
+#inv-opt .so-dvax{position:relative;height:24px}
+#inv-opt .so-dvmid{position:absolute;top:-7px;bottom:-7px;width:1px;background:rgba(255,255,255,.22)}
+#inv-opt .so-seg{position:absolute;top:4px;height:16px;border-radius:3px;display:flex;align-items:center;font-size:.62rem;font-weight:800;color:#fff;padding:0 6px}
+#inv-opt .so-flt{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+#inv-opt .so-flt select,#inv-opt .so-flt input{background:#232840;border:1px solid var(--border);color:#e2e8f0;border-radius:6px;padding:6px 10px;font-size:.72rem;font-family:inherit}
+#inv-opt .so-flt input{min-width:210px}
+#inv-opt .so-btn{background:#232840;border:1px solid var(--border);color:#a4b4ce;border-radius:7px;padding:6px 13px;font-size:.71rem;font-weight:600;cursor:pointer;font-family:inherit}
+#inv-opt .so-btn:hover{color:#fff;border-color:#475670}
+#inv-opt .so-btn.on{background:#6366f1;border-color:#6366f1;color:#fff}
+#inv-opt .ug{background:rgba(126,148,190,.10)} #inv-opt thead th.ug{background:#283043}
+#inv-opt .cg{background:rgba(99,102,241,.09)} #inv-opt thead th.cg{background:#2a2f4e}
+#inv-opt .g0{border-left:2px solid rgba(255,255,255,.16)!important}
+#inv-opt table td.num,#inv-opt table th.num{text-align:right;font-variant-numeric:tabular-nums}
+#inv-opt tbody tr.ck{cursor:pointer}
+#inv-opt .so-note{font-size:.68rem;color:var(--muted);margin-top:8px;font-style:italic;max-width:112ch}
+#inv-opt .so-dsc{max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ficha lateral */
+#so-ov{position:fixed;inset:0;background:rgba(4,6,12,.62);z-index:998;display:none}
+#so-ov.on{display:block}
+#so-dw{position:fixed;top:0;right:0;bottom:0;width:min(740px,94vw);background:#141826;border-left:1px solid var(--border);z-index:999;transform:translateX(102%);transition:transform .22s ease;overflow-y:auto;box-shadow:-14px 0 44px rgba(0,0,0,.55)}
+#so-dw.on{transform:none}
+#so-dw .dwh{position:sticky;top:0;background:linear-gradient(135deg,#1a1f2e,#232840);border-bottom:1px solid var(--border);padding:14px 19px;z-index:3}
+#so-dw .dwh .x{position:absolute;top:12px;right:15px;background:#232840;border:1px solid var(--border);color:var(--muted);border-radius:6px;width:27px;height:27px;font-size:.85rem;cursor:pointer;line-height:1}
+#so-dw .dwh h3{font-size:.9rem;color:#fff;font-weight:800;padding-right:36px}
+#so-dw .dwh .m{font-size:.69rem;color:var(--muted);margin-top:3px}
+#so-dw .dwb{padding:15px 19px 40px}
+#so-dw h5{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:800;margin:20px 0 7px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+#so-dw h5:first-child{margin-top:0}
+#so-dw .gr{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px}
+#so-dw .cel{background:#1a1f2e;border:1px solid var(--border);border-radius:8px;padding:9px 11px}
+#so-dw .cel .l{font-size:.59rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+#so-dw .cel .v{font-size:.92rem;font-weight:800;color:#fff;margin-top:2px;font-variant-numeric:tabular-nums}
+#so-dw .cel .d{font-size:.62rem;color:var(--muted);margin-top:1px}
+#so-dw .why{background:#161b2b;border:1px solid var(--border);border-left:3px solid #6366f1;border-radius:8px;padding:11px 14px;font-size:.72rem;color:var(--muted);line-height:1.6}
+#so-dw .why b{color:#c0caf5}
+#so-dw .why code{background:#0f1117;padding:1px 5px;border-radius:3px;color:#a5b4fc;font-size:.9em}
+#so-dw .dwt{width:100%;border-collapse:collapse;font-size:.71rem}
+#so-dw .dwt td{padding:5px 4px;border-bottom:1px solid rgba(45,52,82,.4)}
+#so-dw .dwt td:last-child{text-align:right;font-weight:700;color:#e2e8f0;font-variant-numeric:tabular-nums}
+#so-dw .dwt td:first-child{color:var(--muted)}
 /* Tabla delta histórico */
 #ih-delta-tb tr:first-child td,.inv-hist-tot{background:#1a2138!important}
 .ih-up{color:var(--rT);font-weight:700}
@@ -658,6 +720,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="inv-subnav">
     <button class="inv-stab active" data-inv="hoy" onclick="showInvSub('hoy')">&#128202; Inventarios Hoy</button>
     <button class="inv-stab" data-inv="hist" onclick="showInvSub('hist')">&#128200; Hist&#243;rico de Inventarios</button>
+    <button class="inv-stab" data-inv="opt" onclick="showInvSub('opt')">&#127919; Stock &#211;ptimo</button>
   </div>
   <div id="inv-hoy">
   <div class="gk" id="gkpis"></div>
@@ -735,6 +798,82 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
         </div>
         <div id="ih-drw-body"></div>
       </div>
+    </div>
+  </div>
+
+  <div id="inv-opt" style="display:none">
+    <div class="so-lede">Cuánto inventario <b>deberíamos</b> tener por SKU, contra cuánto tenemos. La banda es el diente de sierra del ciclo de reposición: <b>mínimo</b> = colchón de seguridad (justo antes de recibir), <b>máximo</b> = recién recibido el lote, <b>óptimo</b> = el promedio del ciclo, que es la meta de capital. Metodología completa en <code>PARAMETRO.MD</code> B.20.</div>
+    <div id="so-load" style="color:var(--muted);font-size:.78rem;padding:24px 0">Cargando bandas…</div>
+    <div id="so-nodata" style="display:none;color:var(--q);font-size:.78rem;padding:20px 0">⚠️ No se encontró <code>stock_optimo.json</code>. Corre <code>python Dashboard/calcular_stock_optimo.py</code>.</div>
+    <div id="so-body" style="display:none">
+      <div class="so-kpis" id="so-kpis"></div>
+      <div class="cb">
+        <div class="ct">Dónde está el inventario respecto de su banda</div>
+        <div class="so-track" id="so-track"></div>
+        <div class="so-leg">
+          <span><i style="background:rgba(99,102,241,.30);border:1px solid rgba(99,102,241,.7)"></i>banda mín–máx</span>
+          <span><i style="background:#fff"></i>óptimo (meta)</span>
+          <span><i style="background:#378ADD"></i>stock disponible</span>
+          <span><i style="background:repeating-linear-gradient(135deg,#4A5068 0 3px,#3a4056 3px 6px)"></i>inmovilizado: sin demanda + bloqueado</span>
+        </div>
+      </div>
+      <div class="stt">Dónde está la desviación — y de qué signo</div>
+      <div class="so-lede">Exceso y déficit <b>no se netean</b>: están en SKU distintos y se corrigen con acciones opuestas. Clic en una categoría para filtrar el detalle.</div>
+      <div class="cb" id="so-dvg"></div>
+      <div class="stt">Detalle por categoría y origen</div>
+      <div class="so-flt"><button class="so-btn on" id="so-mode-org" data-m="org">Con desglose por origen</button><button class="so-btn" id="so-mode-cat" data-m="cat">Sólo categoría</button></div>
+      <div class="tw"><table id="so-tb">
+        <thead><tr><th>Categoría</th><th>Origen</th><th class="num">SKU</th><th class="num">LT sem</th><th class="num">NS</th><th class="num">CV</th>
+        <th class="num ug g0">Stock hoy</th><th class="num ug">B. mín $</th><th class="num ug">Óptimo $</th><th class="num ug">B. máx $</th>
+        <th class="num cg g0">Cob. hoy</th><th class="num cg">Cob. mín</th><th class="num cg">Cob. ópt</th><th class="num cg">Cob. máx</th>
+        <th class="num g0">Exceso</th><th class="num">Déficit</th></tr></thead><tbody></tbody><tfoot></tfoot>
+      </table></div>
+      <div class="so-note">Coberturas <b>ponderadas por valor</b> y recalculadas sobre los agregados — nunca promediadas entre filas, porque no se pueden sumar unidades de SKU con distinta unidad de medida.</div>
+      <div class="stt">Dónde se concentra el colchón</div>
+      <div class="so-lede">El colchón de seguridad no está repartido parejo: se decide en un puñado de celdas del cruce <b>ABC × criticidad</b>. Cualquier política de nivel de servicio se define ahí — mover el NS de las celdas del fondo de la tabla no cambia nada material.</div>
+      <div id="so-conc"></div>
+      <div class="tw" style="margin-top:10px"><table id="so-celdas">
+        <thead><tr><th>Celda (ABC / criticidad)</th><th class="num">NS</th><th class="num">SKU</th>
+        <th class="num">Colchón $</th><th class="num">% del colchón</th><th class="num">Acumulado</th><th style="width:22%">Peso</th></tr></thead>
+        <tbody></tbody><tfoot></tfoot>
+      </table></div>
+      <div class="so-note">El <b>colchón</b> (stock de seguridad) es lo que separa la banda mínima de cero: es la parte del inventario que existe para absorber variabilidad, no para cubrir el consumo del ciclo. Clic en una fila para ver sus SKU.</div>
+
+      <div class="stt">Los SKU sobre los que se decide <span id="so-nA" style="color:var(--muted);font-weight:400;font-size:.7rem"></span></div>
+      <div class="so-lede">Clase A ordenados por el colchón que generan. Son los que hay que mirar antes de fijar cualquier política de inventario: <b>PT afect.</b> y <b>Uds. PT</b> son las dos cifras que definen su criticidad.</div>
+      <div class="so-flt"><button class="so-btn on" id="so-a-ss" data-o="ss_val">Ordenar: mayor colchón</button><button class="so-btn" id="so-a-exp" data-o="pt_uds">Ordenar: más producción expuesta</button><button class="so-btn" id="so-a-cob" data-o="cob_sem">Ordenar: menor cobertura</button></div>
+      <div class="tw"><table id="so-tda">
+        <thead><tr><th>SKU</th><th>Descripción</th><th>Cat.</th><th>Criticidad</th><th class="num">NS</th>
+        <th class="num">PT afect.</th><th class="num">Uds. PT</th><th class="num">Dem/sem</th><th class="num">CV</th><th class="num">LT sem</th>
+        <th class="num ug g0">Stock</th><th class="num ug">B. mín</th><th class="num ug">Óptimo</th><th class="num ug">B. máx</th>
+        <th class="num cg g0">Cob. hoy</th><th class="num">Colchón $</th><th class="num">% del colchón A</th></tr></thead>
+        <tbody></tbody><tfoot></tfoot>
+      </table></div>
+      <div class="so-note"><b>PT afect.</b> = productos terminados distintos que dejan de producirse si falta ese SKU · <b>Uds. PT</b> = unidades de producción comprometidas en la ventana de COOIS. <b>Colchón $</b> es el stock de seguridad valorizado que genera cada SKU.</div>
+
+      <div class="stt">Detalle por SKU</div>
+      <div class="so-lede">Clic en cualquier fila para abrir su <b>ficha</b>: la serie de consumo real con la banda superpuesta, la regla que la determinó, las OC en camino y la producción que sostiene.</div>
+      <div class="so-flt">
+        <input id="so-q" placeholder="Buscar SKU o descripción…">
+        <select id="so-fcat"><option value="">Todas las categorías</option></select>
+        <select id="so-forg"><option value="">Nacional + Importado</option><option value="NACIONAL">Sólo nacional</option><option value="IMPORTADO">Sólo importado</option></select>
+        <select id="so-fest"><option value="">Todos los estados</option></select>
+        <select id="so-fabc"><option value="">Todo ABC</option><option>A</option><option>B</option><option>C</option></select>
+        <select id="so-fcom"><option value="">Todos los compradores</option></select>
+        <select id="so-ford"><option value="exceso">Ordenar: mayor exceso</option><option value="deficit">Ordenar: mayor déficit</option><option value="v_stock">Ordenar: mayor stock $</option><option value="cob_sem">Ordenar: menor cobertura</option></select>
+        <button class="so-btn" id="so-lim">Mostrar más ▾</button>
+        <button class="so-btn" id="so-xls" style="border-color:#2E9E7A;color:#7fd3b4">⬇ Descargar Excel</button>
+        <span style="font-size:.7rem;color:var(--muted)" id="so-nd"></span>
+      </div>
+      <div class="tw"><table id="so-ts">
+        <thead><tr><th>SKU</th><th>Descripción</th><th>Cat.</th><th>Orig.</th><th>Comprador</th><th class="num">ABC</th>
+        <th class="num">LT sem</th><th class="num">NS</th><th class="num">CV</th>
+        <th class="num g0">Stock unid.</th><th class="num">Dem/sem unid.</th>
+        <th class="num ug g0">Stock $</th><th class="num ug">B. mín $</th><th class="num ug">Óptimo $</th><th class="num ug">B. máx $</th>
+        <th class="num cg g0">Cob. hoy</th><th class="num cg">Cob. mín</th><th class="num cg">Cob. ópt</th><th class="num cg">Cob. máx</th>
+        <th>Estado</th><th class="num">Δ banda $</th></tr></thead><tbody></tbody>
+      </table></div>
+      <div class="so-note"><b>Stock unid.</b> y <b>Dem/sem unid.</b> son las cifras físicas de las que sale todo: <code>Cob. hoy = Stock ÷ Dem/sem</code>. Si una cobertura extraña, casi siempre el problema está en la demanda, no en la banda. Los bloques sombreados son lo mismo en pesos y en semanas.</div>
     </div>
   </div>
 </div>
@@ -3568,13 +3707,14 @@ function buildInvCat(){
 var _ihView='total';
 
 function showInvSub(name){
-  ['hoy','hist'].forEach(function(n){
+  ['hoy','hist','opt'].forEach(function(n){
     var p=el('inv-'+n); if(p) p.style.display=(n===name)?'':'none';
   });
   document.querySelectorAll('.inv-stab').forEach(function(b){
     b.classList.toggle('active',b.getAttribute('data-inv')===name);
   });
   if(name==='hist'&&!window._ihBuilt){buildHistInv();window._ihBuilt=true;}
+  if(name==='opt'&&!window._soBuilt){window._soBuilt=true;soLoad();}
 }
 
 function buildHistInv(){
@@ -7194,6 +7334,504 @@ function ticToggleDetail(bucket, items, tbody){
     + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 
+// ══ Subsección Stock Óptimo (Inventarios) ═════════════════════════════════
+// Todo con prefijo `so` y namespaced bajo #inv-opt: este archivo se inyecta en
+// dashboard.html, que ya tiene decenas de helpers globales. Aislar es la única
+// forma de garantizar que no rompa nada existente.
+//
+// Los datos se cargan bajo demanda desde `stock_optimo.json` (mismo patrón que
+// `loadPPA()`), no desde data.json: son ~500 KB que sólo paga quien abre la vista.
+var SO = null, SOC = {}, SOSER = {}, SO_LIM = 60, SO_TBMODE = 'org';
+var SO_COL = {'BAJO MINIMO':'#E24B4A','EN BANDA':'#2E9E7A','SOBRE MAXIMO':'#378ADD','SIN DEMANDA':'#4A5068'};
+var SO_ICO = {'BAJO MINIMO':'▼','EN BANDA':'●','SOBRE MAXIMO':'▲','SIN DEMANDA':'○'};
+var SO_ORD = ['BAJO MINIMO','EN BANDA','SOBRE MAXIMO','SIN DEMANDA'];
+
+function soN(n){ return (n==null||isNaN(n))?'—':n.toLocaleString('es-CL',{maximumFractionDigits:0}); }
+function soN1(n){ return (n==null||isNaN(n))?'—':n.toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1}); }
+function soMM(v){ return (v==null||isNaN(v))?'—':(v/1e6).toLocaleString('es-CL',{maximumFractionDigits:0})+' MM'; }
+function soE(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function soV(r,k){ return r[SOC[k]]; }
+function soCat(id){ var c=(SO.cats||[]).filter(function(x){return x.id===id;})[0]; return c?c.label:id; }
+
+function soLoad(){
+  fetch('stock_optimo.json?v='+Date.now())
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(d){
+      SO=d; SO.cols.forEach(function(c,i){ SOC[c]=i; });
+      return fetch('stock_optimo_series.json?v='+Date.now())
+        .then(function(r){ return r.ok?r.json():{series:{}}; })
+        .catch(function(){ return {series:{}}; });
+    })
+    .then(function(sr){ SOSER=sr.series||{}; soBuild(); })
+    .catch(function(){
+      var l=el('so-load'); if(l) l.style.display='none';
+      var n=el('so-nodata'); if(n) n.style.display='';
+    });
+}
+
+function soBuild(){
+  el('so-load').style.display='none';
+  el('so-body').style.display='';
+  soKpis(); soHero(); soDvg(); soInitFiltros(); soDrawTB();
+  soCeldas(); soDetA(); soDrawTS();
+}
+
+/* ── KPIs ── */
+function soKpis(){
+  var t=SO.tot, base=(t.stock_dem!=null?t.stock_dem:t.stock);
+  var gap=base-t.opt, gp=t.opt>0?100*gap/t.opt:0;
+  var sinDem=t.stock-base, bloq=t.bloqueado||0, totDA=t.stock_da||t.stock;
+  var k=[
+    ['Stock en bodega hoy','$'+soMM(totDA),
+     'igual al Total G. Planificación · <b style="color:#c0caf5">$'+soMM(base)+'</b> con banda'
+     +(sinDem>0?' + $'+soMM(sinDem)+' sin demanda':'')+(bloq>0?' + $'+soMM(bloq)+' bloqueado':''),''],
+    ['Meta — stock óptimo','$'+soMM(t.opt),
+     (gap>=0?'estamos $'+soMM(Math.abs(gap))+' por encima':'estamos $'+soMM(Math.abs(gap))+' por debajo')
+     +' ('+(gp>=0?'+':'')+gp.toFixed(0)+'%) — contra los $'+soMM(base)+' con banda','tg'],
+    ['Capital liberable','$'+soMM(t.exceso),'stock por sobre el techo de la banda','hi'],
+    ['Riesgo de quiebre','$'+soMM(t.deficit),'lo que falta para llegar al colchón de seguridad','lo']
+  ];
+  el('so-kpis').innerHTML = k.map(function(x){
+    return '<div class="so-kpi '+x[3]+'"><div class="l">'+x[0]+'</div><div class="v">'+x[1]+'</div><div class="d">'+x[2]+'</div></div>';
+  }).join('');
+}
+
+/* ── Barra de banda total. Dos tramos: disponible (se juzga) e inmovilizado
+      (se apila sólo para cuadrar con el total del DA). ── */
+function soHero(){
+  var t=SO.tot, base=(t.stock_dem!=null?t.stock_dem:t.stock);
+  var inmo=Math.max(0,(t.stock_da||t.stock)-base), totDA=base+inmo;
+  var mx=Math.max(t.bmax,totDA)*1.08;
+  var pc=function(v){ return Math.max(0,Math.min(100,100*v/mx)); };
+  var col=base<t.bmin?SO_COL['BAJO MINIMO']:(base>t.bmax?SO_COL['SOBRE MAXIMO']:SO_COL['EN BANDA']);
+  var ray='repeating-linear-gradient(135deg,#4A5068 0 5px,#3a4056 5px 10px)';
+  el('so-track').innerHTML =
+    '<div class="so-band" style="left:'+pc(t.bmin)+'%;width:'+(pc(t.bmax)-pc(t.bmin))+'%"></div>'
+   +'<div class="so-bar" style="width:'+pc(base)+'%;background:'+col+'"></div>'
+   +(inmo>0?'<div class="so-bar" style="left:'+pc(base)+'%;width:'+(pc(totDA)-pc(base))+'%;background:'+ray+'"></div>':'')
+   +'<div class="so-tgt" style="left:'+pc(t.opt)+'%"></div>'
+   +'<div class="so-lab" style="left:'+pc(t.bmin)+'%;top:-19px;color:#8b93bd">mín $'+soMM(t.bmin)+'</div>'
+   +'<div class="so-lab" style="left:'+pc(t.opt)+'%;top:-19px;color:#fff">óptimo $'+soMM(t.opt)+'</div>'
+   +'<div class="so-lab" style="left:'+pc(t.bmax)+'%;top:-19px;color:#8b93bd">máx $'+soMM(t.bmax)+'</div>'
+   +'<div class="so-lab" style="left:'+pc(base)+'%;top:50px;color:'+col+'">▲ disponible $'+soMM(base)+'</div>'
+   +(inmo>0?'<div class="so-lab" style="left:'+pc(totDA)+'%;top:'+((pc(totDA)-pc(base)<9)?68:50)+'px;color:#8892b0">total DA $'+soMM(totDA)+'</div>':'');
+}
+
+/* ── Barras divergentes exceso/déficit ── */
+function soDvg(){
+  var cs=(SO.cats||[]).filter(function(c){return c.n_dem>0;}).slice()
+          .sort(function(a,b){return (b.exceso+b.deficit)-(a.exceso+a.deficit);});
+  var mx=Math.max.apply(null,cs.map(function(c){return Math.max(c.exceso,c.deficit);}))*1.04||1;
+  var h=50;
+  el('so-dvg').innerHTML = cs.map(function(c){
+    var we=h*c.exceso/mx, wd=h*c.deficit/mx;
+    return '<div class="so-dvrow" data-c="'+c.id+'">'
+      +'<div class="so-dvlab">'+soE(c.label)+'<small>'+c.n_dem+' SKU con demanda</small></div>'
+      +'<div class="so-dvax"><div class="so-dvmid" style="left:'+h+'%"></div>'
+      +(wd>0?'<div class="so-seg" style="right:'+(100-h)+'%;width:'+wd+'%;background:'+SO_COL['BAJO MINIMO']+';justify-content:flex-start">'+(wd>7?'$'+soMM(c.deficit):'')+'</div>':'')
+      +(we>0?'<div class="so-seg" style="left:'+h+'%;width:'+we+'%;background:'+SO_COL['SOBRE MAXIMO']+';justify-content:flex-end">'+(we>7?'$'+soMM(c.exceso):'')+'</div>':'')
+      +'</div></div>';
+  }).join('')
+  +'<div class="so-leg"><span><i style="background:'+SO_COL['BAJO MINIMO']+'"></i>◀ déficit</span>'
+  +'<span><i style="background:'+SO_COL['SOBRE MAXIMO']+'"></i>exceso ▶</span>'
+  +'<span style="margin-left:auto;color:#c0caf5"><b>Total: $'+soMM(SO.tot.deficit)+' de déficit · $'+soMM(SO.tot.exceso)+' de exceso</b></span></div>';
+  Array.prototype.forEach.call(el('so-dvg').querySelectorAll('.so-dvrow'), function(e){
+    e.onclick=function(){ soDrill(e.getAttribute('data-c'),''); };
+  });
+}
+
+/* ── Tabla categoría × origen ── */
+function soDrawTB(){
+  var B=SO.bandas||[]; if(!B.length) return;
+  var demOf=function(r){ return r.cob>0?r.stock/r.cob:(r.cob_opt>0?r.opt/r.cob_opt:0); };
+  var rows;
+  if(SO_TBMODE==='org'){
+    rows=B.map(function(r){ var o={}; for(var k in r) o[k]=r[k]; o.org=r.origen; o._dem=demOf(r); return o; });
+  } else {
+    var m={};
+    B.forEach(function(r){
+      if(!m[r.cat]) m[r.cat]={cat:r.cat,label:r.label,org:'—',n:0,stock:0,bmin:0,opt:0,bmax:0,exceso:0,deficit:0,_dem:0,_lt:[],_cv:[],_sl:[]};
+      var o=m[r.cat];
+      ['n','stock','bmin','opt','bmax','exceso','deficit'].forEach(function(f){ o[f]+=r[f]||0; });
+      o._dem+=demOf(r); o._lt.push([r.lt_med,r.n]); o._cv.push([r.cv_med,r.n]); o._sl.push([r.sl_med,r.n]);
+    });
+    var wm=function(a){ var s=0,w=0; a.forEach(function(p){s+=p[0]*p[1];w+=p[1];}); return w?s/w:0; };
+    rows=Object.keys(m).map(function(k){
+      var o=m[k];
+      o.lt_med=wm(o._lt); o.cv_med=wm(o._cv); o.sl_med=wm(o._sl);
+      o.cob=o._dem>0?o.stock/o._dem:null; o.cob_min=o._dem>0?o.bmin/o._dem:null;
+      o.cob_opt=o._dem>0?o.opt/o._dem:null; o.cob_max=o._dem>0?o.bmax/o._dem:null;
+      return o;
+    });
+  }
+  var tb=document.querySelector('#so-tb tbody'), tf=document.querySelector('#so-tb tfoot');
+  tb.innerHTML=rows.map(function(r){
+    var k=r.stock<r.bmin?'BAJO MINIMO':(r.stock>r.bmax?'SOBRE MAXIMO':'EN BANDA');
+    return '<tr class="ck" data-c="'+r.cat+'" data-o="'+(r.org==='—'?'':r.org)+'">'
+      +'<td><b>'+soE(r.label)+'</b></td>'
+      +'<td>'+(r.org==='—'?'<span style="color:var(--muted)">todos</span>':'<span class="ba '+(r.org==='IMPORTADO'?'bas':'')+'" style="'+(r.org==='IMPORTADO'?'':'background:rgba(136,146,176,.16);color:#a4b4ce')+'">'+(r.org==='IMPORTADO'?'IMP':'NAC')+'</span>')+'</td>'
+      +'<td class="num">'+r.n+'</td><td class="num">'+soN1(r.lt_med/7)+'</td>'
+      +'<td class="num" style="color:var(--muted)">'+(100*r.sl_med).toFixed(0)+'%</td>'
+      +'<td class="num" style="color:var(--muted)">'+soN1(r.cv_med)+'</td>'
+      +'<td class="num ug g0" style="color:'+SO_COL[k]+'"><b>$'+soMM(r.stock)+'</b></td>'
+      +'<td class="num ug" style="color:var(--muted)">$'+soMM(r.bmin)+'</td>'
+      +'<td class="num ug"><b>$'+soMM(r.opt)+'</b></td>'
+      +'<td class="num ug" style="color:var(--muted)">$'+soMM(r.bmax)+'</td>'
+      +'<td class="num cg g0" style="color:'+SO_COL[k]+'"><b>'+soN1(r.cob)+'</b></td>'
+      +'<td class="num cg" style="color:var(--muted)">'+soN1(r.cob_min)+'</td>'
+      +'<td class="num cg">'+soN1(r.cob_opt)+'</td>'
+      +'<td class="num cg" style="color:var(--muted)">'+soN1(r.cob_max)+'</td>'
+      +'<td class="num g0" style="color:'+(r.exceso>0?SO_COL['SOBRE MAXIMO']:'var(--muted)')+'">'+(r.exceso>0?'$'+soMM(r.exceso):'—')+'</td>'
+      +'<td class="num" style="color:'+(r.deficit>0?SO_COL['BAJO MINIMO']:'var(--muted)')+'">'+(r.deficit>0?'$'+soMM(r.deficit):'—')+'</td></tr>';
+  }).join('');
+  var sm=function(k){ var t=0; rows.forEach(function(r){t+=r[k]||0;}); return t; };
+  var dT=sm('_dem'), cT=function(v){ return dT>0?soN1(v/dT):'—'; };
+  tf.innerHTML='<tr style="font-weight:800;background:#1e2438;border-top:2px solid var(--border)">'
+    +'<td colspan="2">TOTAL</td><td class="num">'+sm('n')+'</td><td colspan="3"></td>'
+    +'<td class="num ug g0">$'+soMM(sm('stock'))+'</td><td class="num ug">$'+soMM(sm('bmin'))+'</td>'
+    +'<td class="num ug">$'+soMM(sm('opt'))+'</td><td class="num ug">$'+soMM(sm('bmax'))+'</td>'
+    +'<td class="num cg g0">'+cT(sm('stock'))+'</td><td class="num cg">'+cT(sm('bmin'))+'</td>'
+    +'<td class="num cg">'+cT(sm('opt'))+'</td><td class="num cg">'+cT(sm('bmax'))+'</td>'
+    +'<td class="num g0" style="color:'+SO_COL['SOBRE MAXIMO']+'">$'+soMM(sm('exceso'))+'</td>'
+    +'<td class="num" style="color:'+SO_COL['BAJO MINIMO']+'">$'+soMM(sm('deficit'))+'</td></tr>';
+  Array.prototype.forEach.call(tb.querySelectorAll('tr.ck'), function(e){
+    e.onclick=function(){ soDrill(e.getAttribute('data-c'), e.getAttribute('data-o')); };
+  });
+}
+
+/* ── Filtros y tabla por SKU ── */
+function soInitFiltros(){
+  (SO.cats||[]).forEach(function(c){
+    el('so-fcat').insertAdjacentHTML('beforeend','<option value="'+c.id+'">'+soE(c.label)+'</option>');
+  });
+  SO_ORD.forEach(function(k){ el('so-fest').insertAdjacentHTML('beforeend','<option>'+k+'</option>'); });
+  var comps={}; SO.rows.forEach(function(r){ var c=soV(r,'comp'); if(c) comps[c]=1; });
+  Object.keys(comps).sort().forEach(function(c){ el('so-fcom').insertAdjacentHTML('beforeend','<option>'+soE(c)+'</option>'); });
+  ['so-q','so-fcat','so-forg','so-fest','so-fabc','so-fcom','so-ford'].forEach(function(id){
+    el(id).addEventListener(id==='so-q'?'input':'change',function(){ SO_LIM=60; soDrawTS(); });
+  });
+  el('so-lim').onclick=function(){ SO_LIM+=200; soDrawTS(); };
+  el('so-xls').onclick=soExport;
+  ['org','cat'].forEach(function(m){
+    el('so-mode-'+m).onclick=function(){
+      SO_TBMODE=m;
+      el('so-mode-org').classList.toggle('on',m==='org');
+      el('so-mode-cat').classList.toggle('on',m==='cat');
+      soDrawTB();
+    };
+  });
+  [['so-a-ss','ss_val'],['so-a-exp','pt_uds'],['so-a-cob','cob_sem']].forEach(function(p){
+    el(p[0]).onclick=function(){
+      SO_AORD=p[1];
+      ['so-a-ss','so-a-exp','so-a-cob'].forEach(function(id){ el(id).classList.toggle('on',id===p[0]); });
+      soDetA();
+    };
+  });
+  el('so-dwx').onclick=soCerrar; el('so-ov').onclick=soCerrar;
+}
+
+function soFiltro(){
+  var q=el('so-q').value.trim().toLowerCase(), fc=el('so-fcat').value, fo=el('so-forg').value,
+      fe=el('so-fest').value, fa=el('so-fabc').value, fm=el('so-fcom').value, or_=el('so-ford').value;
+  var xs=SO.rows.filter(function(r){
+    return (!fc||soV(r,'cat')===fc) && (!fo||soV(r,'origen')===fo) && (!fe||soV(r,'estado')===fe)
+        && (!fa||soV(r,'abc')===fa) && (!fm||soV(r,'comp')===fm)
+        && (!q||String(soV(r,'sku')).toLowerCase().indexOf(q)>=0||String(soV(r,'desc')).toLowerCase().indexOf(q)>=0);
+  });
+  xs.sort(function(a,b){
+    if(or_==='cob_sem'){
+      var x=soV(a,'cob_sem'), y=soV(b,'cob_sem');
+      return (x==null?1e9:x)-(y==null?1e9:y);
+    }
+    return (soV(b,or_)||0)-(soV(a,or_)||0);
+  });
+  return xs;
+}
+
+function soDrawTS(){
+  var xs=soFiltro(), tb=document.querySelector('#so-ts tbody');
+  el('so-nd').textContent=xs.length+' SKU · mostrando '+Math.min(SO_LIM,xs.length);
+  el('so-lim').style.display=xs.length>SO_LIM?'':'none';
+  tb.innerHTML=xs.slice(0,SO_LIM).map(function(r){
+    var k=soV(r,'estado'), ex=soV(r,'exceso')||0, df=soV(r,'deficit')||0;
+    var d=ex>0?ex:(df>0?-df:0), dm=soV(r,'d')||0;
+    var cw=function(v){ return (dm>0&&v!=null)?soN1(v/dm):'—'; };
+    return '<tr class="ck" data-s="'+soE(soV(r,'sku'))+'">'
+      +'<td>'+soE(soV(r,'sku'))+'</td>'
+      +'<td class="so-dsc" title="'+soE(soV(r,'desc'))+'">'+soE(soV(r,'desc'))+'</td>'
+      +'<td style="color:var(--muted)">'+soE(soCat(soV(r,'cat')).slice(0,18))+'</td>'
+      +'<td><span class="ba '+(soV(r,'origen')==='IMPORTADO'?'bas':'')+'" style="'+(soV(r,'origen')==='IMPORTADO'?'':'background:rgba(136,146,176,.16);color:#a4b4ce')+'">'+(soV(r,'origen')==='IMPORTADO'?'IMP':'NAC')+'</span></td>'
+      +'<td style="color:var(--muted)">'+soE(soV(r,'comp')==='SIN ASIGNAR'?'—':soV(r,'comp'))+'</td>'
+      +'<td class="num">'+(soV(r,'abc')||'—')+'</td>'
+      +'<td class="num">'+soN1(soV(r,'lt'))+'</td>'
+      +'<td class="num" style="color:var(--muted)">'+(soV(r,'sl')==null?'—':(100*soV(r,'sl')).toFixed(0)+'%')+'</td>'
+      +'<td class="num" style="color:var(--muted)">'+(soV(r,'cv')==null?'—':soN1(soV(r,'cv')))+'</td>'
+      +'<td class="num g0" style="color:'+SO_COL[k]+'">'+soN(soV(r,'stock'))+'</td>'
+      +'<td class="num">'+(dm>0?soN(dm):'—')+'</td>'
+      +'<td class="num ug g0"><b>$'+soMM(soV(r,'v_stock'))+'</b></td>'
+      +'<td class="num ug" style="color:var(--muted)">$'+soMM(soV(r,'v_bmin'))+'</td>'
+      +'<td class="num ug">$'+soMM(soV(r,'v_opt'))+'</td>'
+      +'<td class="num ug" style="color:var(--muted)">$'+soMM(soV(r,'v_bmax'))+'</td>'
+      +'<td class="num cg g0" style="color:'+SO_COL[k]+'"><b>'+(soV(r,'cob_sem')==null?'—':soN1(soV(r,'cob_sem')))+'</b></td>'
+      +'<td class="num cg" style="color:var(--muted)">'+cw(soV(r,'bmin'))+'</td>'
+      +'<td class="num cg">'+cw(soV(r,'opt'))+'</td>'
+      +'<td class="num cg" style="color:var(--muted)">'+cw(soV(r,'bmax'))+'</td>'
+      +'<td><span class="ba" style="background:'+SO_COL[k]+'22;color:'+SO_COL[k]+'">'+SO_ICO[k]+' '+k.toLowerCase()+'</span></td>'
+      +'<td class="num" style="color:'+(d>0?SO_COL['SOBRE MAXIMO']:(d<0?SO_COL['BAJO MINIMO']:'var(--muted)'))+'">'+(d===0?'—':(d>0?'+':'−')+'$'+soMM(Math.abs(d)))+'</td></tr>';
+  }).join('');
+  Array.prototype.forEach.call(tb.querySelectorAll('tr.ck'), function(e){
+    e.onclick=function(){ soFicha(e.getAttribute('data-s')); };
+  });
+}
+
+function soDrill(cat,org){
+  el('so-fcat').value=cat; el('so-forg').value=org||'';
+  el('so-fest').value=''; el('so-fabc').value=''; el('so-fcom').value=''; el('so-q').value='';
+  el('so-ford').value='exceso'; SO_LIM=60; soDrawTS();
+  document.querySelector('#so-ts').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ── Concentración del colchón: celdas ABC × criticidad ── */
+var SO_AORD = 'ss_val';
+
+function soCeldas(){
+  var m = SO.metodologia||{}, cs = m.celdas||[];
+  if(!cs.length){ return; }
+  var tot = 0; cs.forEach(function(c){ tot += c.ss; });
+  var tb = document.querySelector('#so-celdas tbody'), tf = document.querySelector('#so-celdas tfoot');
+  var acc = 0;
+  tb.innerHTML = cs.map(function(c){
+    acc += c.ss; var p = 100*c.ss/tot;
+    return '<tr class="ck" data-abc="'+c.abc+'" data-crit="'+c.crit+'">'
+      +'<td><b>'+c.abc+'</b> / '+soE(c.crit)+'</td>'
+      +'<td class="num">'+(100*c.ns).toFixed(0)+'%</td>'
+      +'<td class="num">'+c.n+'</td>'
+      +'<td class="num"><b>$'+soMM(c.ss)+'</b></td>'
+      +'<td class="num">'+p.toFixed(1)+'%</td>'
+      +'<td class="num" style="color:var(--muted)">'+(100*acc/tot).toFixed(1)+'%</td>'
+      +'<td><div style="height:6px;background:#12162a;border-radius:3px;overflow:hidden">'
+      +'<div style="height:100%;width:'+p.toFixed(1)+'%;background:#6366f1;border-radius:3px"></div></div></td></tr>';
+  }).join('');
+  var nT=0; cs.forEach(function(c){ nT+=c.n; });
+  tf.innerHTML = '<tr style="font-weight:800;background:#1e2438;border-top:2px solid var(--border)">'
+    +'<td>TOTAL colchón</td><td></td><td class="num">'+nT+'</td><td class="num">$'+soMM(tot)+'</td><td colspan="3"></td></tr>';
+  // el titular: cuantas celdas y cuantos SKU concentran el grueso
+  var top = cs.slice(0,2), st = 0, sn = 0;
+  top.forEach(function(c){ st += c.ss; sn += c.n; });
+  el('so-conc').innerHTML = '<div class="so-kpis" style="margin-bottom:0">'
+    +'<div class="so-kpi tg"><div class="l">Las 2 primeras celdas</div><div class="v">'+(100*st/tot).toFixed(0)+'%</div>'
+    +'<div class="d">del colchón total, en sólo <b style="color:#c0caf5">'+sn+' SKU</b> — ahí se decide la política</div></div>'
+    +'<div class="so-kpi"><div class="l">Colchón total (SS)</div><div class="v">$'+soMM(tot)+'</div>'
+    +'<div class="d">es la banda mínima: lo que absorbe variabilidad, no el consumo del ciclo</div></div>'
+    +'<div class="so-kpi"><div class="l">SKU críticos</div><div class="v">'+SO.rows.filter(function(r){return soV(r,'crit')==='critico';}).length+'</div>'
+    +'<div class="d">paran línea si faltan — salen de la explosión de COOIS</div></div></div>';
+  Array.prototype.forEach.call(tb.querySelectorAll('tr.ck'), function(e){
+    e.onclick = function(){
+      el('so-fcat').value=''; el('so-forg').value=''; el('so-fest').value='';
+      el('so-fcom').value=''; el('so-q').value='';
+      el('so-fabc').value = e.getAttribute('data-abc');
+      SO_LIM=60; soDrawTS();
+      document.querySelector('#so-ts').scrollIntoView({behavior:'smooth',block:'start'});
+    };
+  });
+}
+
+/* ── Detalle de los SKU clase A ── */
+function soDetA(){
+  var m = SO.metodologia||{}, cols = m.detalle_a_cols||[], rows = m.detalle_a||[];
+  if(!cols.length || !rows.length){ return; }
+  var I={}; cols.forEach(function(c,i){ I[c]=i; });
+  var tot=0; rows.forEach(function(r){ tot += r[I['ss_val']]||0; });
+  var xs = rows.slice().sort(function(a,b){
+    if(SO_AORD==='cob_sem'){
+      var x=a[I['cob_sem']], y=b[I['cob_sem']];
+      return (x==null?1e9:x)-(y==null?1e9:y);
+    }
+    return (b[I[SO_AORD]]||0)-(a[I[SO_AORD]]||0);
+  });
+  el('so-nA').textContent = '· '+rows.length+' SKU clase A · $'+soMM(tot)+' de colchón';
+  var tb=document.querySelector('#so-tda tbody');
+  tb.innerHTML = xs.slice(0,40).map(function(r){
+    var cob=r[I['cob_sem']];
+    var col = cob==null?'var(--muted)':(cob<(r[I['bmin']]/(r[I['d']]||1))?SO_COL['BAJO MINIMO']:SO_COL['EN BANDA']);
+    return '<tr class="ck" data-s="'+soE(r[I['sku']])+'">'
+      +'<td>'+soE(r[I['sku']])+'</td>'
+      +'<td class="so-dsc" title="'+soE(r[I['desc']])+'">'+soE(r[I['desc']])+'</td>'
+      +'<td style="color:var(--muted)">'+soE(soCat(r[I['cat']]).slice(0,16))+'</td>'
+      +'<td>'+(r[I['crit']]==='critico'
+              ? '<span class="ba" style="background:rgba(226,75,74,.18);color:#E24B4A">crítico</span>'
+              : '<span style="color:var(--muted)">'+soE(r[I['crit']])+'</span>')+'</td>'
+      +'<td class="num">'+(100*r[I['sl']]).toFixed(0)+'%</td>'
+      +'<td class="num">'+soN(r[I['pt_n']])+'</td>'
+      +'<td class="num">'+soN(r[I['pt_uds']])+'</td>'
+      +'<td class="num">'+soN(r[I['d']])+'</td>'
+      +'<td class="num" style="color:var(--muted)">'+soN1(r[I['cv']])+'</td>'
+      +'<td class="num" style="color:var(--muted)">'+soN1(r[I['ltw']])+'</td>'
+      +'<td class="num ug g0">'+soN(r[I['stock']])+'</td>'
+      +'<td class="num ug" style="color:var(--muted)">'+soN(r[I['bmin']])+'</td>'
+      +'<td class="num ug">'+soN(r[I['opt']])+'</td>'
+      +'<td class="num ug" style="color:var(--muted)">'+soN(r[I['bmax']])+'</td>'
+      +'<td class="num cg g0" style="color:'+col+'"><b>'+(cob==null?'—':soN1(cob))+'</b></td>'
+      +'<td class="num"><b>$'+soMM(r[I['ss_val']])+'</b></td>'
+      +'<td class="num" style="color:var(--muted)">'+(100*(r[I['ss_val']]||0)/tot).toFixed(1)+'%</td></tr>';
+  }).join('');
+  var s40=0; xs.slice(0,40).forEach(function(r){ s40 += r[I['ss_val']]||0; });
+  document.querySelector('#so-tda tfoot').innerHTML =
+    '<tr style="font-weight:800;background:#1e2438;border-top:2px solid var(--border)">'
+    +'<td colspan="15">Los 40 mostrados</td><td class="num">$'+soMM(s40)+'</td>'
+    +'<td class="num">'+(100*s40/tot).toFixed(1)+'%</td></tr>';
+  Array.prototype.forEach.call(tb.querySelectorAll('tr.ck'), function(e){
+    e.onclick=function(){ soFicha(e.getAttribute('data-s')); };
+  });
+}
+
+/* ── Exportar: CSV con `;`, coma decimal y BOM UTF-8 — Excel en español lo abre
+      en columnas al doble clic, sin asistente de importación. ── */
+var SO_XCOLS=[
+ ['SKU','sku','t'],['Descripción','desc','t'],['Categoría','_cat','t'],['Origen','origen','t'],
+ ['Tipo','tipo','t'],['Comprador','comp','t'],['Proveedor','prov','t'],['Clase ABC','abc','t'],
+ ['Criticidad','crit','t'],['Nivel de servicio','sl','p'],['Regla del NS','ns_regla','t'],
+ ['Lead time (sem)','lt','n'],['Revisión R (sem)','R','n'],['CV','cv','n'],
+ ['Demanda semanal','d','n'],['Fuente de la demanda','d_fuente','t'],['Consumo real prom/sem','d_real','n'],
+ ['Stock (unid)','stock','n'],['Banda mín (unid)','bmin','n'],['Óptimo (unid)','opt','n'],['Banda máx (unid)','bmax','n'],
+ ['Cob. hoy (sem)','cob_sem','n'],['Cob. mín (sem)','_cmin','n'],['Cob. ópt (sem)','_copt','n'],['Cob. máx (sem)','_cmax','n'],
+ ['Precio unitario','p','n'],['Fuente del precio','p_fuente','t'],['Moneda','mon','t'],
+ ['Stock $','v_stock','n'],['Banda mín $','v_bmin','n'],['Óptimo $','v_opt','n'],['Banda máx $','v_bmax','n'],
+ ['Exceso $','exceso','n'],['Déficit $','deficit','n'],['Estado','estado','t'],
+ ['Regla de la banda','banda_regla','t'],['Método del SS','ss_metodo','t'],
+ ['OC total (unid)','oc','n'],['OC vigente (unid)','oc_vig','n'],['OC caduca (unid)','oc_cad','n'],
+ ['Días desde última OC','dias_oc','n'],['PT que sostiene','pt_n','n'],['% producción expuesta','exp_pct','n']
+];
+function soExport(){
+  var xs=soFiltro();
+  var num=function(v){ return (v==null||v===''||isNaN(v))?'':String(Math.round(v*100)/100).replace('.',','); };
+  var txt=function(x){ return '"'+String(x==null?'':x).replace(/"/g,'""')+'"'; };
+  var val=function(r,k,t){
+    var v;
+    if(k==='_cat') v=soCat(soV(r,'cat'));
+    else if(k==='_cmin'||k==='_copt'||k==='_cmax'){
+      var d=soV(r,'d')||0, u=soV(r,k==='_cmin'?'bmin':(k==='_copt'?'opt':'bmax'));
+      v=(d>0&&u!=null)?u/d:null;
+    } else v=soV(r,k);
+    if(t==='p') return v==null?'':num(100*v)+'%';
+    return t==='n'?num(v):txt(v);
+  };
+  var filas=[SO_XCOLS.map(function(c){return txt(c[0]);}).join(';')].concat(
+    xs.map(function(r){ return SO_XCOLS.map(function(c){ return val(r,c[1],c[2]); }).join(';'); }));
+  var partes=[];
+  if(el('so-fcat').value) partes.push(soCat(el('so-fcat').value).replace(/[^\w]+/g,'_'));
+  if(el('so-forg').value) partes.push(el('so-forg').value.toLowerCase());
+  if(el('so-fest').value) partes.push(el('so-fest').value.toLowerCase().replace(/\s+/g,'_'));
+  if(el('so-fabc').value) partes.push('clase'+el('so-fabc').value);
+  if(el('so-fcom').value) partes.push(el('so-fcom').value);
+  if(!partes.length) partes.push('completo');
+  var nombre='stock_optimo_'+partes.join('-')+'_'+String(SO.fecha||'').replace(/\//g,'-')+'.csv';
+  var blob=new Blob(['﻿'+filas.join('\r\n')],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=nombre;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },4000);
+  var b=el('so-xls'), t0=b.textContent;
+  b.textContent='✓ '+xs.length+' SKU';
+  setTimeout(function(){ b.textContent=t0; },2200);
+}
+
+/* ── Ficha del SKU ── */
+function soCerrar(){ el('so-ov').classList.remove('on'); el('so-dw').classList.remove('on'); }
+
+function soFicha(sku){
+  var r=null;
+  for(var i=0;i<SO.rows.length;i++){ if(soV(SO.rows[i],'sku')===sku){ r=SO.rows[i]; break; } }
+  if(!r) return;
+  var k=soV(r,'estado'), ser=SOSER[sku]||null, dm=soV(r,'d')||0;
+  var um=function(v){ return v==null?'—':soN(v); };
+  var cobOf=function(v){ return dm>0?soN1(v/dm)+' sem':'—'; };
+
+  el('so-dwt').innerHTML=soE(soV(r,'desc'))
+    +' <span class="ba" style="background:'+SO_COL[k]+'22;color:'+SO_COL[k]+';margin-left:6px">'+SO_ICO[k]+' '+k.toLowerCase()+'</span>';
+  el('so-dwm').innerHTML='<b style="color:#c0caf5">'+soE(sku)+'</b> · '+soE(soCat(soV(r,'cat')))
+    +' · '+soE(soV(r,'origen'))+' · clase '+soV(r,'abc')+' · criticidad '+soE(soV(r,'crit'))
+    +' · comprador '+soE(soV(r,'comp')==='SIN ASIGNAR'?'sin asignar':soV(r,'comp'));
+
+  // gráfico: consumo semanal real con la banda superpuesta. La escala la fijan el
+  // consumo y la banda, NO el stock: si el stock vale 30 semanas y entra en la
+  // escala, aplasta las barras y el gráfico deja de decir nada.
+  var chart='<div class="so-note">Sin serie de consumo registrada para este SKU.</div>';
+  if(ser&&ser.length){
+    var W=680,H=200,ml=52,mr=14,mt=12,mb=24,iw=W-ml-mr,ih=H-mt-mb,n=ser.length;
+    var mx=Math.max(Math.max.apply(null,ser),soV(r,'bmax')||0)*1.12||1;
+    var stk=soV(r,'stock')||0, fuera=stk>mx, bw=iw/n*0.72;
+    var X=function(i){ return ml+iw*(i+0.5)/n; }, Y=function(v){ return mt+ih-ih*Math.max(0,v)/mx; };
+    var lin=function(v,c,d,lab){
+      return '<line x1="'+ml+'" y1="'+Y(v).toFixed(1)+'" x2="'+(W-mr)+'" y2="'+Y(v).toFixed(1)+'" stroke="'+c+'" stroke-width="1.6"'+(d?' stroke-dasharray="'+d+'"':'')+'/>'
+        +'<text x="'+(W-mr)+'" y="'+(Y(v)-4).toFixed(1)+'" text-anchor="end" fill="'+c+'" style="font-weight:700;font-size:9.5px">'+lab+'</text>';
+    };
+    chart='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block">'
+      +'<rect x="'+ml+'" y="'+Y(soV(r,'bmax')).toFixed(1)+'" width="'+iw+'" height="'+Math.max(0,Y(soV(r,'bmin'))-Y(soV(r,'bmax'))).toFixed(1)+'" fill="rgba(99,102,241,.13)"/>'
+      +ser.map(function(v,i){
+          return '<rect x="'+(X(i)-bw/2).toFixed(1)+'" y="'+Y(v).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(0,mt+ih-Y(v)).toFixed(1)+'" rx="2" fill="#4d5878"><title>S'+(i+1)+': '+soN(v)+'</title></rect>';
+        }).join('')
+      +lin(soV(r,'bmax'),'rgba(129,132,255,.75)','4 3','máx '+um(soV(r,'bmax')))
+      +lin(soV(r,'opt'),'#ffffff','','óptimo '+um(soV(r,'opt')))
+      +lin(soV(r,'bmin'),'rgba(129,132,255,.75)','4 3','mín '+um(soV(r,'bmin')))
+      +(stk>0?lin(fuera?mx:stk,SO_COL[k],'7 4','stock hoy '+um(stk)+(fuera?' ↑ fuera de escala':'')):'')
+      +'<text x="'+ml+'" y="'+(H-mb+15)+'" fill="#8892b0" style="font-size:9.5px">S1</text>'
+      +'<text x="'+(W-mr)+'" y="'+(H-mb+15)+'" text-anchor="end" fill="#8892b0" style="font-size:9.5px">S'+n+'</text>'
+      +'</svg><div class="so-note">Barras = consumo real semanal ('+n+' semanas, misma unidad de medida del SKU). La franja y las líneas son la banda de <b>stock</b>: se ve cuántas semanas de consumo cubre cada nivel.'
+      +(fuera?' <b style="color:'+SO_COL[k]+'">El stock actual queda fuera de escala</b> — está '+soN1(stk/(soV(r,'bmax')||1))+'× sobre su banda máxima.':'')+'</div>';
+  }
+
+  var reglas={
+    'calculo estadistico':'la banda salió íntegra de la fórmula, sin topes ni pisos de negocio',
+    'tope por ciclo':'el colchón estadístico superaba un ciclo completo de reposición (LT+R) y se recortó',
+    'piso de negocio':'la fórmula daba menos que el piso definido para su categoría/origen y se subió a ese piso',
+    'techo de negocio':'la fórmula daba más que el techo de negocio y se bajó — puede ser el de su categoría/origen o el de 0,35 semanas del granel de silo',
+    'piso 1 sem (MMPP)':'se aplicó el <b>piso universal de 1 semana</b>: es MP con rol productivo y la fórmula daba menos de una semana de cobertura'};
+  var fuentes={
+    'FC':'forecast cargado (SumExpl)','FC ESTACIONAL':'forecast con perfil estacional propio',
+    'CONSUMO REAL':'consumo real — <b>este SKU no tiene FC confiable</b>, se usa su historia',
+    'SIN DEMANDA':'sin FC ni consumo registrado',
+    'EGRESO CD ESTACIONAL':'egreso total del CD — nivel de 52 semanas winsorizado al p90, con forma estacional',
+    'EGRESO CD PLANO':'egreso total del CD — nivel de 52 semanas winsorizado al p90, sin forma estacional'};
+
+  var why='<div class="why"><b>Demanda</b>: '+soN(dm)+' por semana, de '+(fuentes[soV(r,'d_fuente')]||soV(r,'d_fuente'))+'.'
+    +(soV(r,'d_real')?' Su consumo real promedio es '+soN(soV(r,'d_real'))+'/sem'+(soV(r,'fc_vs_real')!=null?' (FC/real = '+soN1(soV(r,'fc_vs_real'))+'×)':'')+'.':'')
+    +'<br><b>Nivel de servicio '+(100*soV(r,'sl')).toFixed(0)+'%</b> — asignado por <code>'+soE(soV(r,'ns_regla'))+'</code>'
+    +(soV(r,'ns_regla')==='ABC x criticidad'?' (clase '+soV(r,'abc')+' × criticidad '+soE(soV(r,'crit'))+')':'')+'. '
+    +'Con CV '+soN1(soV(r,'cv'))+' y lead time '+soN1(soV(r,'lt'))+' sem + revisión '+soN1(soV(r,'R'))+' sem, '
+    +'el colchón por método <code>'+soE(soV(r,'ss_metodo'))+'</code> es <b>'+soN(soV(r,'ss'))+'</b>.'
+    +'<br><b>Banda final</b>: '+(reglas[soV(r,'banda_regla')]||soV(r,'banda_regla'))+'.'
+    +(soV(r,'cob_bmin')!=null?' El mínimo equivale a <b>'+soN1(soV(r,'cob_bmin'))+' semanas</b> de consumo.':'')+'</div>';
+
+  var niveles=[['Stock hoy',um(soV(r,'stock')),'$'+soMM(soV(r,'v_stock'))+' · '+(soV(r,'cob_sem')==null?'—':soN1(soV(r,'cob_sem'))+' sem'),SO_COL[k]],
+               ['Banda mínima',um(soV(r,'bmin')),'$'+soMM(soV(r,'v_bmin'))+' · '+cobOf(soV(r,'bmin')),''],
+               ['Óptimo (meta)',um(soV(r,'opt')),'$'+soMM(soV(r,'v_opt'))+' · '+cobOf(soV(r,'opt')),'#fff'],
+               ['Banda máxima',um(soV(r,'bmax')),'$'+soMM(soV(r,'v_bmax'))+' · '+cobOf(soV(r,'bmax')),'']];
+
+  el('so-dwb').innerHTML='<h5>Consumo real vs la banda</h5>'+chart
+    +'<h5>Por qué su banda es ésta</h5>'+why
+    +'<h5>Niveles — en unidades, en pesos y en semanas</h5><div class="gr">'
+    +niveles.map(function(c){
+        return '<div class="cel"><div class="l">'+c[0]+'</div><div class="v"'+(c[3]?' style="color:'+c[3]+'"':'')+'>'+c[1]+'</div><div class="d">'+c[2]+'</div></div>';
+      }).join('')+'</div>'
+    +'<h5>Abastecimiento en camino</h5><table class="dwt">'
+    +'<tr><td>Proveedor</td><td>'+soE(soV(r,'prov')||'—')+'</td></tr>'
+    +'<tr><td>Precio unitario</td><td>$'+soN(soV(r,'p'))+' '+soE(soV(r,'mon')||'')+' <span style="color:var(--muted);font-weight:400">('+soE(soV(r,'p_fuente'))+')</span></td></tr>'
+    +'<tr><td>OC total en camino</td><td>'+um(soV(r,'oc'))+'</td></tr>'
+    +'<tr><td>OC vigente</td><td style="color:'+SO_COL['EN BANDA']+'">'+um(soV(r,'oc_vig'))+'</td></tr>'
+    +'<tr><td>OC caduca <span style="color:var(--muted);font-weight:400">(supera LT×7+45 días)</span></td><td style="color:'+((soV(r,'oc_cad')||0)>0?SO_COL['BAJO MINIMO']:'var(--muted)')+'">'+um(soV(r,'oc_cad'))+' · $'+soMM(soV(r,'v_oc_cad'))+'</td></tr>'
+    +'<tr><td>Última OC hace</td><td>'+(soV(r,'dias_oc')==null?'—':soN(soV(r,'dias_oc'))+' días')+'</td></tr>'
+    +'<tr><td>Posición (stock + OC vigente)</td><td>'+um(soV(r,'pos'))+' · $'+soMM(soV(r,'v_pos'))+'</td></tr></table>'
+    +'<h5>Producción que sostiene</h5>'
+    +((soV(r,'pt_n')||0)>0
+      ? '<table class="dwt"><tr><td>Productos terminados distintos</td><td>'+soN(soV(r,'pt_n'))+'</td></tr>'
+        +'<tr><td>Unidades de PT comprometidas <span style="color:var(--muted);font-weight:400">('+SO.nsem_hist+' sem COOIS)</span></td><td>'+soN(soV(r,'pt_uds'))+'</td></tr>'
+        +'<tr><td>% de la producción expuesta</td><td style="color:'+((soV(r,'exp_pct')||0)>2?SO_COL['BAJO MINIMO']:'#e2e8f0')+'">'+soN1(soV(r,'exp_pct'))+'%</td></tr>'
+        +'<tr><td>Clasificación</td><td>'+soE(soV(r,'crit'))+'</td></tr></table>'
+      : '<div class="so-note">Este SKU no aparece en la explosión de COOIS: no tiene rol productivo medido, así que su NS se asigna por origen y no por criticidad.</div>');
+
+  el('so-ov').classList.add('on'); el('so-dw').classList.add('on'); el('so-dw').scrollTop=0;
+}
+
 // ── LOAD DATA & INIT ────────────────────────────────────────────────────────
 fetch('data.json?v='+Date.now())
   .then(function(resp){
@@ -7244,5 +7882,9 @@ fetch('data.json?v='+Date.now())
     if(ov) ov.innerHTML='<div style="color:#E24B4A;font-size:.9rem;text-align:center;padding:20px">⚠️ Error cargando datos<br><span style="font-size:.75rem;color:#8892b0;margin-top:8px;display:block">'+err.message+'</span><br><button onclick="location.reload()" style="margin-top:12px;background:#6366f1;border:none;color:#fff;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:.8rem">Reintentar</button></div>';
   });
 </script>
+<div id="so-ov"></div>
+<aside id="so-dw"><div class="dwh"><button class="x" id="so-dwx">&#10005;</button>
+<h3 id="so-dwt">&mdash;</h3><div class="m" id="so-dwm"></div></div>
+<div class="dwb" id="so-dwb"></div></aside>
 </body>
 </html>
