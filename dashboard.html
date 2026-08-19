@@ -133,6 +133,46 @@ tr.ic-subh:hover{background:rgba(99,102,241,.14)}
 #so-dw .dwt td{padding:5px 4px;border-bottom:1px solid rgba(45,52,82,.4)}
 #so-dw .dwt td:last-child{text-align:right;font-weight:700;color:#e2e8f0;font-variant-numeric:tabular-nums}
 #so-dw .dwt td:first-child{color:var(--muted)}
+/* bullet por categoria */
+#inv-opt .so-bltrow{display:grid;grid-template-columns:190px 1fr 168px;gap:14px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(45,52,82,.45);cursor:pointer;border-radius:5px}
+#inv-opt .so-bltrow:last-child{border-bottom:none}
+#inv-opt .so-bltrow:hover{background:rgba(99,102,241,.09)}
+#inv-opt .so-bltlab{font-size:.73rem;font-weight:600;color:#c0caf5}
+#inv-opt .so-bltlab small{display:block;color:var(--muted);font-weight:400;font-size:.63rem}
+#inv-opt .so-blttrack{position:relative;height:28px;background:#12162355;border-radius:5px}
+#inv-opt .so-bltband{position:absolute;top:0;height:100%;background:rgba(99,102,241,.30);border-left:2px solid rgba(129,132,255,.95);border-right:2px solid rgba(129,132,255,.95);border-radius:2px}
+#inv-opt .so-bltbar{position:absolute;top:9px;height:10px;border-radius:0 3px 3px 0;box-shadow:0 0 0 2px var(--card)}
+#inv-opt .so-blttgt{position:absolute;top:-2px;height:32px;width:3px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.7)}
+#inv-opt .so-bltval{font-size:.73rem;text-align:right;font-weight:700}
+#inv-opt .so-bltval small{display:block;font-weight:400;color:var(--muted);font-size:.63rem}
+/* pastillas colapsables del anexo */
+#inv-opt details.so-an{background:var(--card);border:1px solid var(--border);border-radius:9px;margin-top:9px;overflow:hidden}
+#inv-opt details.so-an>summary{cursor:pointer;font-size:.77rem;color:#c0caf5;font-weight:700;padding:12px 16px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+#inv-opt details.so-an>summary::-webkit-details-marker{display:none}
+#inv-opt details.so-an>summary:after{content:'\25BE';color:var(--muted);font-size:.8rem}
+#inv-opt details.so-an[open]>summary{border-bottom:1px solid var(--border);background:#1e2438}
+#inv-opt details.so-an[open]>summary:after{content:'\25B4'}
+#inv-opt details.so-an>summary small{font-weight:400;color:var(--muted);font-size:.68rem;flex:1;text-align:right;margin-right:6px}
+#inv-opt .so-anb{padding:14px 16px 18px}
+#inv-opt .so-form{background:#0d1019;border:1px solid var(--border);border-left:3px solid #6366f1;border-radius:8px;padding:14px 18px;margin:10px 0;overflow-x:auto}
+#inv-opt .so-form pre{font-family:ui-monospace,Consolas,monospace;font-size:.76rem;line-height:1.75;color:#dbe3f4;white-space:pre;margin:0}
+#inv-opt .so-form .k{color:#a5b4fc;font-weight:700}
+#inv-opt .so-form .c{color:var(--muted);font-style:italic}
+#inv-opt .so-form .h{color:#fff;font-weight:800}
+#inv-opt .so-mtz{border-collapse:collapse;font-size:.74rem;margin-top:8px}
+#inv-opt .so-mtz th,#inv-opt .so-mtz td{border:1px solid var(--border);padding:7px 16px;text-align:center}
+#inv-opt .so-mtz thead th{background:#232840;color:var(--muted);font-size:.66rem;text-transform:uppercase;letter-spacing:.4px}
+#inv-opt .so-mtz tbody th{background:#232840;color:#c0caf5;font-weight:800}
+#inv-opt .so-mtz td{font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+#inv-opt .so-mtz td small{display:block;font-weight:400;color:var(--muted);font-size:.61rem;margin-top:2px}
+#inv-opt .so-mtz td.hot{background:rgba(99,102,241,.20)}
+#inv-opt .so-axes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0}
+@media(max-width:900px){#inv-opt .so-axes{grid-template-columns:1fr}}
+#inv-opt .so-ax{background:#161b2b;border:1px solid var(--border);border-radius:9px;padding:13px 15px}
+#inv-opt .so-ax h4{font-size:.74rem;color:#c0caf5;margin-bottom:5px}
+#inv-opt .so-ax p{font-size:.71rem;color:var(--muted);margin-bottom:6px}
+#inv-opt .so-bar0{height:6px;background:#12162a;border-radius:3px;overflow:hidden;margin-top:3px}
+#inv-opt .so-bar0 i{display:block;height:100%;background:#6366f1;border-radius:3px}
 /* Tabla delta histórico */
 #ih-delta-tb tr:first-child td,.inv-hist-tot{background:#1a2138!important}
 .ih-up{color:var(--rT);font-weight:700}
@@ -817,6 +857,9 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
           <span><i style="background:repeating-linear-gradient(135deg,#4A5068 0 3px,#3a4056 3px 6px)"></i>inmovilizado: sin demanda + bloqueado</span>
         </div>
       </div>
+      <div class="stt">Posición vs banda, por categoría</div>
+      <div class="so-lede">Cada barra es el <b>stock en bodega</b> contra su banda. La franja azul es el rango mín–máx; la marca blanca es el óptimo. Barra a la izquierda de la franja = bajo el colchón; a la derecha = capital de más. Clic para abrir el detalle.</div>
+      <div class="cb" id="so-blt"></div>
       <div class="stt">Dónde está la desviación — y de qué signo</div>
       <div class="so-lede">Exceso y déficit <b>no se netean</b>: están en SKU distintos y se corrigen con acciones opuestas. Clic en una categoría para filtrar el detalle.</div>
       <div class="cb" id="so-dvg"></div>
@@ -829,28 +872,6 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
         <th class="num g0">Exceso</th><th class="num">Déficit</th></tr></thead><tbody></tbody><tfoot></tfoot>
       </table></div>
       <div class="so-note">Coberturas <b>ponderadas por valor</b> y recalculadas sobre los agregados — nunca promediadas entre filas, porque no se pueden sumar unidades de SKU con distinta unidad de medida.</div>
-      <div class="stt">Dónde se concentra el colchón</div>
-      <div class="so-lede">El colchón de seguridad no está repartido parejo: se decide en un puñado de celdas del cruce <b>ABC × criticidad</b>. Cualquier política de nivel de servicio se define ahí — mover el NS de las celdas del fondo de la tabla no cambia nada material.</div>
-      <div id="so-conc"></div>
-      <div class="tw" style="margin-top:10px"><table id="so-celdas">
-        <thead><tr><th>Celda (ABC / criticidad)</th><th class="num">NS</th><th class="num">SKU</th>
-        <th class="num">Colchón $</th><th class="num">% del colchón</th><th class="num">Acumulado</th><th style="width:22%">Peso</th></tr></thead>
-        <tbody></tbody><tfoot></tfoot>
-      </table></div>
-      <div class="so-note">El <b>colchón</b> (stock de seguridad) es lo que separa la banda mínima de cero: es la parte del inventario que existe para absorber variabilidad, no para cubrir el consumo del ciclo. Clic en una fila para ver sus SKU.</div>
-
-      <div class="stt">Los SKU sobre los que se decide <span id="so-nA" style="color:var(--muted);font-weight:400;font-size:.7rem"></span></div>
-      <div class="so-lede">Clase A ordenados por el colchón que generan. Son los que hay que mirar antes de fijar cualquier política de inventario: <b>PT afect.</b> y <b>Uds. PT</b> son las dos cifras que definen su criticidad.</div>
-      <div class="so-flt"><button class="so-btn on" id="so-a-ss" data-o="ss_val">Ordenar: mayor colchón</button><button class="so-btn" id="so-a-exp" data-o="pt_uds">Ordenar: más producción expuesta</button><button class="so-btn" id="so-a-cob" data-o="cob_sem">Ordenar: menor cobertura</button></div>
-      <div class="tw"><table id="so-tda">
-        <thead><tr><th>SKU</th><th>Descripción</th><th>Cat.</th><th>Criticidad</th><th class="num">NS</th>
-        <th class="num">PT afect.</th><th class="num">Uds. PT</th><th class="num">Dem/sem</th><th class="num">CV</th><th class="num">LT sem</th>
-        <th class="num ug g0">Stock</th><th class="num ug">B. mín</th><th class="num ug">Óptimo</th><th class="num ug">B. máx</th>
-        <th class="num cg g0">Cob. hoy</th><th class="num">Colchón $</th><th class="num">% del colchón A</th></tr></thead>
-        <tbody></tbody><tfoot></tfoot>
-      </table></div>
-      <div class="so-note"><b>PT afect.</b> = productos terminados distintos que dejan de producirse si falta ese SKU · <b>Uds. PT</b> = unidades de producción comprometidas en la ventana de COOIS. <b>Colchón $</b> es el stock de seguridad valorizado que genera cada SKU.</div>
-
       <div class="stt">Detalle por SKU</div>
       <div class="so-lede">Clic en cualquier fila para abrir su <b>ficha</b>: la serie de consumo real con la banda superpuesta, la regla que la determinó, las OC en camino y la producción que sostiene.</div>
       <div class="so-flt">
@@ -874,6 +895,72 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
         <th>Estado</th><th class="num">Δ banda $</th></tr></thead><tbody></tbody>
       </table></div>
       <div class="so-note"><b>Stock unid.</b> y <b>Dem/sem unid.</b> son las cifras físicas de las que sale todo: <code>Cob. hoy = Stock ÷ Dem/sem</code>. Si una cobertura extraña, casi siempre el problema está en la demanda, no en la banda. Los bloques sombreados son lo mismo en pesos y en semanas.</div>
+
+      <div class="stt">Metodología y respaldo</div>
+      <div class="so-lede">Todo lo que sostiene los números de arriba, plegado. Se abre cuando alguien pregunta <i>cómo se calculó</i> — que en una presentación es siempre.</div>
+
+      <details class="so-an"><summary>A · Cómo se construye la banda <small>fórmula, NS, CV, lead time</small></summary>
+        <div class="so-anb">
+          <div class="so-lede">Las tres cifras salen de una sola fórmula. Vale la pena entenderla porque muestra qué palanca mueve qué: el <b>colchón</b> desplaza la banda entera hacia arriba o abajo, y el <b>lote</b> define su ancho.</div>
+          <div class="so-form"><pre><span class="h">B. mínima = SS</span>
+<span class="h">Óptimo    = SS + Q/2</span>          <span class="c">← Q = demanda durante el período de revisión</span>
+<span class="h">B. máxima = SS + Q</span>
+
+<span class="k">SS</span> = <span class="k">z</span> × <span class="k">σ</span> × √(<span class="k">LT</span> + <span class="k">R</span>)          <span class="c">← el único lugar donde entran NS y CV</span>
+
+<span class="k">σ</span>  = demanda semanal × <span class="k">CV</span>       <span class="c">← el CV convierte la demanda en variabilidad</span>
+<span class="k">z</span>  = inversa normal del <span class="k">NS</span>       <span class="c">← 95% → 1,645 · 98% → 2,054 · 99% → 2,326</span></pre></div>
+          <div id="so-mdesc"></div>
+        </div>
+      </details>
+
+      <details class="so-an"><summary>B · Los dos ejes que asignan el nivel de servicio <small>matriz ABC × criticidad</small></summary>
+        <div class="so-anb">
+          <div class="so-lede">El NS <b>no se define por categoría</b>: se asigna SKU por SKU cruzando cuánta plata mueve con cuánta producción detiene. El número que se ve por categoría es sólo el promedio de lo que caiga adentro.</div>
+          <div class="so-axes" id="so-axes"></div>
+          <div id="so-mtz"></div>
+        </div>
+      </details>
+
+      <details class="so-an"><summary>C · Dónde se concentra el colchón <small id="so-nA"></small></summary>
+        <div class="so-anb">
+      <div class="so-lede">El colchón de seguridad no está repartido parejo: se decide en un puñado de celdas del cruce <b>ABC × criticidad</b>. Cualquier política de nivel de servicio se define ahí — mover el NS de las celdas del fondo de la tabla no cambia nada material.</div>
+      <div id="so-conc"></div>
+      <div class="tw" style="margin-top:10px"><table id="so-celdas">
+        <thead><tr><th>Celda (ABC / criticidad)</th><th class="num">NS</th><th class="num">SKU</th>
+        <th class="num">Colchón $</th><th class="num">% del colchón</th><th class="num">Acumulado</th><th style="width:22%">Peso</th></tr></thead>
+        <tbody></tbody><tfoot></tfoot>
+      </table></div>
+      <div class="so-note">El <b>colchón</b> (stock de seguridad) es lo que separa la banda mínima de cero: es la parte del inventario que existe para absorber variabilidad, no para cubrir el consumo del ciclo. Clic en una fila para ver sus SKU.</div>
+
+      <div class="stt">Los SKU sobre los que se decide </div>
+      <div class="so-lede">Clase A ordenados por el colchón que generan. Son los que hay que mirar antes de fijar cualquier política de inventario: <b>PT afect.</b> y <b>Uds. PT</b> son las dos cifras que definen su criticidad.</div>
+      <div class="so-flt"><button class="so-btn on" id="so-a-ss" data-o="ss_val">Ordenar: mayor colchón</button><button class="so-btn" id="so-a-exp" data-o="pt_uds">Ordenar: más producción expuesta</button><button class="so-btn" id="so-a-cob" data-o="cob_sem">Ordenar: menor cobertura</button></div>
+      <div class="tw"><table id="so-tda">
+        <thead><tr><th>SKU</th><th>Descripción</th><th>Cat.</th><th>Criticidad</th><th class="num">NS</th>
+        <th class="num">PT afect.</th><th class="num">Uds. PT</th><th class="num">Dem/sem</th><th class="num">CV</th><th class="num">LT sem</th>
+        <th class="num ug g0">Stock</th><th class="num ug">B. mín</th><th class="num ug">Óptimo</th><th class="num ug">B. máx</th>
+        <th class="num cg g0">Cob. hoy</th><th class="num">Colchón $</th><th class="num">% del colchón A</th></tr></thead>
+        <tbody></tbody><tfoot></tfoot>
+      </table></div>
+      <div class="so-note"><b>PT afect.</b> = productos terminados distintos que dejan de producirse si falta ese SKU · <b>Uds. PT</b> = unidades de producción comprometidas en la ventana de COOIS. <b>Colchón $</b> es el stock de seguridad valorizado que genera cada SKU.</div>
+
+        </div>
+      </details>
+
+      <details class="so-an"><summary>D · Simulación — mover el nivel de servicio <small>trade-off servicio ↔ capital, en pesos</small></summary>
+        <div class="so-anb">
+          <div class="so-lede">Como el SS escala con <code>z</code>, el efecto de cambiar el NS es calculable. Estas dos tablas muestran el trade-off servicio↔capital en pesos.</div>
+          <div class="so-axes">
+            <div class="so-ax"><h4>Mover sólo la celda <b>A / normal</b></h4>
+              <div class="tw" style="margin-top:6px"><table id="so-sim1"><thead><tr><th>NS de A/normal</th><th class="num">Colchón total</th><th class="num">vs hoy</th></tr></thead><tbody></tbody></table></div></div>
+            <div class="so-ax"><h4>Mover <b>toda la fila A</b></h4>
+              <div class="tw" style="margin-top:6px"><table id="so-sim2"><thead><tr><th>Ajuste</th><th class="num">Colchón total</th><th class="num">vs hoy</th></tr></thead><tbody></tbody></table></div></div>
+          </div>
+          <div class="so-note">La simulación mueve sólo el colchón (SS); el lote Q no cambia, porque depende del período de revisión y no del nivel de servicio. Por eso el efecto sobre el óptimo total es exactamente el delta que muestra la tabla.</div>
+        </div>
+      </details>
+
     </div>
   </div>
 </div>
@@ -7372,8 +7459,8 @@ function soLoad(){
 function soBuild(){
   el('so-load').style.display='none';
   el('so-body').style.display='';
-  soKpis(); soHero(); soDvg(); soInitFiltros(); soDrawTB();
-  soCeldas(); soDetA(); soDrawTS();
+  soKpis(); soHero(); soBullet(); soDvg(); soInitFiltros(); soDrawTB(); soDrawTS();
+  soMdesc(); soEjes(); soCeldas(); soDetA(); soSim();
 }
 
 /* ── KPIs ── */
@@ -7591,6 +7678,99 @@ function soDrill(cat,org){
   document.querySelector('#so-ts').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
+/* ── Bullet por categoría ── */
+function soBullet(){
+  var cs=(SO.cats||[]).filter(function(c){return c.n_dem>0;});
+  var mx=Math.max.apply(null,cs.map(function(c){return Math.max(c.stock,c.bmax);}))*1.06;
+  var pc=function(v){ return Math.max(0,Math.min(100,100*v/mx)); };
+  el('so-blt').innerHTML = cs.map(function(c){
+    var k=c.stock<c.bmin?'BAJO MINIMO':(c.stock>c.bmax?'SOBRE MAXIMO':'EN BANDA');
+    var est=k==='BAJO MINIMO'?'bajo el mínimo':(k==='SOBRE MAXIMO'?'sobre el máximo':'en banda');
+    return '<div class="so-bltrow" data-c="'+c.id+'">'
+      +'<div class="so-bltlab">'+soE(c.label)+'<small>'+c.n_dem+' SKU con demanda</small></div>'
+      +'<div class="so-blttrack">'
+      +'<div class="so-bltband" style="left:'+pc(c.bmin)+'%;width:'+Math.max(0.4,pc(c.bmax)-pc(c.bmin))+'%"></div>'
+      +'<div class="so-bltbar" style="width:'+pc(c.stock)+'%;background:'+SO_COL[k]+'"></div>'
+      +'<div class="so-blttgt" style="left:'+pc(c.opt)+'%"></div></div>'
+      +'<div class="so-bltval" style="color:'+SO_COL[k]+'">'+SO_ICO[k]+' $'+soMM(c.stock)
+      +'<small>'+est+' · óptimo $'+soMM(c.opt)+'</small></div></div>';
+  }).join('')
+  +'<div class="so-leg"><span><i style="background:rgba(99,102,241,.30);border:1px solid rgba(99,102,241,.7)"></i>banda mín–máx</span>'
+  +'<span><i style="background:#fff"></i>óptimo</span>'
+  +['BAJO MINIMO','EN BANDA','SOBRE MAXIMO'].map(function(k){
+      return '<span><i style="background:'+SO_COL[k]+'"></i>'+SO_ICO[k]+' '+k.toLowerCase()+'</span>';
+    }).join('')+'</div>';
+  Array.prototype.forEach.call(el('so-blt').querySelectorAll('.so-bltrow'), function(e){
+    e.onclick=function(){ soDrill(e.getAttribute('data-c'),''); };
+  });
+}
+
+/* ── Anexo A: descripción de la fórmula ── */
+function soMdesc(){
+  var emp=SO.rows.filter(function(r){return soV(r,'ss_metodo')==='empirico';}).length;
+  el('so-mdesc').innerHTML='<div class="why" style="background:#161b2b;border:1px solid var(--border);border-left:3px solid #6366f1;border-radius:8px;padding:11px 14px;font-size:.72rem;color:var(--muted);line-height:1.6">'
+    +'<b style="color:#c0caf5">R (período de revisión)</b> es cada cuánto se puede volver a pedir: define el lote Q y con eso el ancho de la banda. '
+    +'<b style="color:#c0caf5">LT</b> es el lead time del proveedor. Ambos entran bajo la raíz porque la incertidumbre crece con la <i>raíz</i> del tiempo expuesto, no linealmente — duplicar el lead time no duplica el colchón, lo multiplica por 1,41.<br><br>'
+    +'Cuando el CV supera 1 la demanda es intermitente y la normal deja de describirla: en esos casos el SS se toma del <b style="color:#c0caf5">percentil empírico</b> de la propia serie (método <code>empirico</code>), no de la fórmula. '
+    +'Hoy son <b style="color:#c0caf5">'+emp+'</b> SKU de '+SO.rows.length+'.</div>';
+}
+
+/* ── Anexo B: matriz ABC × criticidad ── */
+function soEjes(){
+  var m=SO.metodologia||{}, mtz=m.matriz;
+  if(mtz){
+    var crits=['critico','normal','bajo'];
+    el('so-mtz').innerHTML='<table class="so-mtz"><thead><tr><th>ABC \\ criticidad</th>'
+      +crits.map(function(c){return '<th>'+c+'</th>';}).join('')+'</tr></thead><tbody>'
+      +['A','B','C'].map(function(a){
+        return '<tr><th>'+a+'</th>'+crits.map(function(c){
+          var v=(mtz[a]||{})[c];
+          var n=(m.celdas||[]).filter(function(x){return x.abc===a&&x.crit===c;})[0];
+          return '<td class="'+((a==='A'&&c==='critico')?'hot':'')+'">'+(v!=null?(100*v).toFixed(0)+'%':'—')
+            +'<small>'+(n?n.n+' SKU':'')+'</small></td>';
+        }).join('')+'</tr>';
+      }).join('')+'</tbody></table>';
+  }
+  var abc=SO.abc||{}, totAbc=0;
+  ['A','B','C'].forEach(function(k){ totAbc+=(abc[k]||{}).val||0; });
+  el('so-axes').innerHTML=
+    '<div class="so-ax"><h4>Eje 1 · ABC — cuánta plata mueve</h4>'
+    +'<p>Sobre el <b>consumo anual valorizado</b> (demanda semanal × 52 × precio), no sobre el stock. Un SKU con mucho stock parado no es A: es un problema.</p>'
+    +['A','B','C'].map(function(k){
+        var x=abc[k]||{n:0,val:0};
+        return '<div style="margin-top:7px"><div style="display:flex;justify-content:space-between;font-size:.71rem">'
+          +'<span>Clase '+k+' · '+x.n+' SKU</span><b>$'+soMM(x.val)+'</b></div>'
+          +'<div class="so-bar0"><i style="width:'+(totAbc?100*x.val/totAbc:0).toFixed(1)+'%"></i></div></div>';
+      }).join('')+'</div>'
+    +'<div class="so-ax"><h4>Eje 2 · Criticidad — cuánta producción detiene</h4>'
+    +'<p>De la explosión de COOIS: cuántas unidades de producto terminado dejan de fabricarse si esa MP falta. Es lo que separa un insumo caro de uno que <i>para la línea</i>.</p>'
+    +['critico','normal','bajo'].map(function(k){
+        var n=SO.rows.filter(function(r){return soV(r,'crit')===k;}).length;
+        return '<div style="margin-top:7px"><div style="display:flex;justify-content:space-between;font-size:.71rem">'
+          +'<span>'+k+'</span><b>'+n+' SKU</b></div>'
+          +'<div class="so-bar0"><i style="width:'+(100*n/SO.rows.length).toFixed(1)+'%"></i></div></div>';
+      }).join('')+'</div>';
+}
+
+/* ── Anexo D: simulaciones de NS ── */
+function soSim(){
+  var m=SO.metodologia||{};
+  var pinta=function(id,arr,lab){
+    var tb=document.querySelector('#'+id+' tbody'); if(!tb||!arr) return;
+    tb.innerHTML=arr.map(function(x){
+      return '<tr><td>'+lab(x)+'</td><td class="num">$'+soMM(x.ss)+'</td>'
+        +'<td class="num" style="color:'+(x.delta>0?SO_COL['SOBRE MAXIMO']:(x.delta<0?SO_COL['EN BANDA']:'var(--muted)'))+'">'
+        +(x.delta===0?'—':(x.delta>0?'+':'−')+'$'+soMM(Math.abs(x.delta)))+'</td></tr>';
+    }).join('');
+  };
+  pinta('so-sim1', m.sim_celda_a_normal, function(x){
+    return (100*x.ns).toFixed(0)+'%'+(x.delta===0?' (hoy)':'');
+  });
+  pinta('so-sim2', m.sim_fila_a, function(x){
+    return x.pts===0?'sin cambio (hoy)':((x.pts>0?'+':'−')+Math.abs(x.pts)+' punto'+(Math.abs(x.pts)>1?'s':'')+' de NS');
+  });
+}
+
 /* ── Concentración del colchón: celdas ABC × criticidad ── */
 var SO_AORD = 'ss_val';
 
@@ -7649,7 +7829,7 @@ function soDetA(){
     }
     return (b[I[SO_AORD]]||0)-(a[I[SO_AORD]]||0);
   });
-  el('so-nA').textContent = '· '+rows.length+' SKU clase A · $'+soMM(tot)+' de colchón';
+  el('so-nA').textContent = rows.length+' SKU clase A · $'+soMM(tot)+' de colchón';
   var tb=document.querySelector('#so-tda tbody');
   tb.innerHTML = xs.slice(0,40).map(function(r){
     var cob=r[I['cob_sem']];
