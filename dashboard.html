@@ -1502,7 +1502,7 @@ function rsLine(pts,o){
     if(l2){
       var l2x=X(l2.i),l2y=Y(l2.v);
       g+='<circle cx="'+l2x.toFixed(1)+'" cy="'+l2y.toFixed(1)+'" r="3.4" fill="'+(o.s2col||'#7FB52C')+'" stroke="#0b0e16" stroke-width="1.6"/>'+
-         '<text x="'+(l2x-7).toFixed(1)+'" y="'+(l2y+13).toFixed(1)+'" fill="'+(o.s2col||'#7FB52C')+'" font-size="10.5" font-weight="800" text-anchor="end">'+(o.fmtL?o.fmtL(l2.v):l2.v)+'</text>';
+         '<text x="'+(l2x-9).toFixed(1)+'" y="'+(l2y+17).toFixed(1)+'" fill="'+(o.s2col||'#7FB52C')+'" font-size="10.5" font-weight="800" text-anchor="end">'+(o.fmtL?o.fmtL(l2.v):l2.v)+'</text>';
     }
   }
   if(o.meta!==undefined&&o.markBelow){
@@ -6124,7 +6124,7 @@ function ppaBolsaQRender(){
     +   '<button onclick="expXls(\'ppa-bolsaq-tb\',\'bolsas_ppa_sin_stock\')" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button>'
     +   '<button class="cov-cl" onclick="ppaToggleBolsaQ()">✕ Cerrar</button>'
     + '</span></h4>'
-    + '<div style="font-size:.62rem;color:var(--muted);margin:2px 0 8px">Bolsa (producto terminado) con <b>stock 0 en bodega hoy</b>. El único suministro reconocido es la <b>OC en tránsito de ME2M</b> (toda OC con saldo pendiente cuenta como activa, aunque su fecha de entrega ya haya pasado). <b>Se necesita en</b> = primera semana del horizonte (S'+sem+'→S'+ppaLastWeek()+') con demanda del plan (<span style="color:var(--q)">≤4 sem</span> / <span style="color:#E8C52A">≤10 sem</span>). <b>¿La OC alcanza?</b> compara la OC en tránsito contra la demanda restante de la temporada. El calendario de entregas del proveedor no interviene acá — vive en la tabla "Stock Proyectado Semanal", al final de esta pestaña.</div>'
+    + '<div style="font-size:.62rem;color:var(--muted);margin:2px 0 8px">Bolsa (producto terminado) con <b>stock 0 en bodega hoy</b> <b>y demanda pendiente</b> en el horizonte. Las bolsas <b>sin demanda restante</b> (ej. códigos de la campaña anterior) quedan fuera: stock 0 es su estado correcto, no un quiebre. El único suministro reconocido es la <b>OC en tránsito de ME2M</b> (toda OC con saldo pendiente cuenta como activa, aunque su fecha de entrega ya haya pasado). <b>Se necesita en</b> = primera semana del horizonte (S'+sem+'→S'+ppaLastWeek()+') con demanda del plan (<span style="color:var(--q)">≤4 sem</span> / <span style="color:#E8C52A">≤10 sem</span>). <b>¿La OC alcanza?</b> compara la OC en tránsito contra la demanda restante de la temporada. El calendario de entregas del proveedor no interviene acá — vive en la tabla "Stock Proyectado Semanal", al final de esta pestaña.</div>'
     + '<div class="tw"><table><thead><tr>'
     + '<th>Código</th><th>Nombre bolsa</th>'
     + th('Stock hoy','stock') + th('OC tránsito','oc') + th('Demanda restante','demR')
@@ -6557,16 +6557,21 @@ function buildPPA(){
   // proyección del calendario de Matías (que es el plan del proveedor y vive en la tabla de Stock
   // Proyectado, abajo): el suministro reconocido en los cálculos de la pestaña es la OC en tránsito
   // de ME2M. Ver PARAMETRO.MD B.16.
+  // El universo son las bolsas CON demanda restante en el horizonte (S<sem>→S52): una bolsa sin
+  // demanda no es quiebre ni faltante por comprar — stock 0 es el estado correcto (ej. 400567
+  // BOLSA PP TOTTUS 700G 09.25, de la campaña anterior). Mismo criterio que el resto de la
+  // pestaña (rest<=0 → se ignora) y que el flag `sin_lleg` del backend (dem_tot>0).
   var bolsasQ=0, bolsasTot=0, bolsaQDet=[];
   if(LLEG_PPA && LLEG_PPA.rows){
-    bolsasTot=LLEG_PPA.rows.length;
     var Wb=LLEG_PPA.weeks||[];
     LLEG_PPA.rows.forEach(function(r){
-      if((r.stock||0)>0) return;
-      bolsasQ++;
       // Demanda restante de la temporada y primera semana en que se necesita la bolsa.
       var demR=0, firstD=null;
       Wb.forEach(function(w){ var dv=(r.dem&&r.dem[String(w)])||0; if(dv>0){ demR+=dv; if(firstD===null) firstD=w; } });
+      if(demR<=0) return;                 // sin demanda ⇒ fuera del universo, no es quiebre
+      bolsasTot++;
+      if((r.stock||0)>0) return;
+      bolsasQ++;
       var oc=r.oc||0;
       bolsaQDet.push({cod:r.cod, nom:r.nom||'', stock:r.stock||0, oc:oc, demR:demR,
         firstD:(firstD===null?999:firstD), saldo:oc-demR, pct:(demR>0?Math.min(100,oc/demR*100):null)});
@@ -6634,7 +6639,7 @@ function buildPPA(){
     +   kc('#378ADD','$'+fMM(valA),'Stock valorizado PPA','Todo el programa · '+itemsA.length+' SKU')
     +   kc('#38bdf8','$'+fMM(valExcl),'Stock valorizado Exclusivos PPA','Uso exclusivo · '+exclCnt+' SKU · no reutilizable')
     +   kc('#E87B2A','$'+fMM(excExclTot),'Sobre-abastec. exclusivos PPA','riesgo merma real · '+excExclCnt+' SKU', excExclCnt>0?'ppaToggleExcl()':'')
-    +   kc('#a855f7',f0(bolsasQ),'Bolsas PPA sin stock','stock 0 en bodega · de '+bolsasTot+' bolsas', bolsasQ>0?'ppaToggleBolsaQ()':'')
+    +   kc('#a855f7',f0(bolsasQ),'Bolsas PPA sin stock','stock 0 en bodega · de '+bolsasTot+' bolsas con demanda', bolsasQ>0?'ppaToggleBolsaQ()':'')
     +   gaugesPanel
     +   funnelPanel
     + '</div>'
