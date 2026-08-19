@@ -439,6 +439,13 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 #rs-host .hv .l{font-size:.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
 #rs-host .hv .d{font-size:.7rem;color:#9fabc6;margin-top:7px;line-height:1.6}
 #rs-host .hv .d b{color:#fff}
+/* subtotal G. Planificación: es el número que realmente gestiona el área, va destacado
+   y en el mismo verde que su línea en el gráfico de evolución */
+#rs-host .hv .hvp{margin-top:10px;padding-top:9px;border-top:1px solid rgba(45,52,82,.9)}
+#rs-host .hv .hvp .k{font-size:.72rem;font-weight:800;color:#c9d3e8;letter-spacing:.2px}
+#rs-host .hv .hvp .v{font-size:1.35rem;font-weight:900;color:#7FB52C;line-height:1.15;letter-spacing:-.5px;margin-top:2px}
+#rs-host .hv .hvp .v small{font-size:.8rem;font-weight:800;color:#7FB52C;opacity:.85}
+#rs-host .hv .hvp .s{font-size:.66rem;color:var(--muted);line-height:1.45;margin-top:3px}
 #rs-host .hc{min-width:0}
 /* Titulo de tabla/grafico dentro de un bloque. Va en blanco, mas grande y con una linea
    inferior para que se lea como encabezado y no se confunda con las etiquetas menores.
@@ -1451,7 +1458,11 @@ function rsLine(pts,o){
   var W=720,H=o.h||170,L=42,R=14,T=12,Bo=24;
   var vals=pts.map(function(p){return p.v;}).filter(function(v){return v!==null&&v!==undefined;});
   if(vals.length<2) return '<div style="color:var(--muted);font-size:.7rem;padding:20px">Sin serie</div>';
+  /* serie secundaria opcional: o.s2 = campo del punto (ej. 'v2'). Comparte escala con la
+     principal y se dibuja como línea sin área, para que la comparación sea directa. */
+  var s2=o.s2, v2s=s2?pts.map(function(p){return p[s2];}).filter(function(v){return v!==null&&v!==undefined;}):[];
   var mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals);
+  if(v2s.length){mn=Math.min(mn,Math.min.apply(null,v2s));mx=Math.max(mx,Math.max.apply(null,v2s));}
   if(o.meta!==undefined){mn=Math.min(mn,o.meta);mx=Math.max(mx,o.meta);}
   var pad=(mx-mn)*0.18||1; mn-=pad; mx+=pad;
   if(o.zero&&mn<0) mn=0;                       // un % no baja de 0
@@ -1478,6 +1489,22 @@ function rsLine(pts,o){
   });
   g+='<path d="'+dp+' L'+X(pts.length-1).toFixed(1)+' '+(H-Bo)+' L'+fx.toFixed(1)+' '+(H-Bo)+' Z" fill="'+o.color+'" opacity=".12"/>';
   g+='<path d="'+dp+'" fill="none" stroke="'+o.color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+  if(v2s.length>1){
+    var dp2='',f2=true;
+    pts.forEach(function(p,i){
+      var v=p[s2]; if(v===null||v===undefined) return;
+      var x=X(i),y=Y(v);
+      if(f2){dp2='M'+x.toFixed(1)+' '+y.toFixed(1);f2=false;} else dp2+=' L'+x.toFixed(1)+' '+y.toFixed(1);
+    });
+    g+='<path d="'+dp2+'" fill="none" stroke="'+(o.s2col||'#7FB52C')+'" stroke-width="1.8" stroke-dasharray="'+(o.s2dash||'6 3')+'" stroke-linejoin="round" stroke-linecap="round"/>';
+    var l2=null;
+    for(var q=pts.length-1;q>=0;q--){if(pts[q][s2]!==null&&pts[q][s2]!==undefined){l2={i:q,v:pts[q][s2]};break;}}
+    if(l2){
+      var l2x=X(l2.i),l2y=Y(l2.v);
+      g+='<circle cx="'+l2x.toFixed(1)+'" cy="'+l2y.toFixed(1)+'" r="3.4" fill="'+(o.s2col||'#7FB52C')+'" stroke="#0b0e16" stroke-width="1.6"/>'+
+         '<text x="'+(l2x-7).toFixed(1)+'" y="'+(l2y+13).toFixed(1)+'" fill="'+(o.s2col||'#7FB52C')+'" font-size="10.5" font-weight="800" text-anchor="end">'+(o.fmtL?o.fmtL(l2.v):l2.v)+'</text>';
+    }
+  }
   if(o.meta!==undefined&&o.markBelow){
     pts.forEach(function(p,i){
       if(p.v===null||p.v===undefined||p.v>=o.meta) return;
@@ -1712,12 +1739,22 @@ function rsRender(){
         '<div class="n">$'+rsN(B2.total/1e6)+'<small> MM</small></div>'+
         '<div class="d">'+(B2.var12<0?'<span style="color:var(--n)">▼':'<span style="color:var(--q)">▲')+' '+Math.abs(B2.var12).toFixed(1)+'%</span> en 12 semanas'+
         '<br>Dura en promedio <b>'+B2.doh+' días</b> = rota <b>'+B2.vueltas+' veces al año</b>'+
-        '<br><span style="color:var(--muted)">Con pronóstico (MP + empaques): '+rsMM(B2.zmpr_zemp)+'</span></div></div>'+
+        '<br><span style="color:var(--muted)">Con pronóstico (MP + empaques): '+rsMM(B2.zmpr_zemp)+'</span></div>'+
+        (B2.plan?'<div class="hvp"><div class="k">G. Planificación</div>'+
+          '<div class="v">$'+rsN(B2.plan.val/1e6)+'<small> MM</small></div>'+
+          '<div class="s">'+Number(B2.plan.pct).toFixed(1)+'% del total · '+f0(B2.plan.n)+' SKU'+
+          '<br>sin uniformes ni repuestos</div></div>':'')+
+        '</div>'+
         '<div class="hc"><div class="ct"><span>Evolución del inventario valorizado</span><span><b>'+B2.serie.length+'</b> semanas · millones de pesos</span></div>'+
-        rsLine(B2.serie.map(function(x){return {s:x.s.slice(-3),v:x.v/1e6,f:x.f,sem:x.s};}),{
+        rsLine(B2.serie.map(function(x){return {s:x.s.slice(-3),v:x.v/1e6,f:x.f,sem:x.s,
+                                               p:(x.p===null||x.p===undefined?null:x.p/1e6)};}),{
           color:'#378ADD',h:170,fmtY:function(v){return rsN(v);},fmtL:function(v){return rsN(v)+' MM';},
-          fmtX:function(p){return p.s;},marks:B2.saltos,
-          tip:function(p){return '<div class="tw2">'+p.sem+' · '+p.f+'</div><div class="tv">$'+rsN(p.v)+' MM</div>';}})+
+          fmtX:function(p){return p.s;},marks:B2.saltos,s2:'p',s2col:'#7FB52C',
+          tip:function(p){return '<div class="tw2">'+p.sem+' · '+p.f+'</div><div class="tv">$'+rsN(p.v)+' MM</div>'+
+            (p.p!==null&&p.p!==undefined?'<div style="font-size:.62rem;color:#7FB52C;font-weight:700">G. Planificación $'+rsN(p.p)+' MM · '+(p.p/p.v*100).toFixed(0)+'%</div>':'');}})+
+        '<div class="lg" style="margin-top:6px">'+
+          '<span class="li"><span class="sw" style="background:#378ADD"></span>Inventario total</span>'+
+          '<span class="li"><span class="sw" style="background:#7FB52C"></span>G. Planificación (sin uniformes ni repuestos)</span></div>'+
         (B2.saltos.length?'<div class="hint">▲ <b>'+B2.saltos.length+' saltos sobre 15% en una semana</b> ('+B2.saltos.map(function(x){return x.s.slice(-3)+' '+(x.pct>0?'+':'')+x.pct+'%';}).join(' · ')+'). '+
           'Demasiado grandes para ser movimiento real de stock: probable cambio de alcance de la extracción. <b>No leer la tendencia a través de esas marcas hasta validarlas.</b></div>':'')+
         '</div></div>'+
