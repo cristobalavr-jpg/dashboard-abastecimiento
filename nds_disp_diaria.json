@@ -1,5 +1,5 @@
 {
- "generado": "2026-08-18T17:17:28",
+ "generado": "2026-08-19T10:29:27",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -2829,6 +2829,68 @@
     {
      "sku": "400495",
      "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-08-19",
+   "disp": 97.3,
+   "n_solic": 489,
+   "n_cero": 13,
+   "n_excl_granel": 8,
+   "n_anom_neg": 3,
+   "skus_cero": [
+    {
+     "sku": "300134",
+     "desc": "ENELDO"
+    },
+    {
+     "sku": "300160",
+     "desc": "ALBAHACA DESHIDRATADA PICADA"
+    },
+    {
+     "sku": "300283",
+     "desc": "MASA MADRE RIGOLETTO"
+    },
+    {
+     "sku": "300305",
+     "desc": "SABORIZANTE POLLO EN POLVO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300348",
+     "desc": "GRANOFIBRA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400100",
+     "desc": "ETIQ CAST CHAPARRITA 02.21"
+    },
+    {
+     "sku": "400474",
+     "desc": "FILM CAST BROOKIE (IND) 03.25"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400495",
+     "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    },
+    {
+     "sku": "400571",
+     "desc": "FILM CAST BROOKIE (PACK4) 05.25"
     }
    ]
   }
