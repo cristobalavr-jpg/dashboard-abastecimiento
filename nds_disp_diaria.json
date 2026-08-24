@@ -1,5 +1,5 @@
 {
- "generado": "2026-08-20T09:49:20",
+ "generado": "2026-08-24T10:10:03",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -2949,6 +2949,84 @@
     {
      "sku": "400495",
      "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-08-24",
+   "disp": 96.3,
+   "n_solic": 456,
+   "n_cero": 17,
+   "n_excl_granel": 8,
+   "n_anom_neg": 6,
+   "skus_cero": [
+    {
+     "sku": "300134",
+     "desc": "ENELDO"
+    },
+    {
+     "sku": "300160",
+     "desc": "ALBAHACA DESHIDRATADA PICADA"
+    },
+    {
+     "sku": "300181",
+     "desc": "COLOR ZAPALLO NATURAL"
+    },
+    {
+     "sku": "300291",
+     "desc": "ALBAHACA FRESCA"
+    },
+    {
+     "sku": "300305",
+     "desc": "SABORIZANTE POLLO EN POLVO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300348",
+     "desc": "GRANOFIBRA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400010",
+     "desc": "BOLS.POLIETILENO 25.5X39 - 3"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400054",
+     "desc": "FILM BOPP TPTE 300X0,035"
+    },
+    {
+     "sku": "400100",
+     "desc": "ETIQ CAST CHAPARRITA 02.21"
+    },
+    {
+     "sku": "400190",
+     "desc": "ETIQ. CAST COCADA CHOC 06.22"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400495",
+     "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    },
+    {
+     "sku": "400564",
+     "desc": "ETIQ CAS GALL ALMENDRA 90G 07.25 FRONTAL"
+    },
+    {
+     "sku": "400665",
+     "desc": "BOLSA KING PROTEÍNA INTEGRAL 04.26 PEBD4"
     }
    ]
   }
