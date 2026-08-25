@@ -1880,6 +1880,14 @@ document.addEventListener('mouseover',function(e){
 document.addEventListener('mouseout',function(e){
   var t=e.target; if(t&&t.tagName==='rect'&&t.hasAttribute('data-tip')) rsTip(t,false);
 });
+// Auto-alto del iframe NDS (t14): crece al contenido y elimina la barra interna
+// (que se vea como Terceros e Insumos). nds.html postea su altura al cambiar.
+window.addEventListener('message',function(e){
+  if(e&&e.data&&e.data.type==='nds-height'&&e.data.h){
+    var f=document.getElementById('nds-frame');
+    if(f) f.style.height=(e.data.h+24)+'px';
+  }
+});
 
 // ── Desglose por línea productiva del bloque Servicio (mismo diseño, vía rsLine) ──
 function svcEntity(code){
