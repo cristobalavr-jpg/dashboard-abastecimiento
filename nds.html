@@ -436,5 +436,23 @@ document.getElementById('notas').innerHTML=
   document.getElementById('plOv').addEventListener('click',function(e){if(e.target.id==='plOv')this.style.display='none';});
   document.addEventListener('keydown',function(e){if(e.key==='Escape')document.getElementById('plOv').style.display='none';});
 })();
+
+// Auto-alto: reporta la altura del contenido al DA padre para que el iframe crezca
+// al contenido (sin barra interna, igual que las secciones inline). Reacciona a los
+// cambios de alto (toggle Gráficos/Tabla, combo, etc.) vía ResizeObserver.
+(function(){
+  if(window.self===window.top) return;                 // sólo embebido en el DA
+  var last=0;
+  function postH(){
+    // body.offsetHeight = alto del CONTENIDO (no se infla al viewport del iframe como
+    // documentElement.scrollHeight, que causaría un bucle creciente con el auto-alto).
+    var h=document.body.offsetHeight||0;
+    if(h && Math.abs(h-last)>3){ last=h; try{ parent.postMessage({type:'nds-height',h:h},'*'); }catch(e){} }
+  }
+  window.addEventListener('load',postH);
+  window.addEventListener('resize',postH);
+  if(window.ResizeObserver){ try{ new ResizeObserver(postH).observe(document.body); }catch(e){} }
+  setTimeout(postH,300); setTimeout(postH,1200); setTimeout(postH,2500);   // tras render de charts
+})();
 </script>
 </body></html>
