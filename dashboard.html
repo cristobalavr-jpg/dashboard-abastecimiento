@@ -289,6 +289,20 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .si:focus{outline:none;border-color:#6366f1}
 .csel{background:#1a1f2e;border:1px solid var(--border);border-radius:5px;padding:6px 11px;color:#e2e8f0;font-size:.75rem;cursor:pointer}
 .csel:focus{outline:none;border-color:#6366f1}
+/* Combo multi-select de líneas productivas (FC por línea, B.7.12) */
+.plcmb{position:relative;display:inline-block}
+.plcmb-btn{background:#1a1f2e;border:1px solid var(--border);border-radius:5px;padding:5px 10px;color:#e2e8f0;font-size:.71rem;font-weight:700;font-family:inherit;cursor:pointer;min-width:230px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.plcmb-btn:hover{border-color:#6366f1}
+.plcmb-btn.on{border-color:#6366f1;color:#c0caf5;background:#1d2340}
+.plcmb-btn .cv{color:var(--muted);font-size:.6rem}
+.plcmb-pan{position:absolute;top:calc(100% + 4px);left:0;z-index:60;background:#12172a;border:1px solid #2d3452;border-radius:8px;padding:6px;min-width:290px;max-height:340px;overflow:auto;box-shadow:0 16px 40px rgba(0,0,0,.55);display:none}
+.plcmb-pan.open{display:block}
+.plcmb-opt{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;font-size:.72rem;color:#c9d3e8;cursor:pointer;font-weight:600;white-space:nowrap}
+.plcmb-opt:hover{background:#1c2238}
+.plcmb-opt input{accent-color:#6366f1;cursor:pointer}
+.plcmb-opt .pc{color:var(--muted);font-weight:700;font-size:.66rem;margin-left:auto}
+.plcmb-sep{height:1px;background:#2d3452;margin:5px 2px}
+.plcmb-ft{font-size:.62rem;color:var(--muted);padding:4px 8px 2px;line-height:1.4}
 .pag{display:flex;gap:5px;margin-top:8px;align-items:center;flex-wrap:wrap}
 .pb{background:#232840;border:1px solid var(--border);border-radius:4px;padding:3px 9px;font-size:.68rem;color:var(--muted);cursor:pointer}
 .pb:hover,.pb.active{background:#6366f1;border-color:#6366f1;color:#fff}
@@ -786,8 +800,12 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="plk-body" id="body-plt">
   <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.25);border-radius:7px;padding:7px 11px;margin-bottom:8px;font-size:.66rem;color:#a4b4ce">
     Cruza stock por bodega y OC en tránsito con <b>consumo real semanal (últimas 12 sem)</b> y <b>FC semanal (próximas 12 sem)</b>. <b>Desv. %</b> = (ΣFC 4w − ΣReal 4w)/ΣReal 4w (Real 4w excluye la semana en curso): <span style="color:var(--mT)">+</span> = FC sobreestima (riesgo merma), <span style="color:var(--q)">−</span> = FC subestima (riesgo quiebre). <b>Cob.</b> en semanas. <b>OC tránsito</b> abre el detalle de las OC al hacer clic. Respeta filtro global de comprador y toggle Excluir PPA.
+    El selector <b>FC completo (SumExpl)</b> permite cambiar el FC por el de una o varias <b>líneas productivas</b> (hojas Ex.* del Consolidado): la tabla recalcula ΣFC y las 3 coberturas contra ese FC y se acota a los SKU que la línea consume. Sin selección manda SumExpl, la suma de todas las líneas.
   </div>
-  <div class="fr"><input type="text" class="si" id="plts" placeholder="Buscar por SKU o descripción..." oninput="sPLT(this.value)" style="width:320px"><input type="text" class="si" id="pltoc" placeholder="Filtrar por N° de OC..." oninput="sPLTOC(this.value)" title="Muestra solo los SKU con una OC en tránsito cuyo N° de documento contenga el texto ingresado" style="width:220px"></div>
+  <div class="fr"><input type="text" class="si" id="plts" placeholder="Buscar por SKU o descripción..." oninput="sPLT(this.value)" style="width:320px"><input type="text" class="si" id="pltoc" placeholder="Filtrar por N° de OC..." oninput="sPLTOC(this.value)" title="Muestra solo los SKU con una OC en tránsito cuyo N° de documento contenga el texto ingresado" style="width:220px">
+    <div class="plcmb" id="pltLnCombo"><button type="button" class="plcmb-btn" id="pltLnBtn" title="FC por línea productiva: elige una o varias líneas y la tabla recalcula FC y coberturas contra ese FC. Sin selección = FC completo (SumExpl).">FC completo (SumExpl) <span class="cv">▾</span></button><div class="plcmb-pan" id="pltLnPan"></div></div>
+  </div>
+  <div id="plt-lnwarn" style="display:none;background:rgba(232,146,74,.08);border:1px solid rgba(232,146,74,.32);border-radius:7px;padding:6px 11px;margin-bottom:8px;font-size:.64rem;color:#e8ae7a"></div>
   <div class="tw" style="margin-bottom:6px;max-height:74vh;overflow:auto"><table id="plt-table"><thead id="pltth"></thead><tbody id="plttb"></tbody></table></div>
   <div class="pag" id="pltpag"></div>
   </div>
@@ -2916,7 +2934,7 @@ function rndFCW(){
 // Layout fila PLT: 0=sku 1=desc 2=um 3=comp 4=stock 5=scd 6=sq 7=blq 8=sh 9=oc
 //   10..21=cons12(12) 22..34=fc(13, incl. sem en curso) 35=fc4_sum 36=real4_sum 37=desv_pct
 //   38=cob_fc4 39=fc12_sum 40=cob_fc12 41=cob_fc12_oc 42=val_stock 43=val_oc
-var PLTF={s:'',oc:'',p:1,sortCol:null,sortDir:1}; // sortCol = índice de columna de cobertura · oc = filtro por N° de OC
+var PLTF={s:'',oc:'',p:1,sortCol:null,sortDir:1,lines:[]}; // sortCol = índice de columna de cobertura · oc = filtro por N° de OC · lines = líneas productivas seleccionadas (vacío = SumExpl)
 var PLT_PER=50;
 var PLT_C0=10, PLT_F0=22; // offsets de las columnas semanales
 // Columnas congeladas (sticky left): sku, desc, um, comp, stock total
@@ -2933,7 +2951,107 @@ function pltFilter(){
   if(q) lst=lst.filter(function(r){return (r[0]||'').toString().toLowerCase().indexOf(q)>=0||(r[1]||'').toLowerCase().indexOf(q)>=0;});
   var qo=(PLTF.oc||'').toLowerCase().trim();
   if(qo) lst=lst.filter(function(r){return ocMatch(r[0],qo);});
+  // FC por línea (B.7.12): se aplica al final para que el orden, la paginación
+  // y el export trabajen ya sobre las filas recalculadas.
+  if(pltLnSel().length) lst=lst.filter(pltLnHas).map(pltLnRow);
   return lst;
+}
+
+// ═══════════════ FC por línea productiva — combo de la pastilla (B.7.12) ═══════════════
+// Por defecto la tabla usa el FC OFICIAL (hoja SumExpl = suma de todas las líneas).
+// Al seleccionar una o varias líneas, el vector semanal de FC de cada SKU se reemplaza
+// por la suma de los vectores de esas líneas (PLT.fc_lines, hojas Ex.*) y se recalcula
+// TODO lo derivado: ΣFC 4w, ΣFC 12w y las 3 coberturas. Dos decisiones deliberadas:
+//   · Se muestran SOLO los SKU con FC en la selección (los demás no abastecen esa línea).
+//   · Desv. % queda en «—»: el consumo real de MB51 no viene separado por línea, así que
+//     comparar el FC de una línea contra el consumo real de TODAS daría una desviación falsa.
+function pltLnSel(){return (PLTF.lines&&PLTF.lines.length)?PLTF.lines:[];}
+function pltLnLabel(k){var L=((PLT&&PLT.lines)||[]).filter(function(x){return x.key===k;})[0];return L?L.label:k;}
+function pltLnHas(r){
+  var sel=pltLnSel(), fl=(PLT&&PLT.fc_lines)||{};
+  for(var i=0;i<sel.length;i++){var m=fl[sel[i]];if(m&&m[r[0]])return true;}
+  return false;
+}
+function pltLnVec(sku){
+  var sel=pltLnSel(), fw=(PLT.fc_weeks||[]), fl=(PLT.fc_lines||{}), out=[];
+  for(var i=0;i<fw.length;i++) out.push(0);
+  for(var s=0;s<sel.length;s++){
+    var v=(fl[sel[s]]||{})[sku]; if(!v) continue;
+    for(var j=0;j<out.length;j++) out[j]+=(v[j]||0);
+  }
+  return out;
+}
+function pltLnRow(r){
+  var fw=PLT.fc_weeks||[], nF=fw.length;
+  var S0=10+(PLT.cons_weeks||[]).length+nF;              // 1ª columna del bloque resumen (=35)
+  var n4=PLT.n4||Math.min(4,nF-1), n12=PLT.n12||(nF-1);
+  var v=pltLnVec(r[0]), o=r.slice();
+  for(var i=0;i<nF;i++) o[PLT_F0+i]=Math.round(v[i]*10)/10;
+  var f4=0,f12=0;
+  for(var a=1;a<=n4&&a<nF;a++)  f4+=v[a];               // excluye la semana en curso
+  for(var b=1;b<=n12&&b<nF;b++) f12+=v[b];
+  f4=Math.round(f4*10)/10; f12=Math.round(f12*10)/10;
+  var st=Number(r[4])||0, oc=Number(r[9])||0;
+  o[S0]=f4;                                             // ΣFC 4w
+  o[S0+2]=null;                                         // Desv. % — no aplica con FC parcial
+  o[S0+3]=f4>0 ?Math.round(st/(f4/n4)*100)/100:null;    // Cob. FC 4w
+  o[S0+4]=f12;                                          // ΣFC 12w
+  o[S0+5]=f12>0?Math.round(st/(f12/n12)*100)/100:null;  // Cob. FC 12w
+  o[S0+6]=f12>0?Math.round((st+oc)/(f12/n12)*100)/100:null; // Cob. 12w c/tránsito
+  return o;
+}
+function pltLnBtnTxt(){
+  var s=pltLnSel();
+  if(!s.length) return 'FC completo (SumExpl)';
+  if(s.length===1) return 'FC · '+pltLnLabel(s[0]);
+  return 'FC · '+s.length+' líneas';
+}
+function pltLnInit(){
+  if(window._pltLnReady) return;
+  var pan=el('pltLnPan'), btn=el('pltLnBtn'), cmb=el('pltLnCombo');
+  if(!pan||!btn||!cmb) return;
+  window._pltLnReady=1;
+  var L=(PLT&&PLT.lines)||[];
+  if(!L.length){cmb.style.display='none';return;}       // data.json sin FC por línea
+  var h='<label class="plcmb-opt"><input type="checkbox" id="pltLnAll" checked> <b>FC completo (SumExpl)</b> <span class="pc">100%</span></label><div class="plcmb-sep"></div>';
+  L.forEach(function(l){
+    h+='<label class="plcmb-opt" title="Hoja '+l.sheet+' · horizonte SEM'+l.w0+'–'+l.w1+' · '+l.nsku+' SKU del universo de la tabla">'+
+       '<input type="checkbox" class="pltLnCk" value="'+l.key+'"> '+l.label+' <span class="pc">'+l.share+'%</span></label>';
+  });
+  var dl=(PLT.lines_meta&&PLT.lines_meta.delta_pct!=null)?PLT.lines_meta.delta_pct:0;
+  h+='<div class="plcmb-sep"></div><div class="plcmb-ft">% = participación de la línea en el ΣFC 12w del universo de la tabla. La suma de las '+L.length+' líneas reproduce SumExpl (Δ '+dl+'%).</div>';
+  pan.innerHTML=h;
+  btn.addEventListener('click',function(ev){ev.stopPropagation();pan.classList.toggle('open');});
+  document.addEventListener('click',function(ev){if(!cmb.contains(ev.target))pan.classList.remove('open');});
+  var all=el('pltLnAll');
+  all.addEventListener('change',function(){
+    if(all.checked){PLTF.lines=[];Array.prototype.forEach.call(pan.querySelectorAll('.pltLnCk'),function(c){c.checked=false;});}
+    else{all.checked=true;}                             // no se permite vacío: SumExpl es el default
+    PLTF.p=1;rndPLT();
+  });
+  Array.prototype.forEach.call(pan.querySelectorAll('.pltLnCk'),function(ck){
+    ck.addEventListener('change',function(){
+      var k=[];Array.prototype.forEach.call(pan.querySelectorAll('.pltLnCk'),function(c){if(c.checked)k.push(c.value);});
+      PLTF.lines=k; all.checked=(k.length===0); PLTF.p=1; rndPLT();
+    });
+  });
+}
+// Botón + aviso de contexto. El aviso es obligatorio: con una línea sola la cobertura
+// se lee alta porque el stock es COMPARTIDO entre líneas.
+function pltLnUI(nSku){
+  var btn=el('pltLnBtn'), w=el('plt-lnwarn'), sel=pltLnSel();
+  if(btn){btn.innerHTML=pltLnBtnTxt()+' <span class="cv">▾</span>';btn.className='plcmb-btn'+(sel.length?' on':'');}
+  if(!w) return;
+  if(!sel.length){w.style.display='none';return;}
+  var L=(PLT.lines||[]), sh=0, nms=[];
+  sel.forEach(function(k){var l=L.filter(function(x){return x.key===k;})[0];if(l){sh+=l.share;nms.push(l.label);}});
+  w.style.display='';
+  w.innerHTML='FC de <b>'+nms.join(' + ')+'</b> — '+(Math.round(sh*10)/10)+'% del FC total. '+
+    'Se listan solo los <b>'+nSku+' SKU</b> con FC en esa selección; ΣFC y las 3 coberturas están recalculadas contra ese FC. '+
+    '⚠️ El <b>stock es compartido entre líneas</b>: la cobertura contra el FC de una línea <b>sobreestima</b> la cobertura real, úsala para priorizar dentro de la línea, no para decidir una compra. '+
+    '<b>Desv. %</b> queda en «—» porque el consumo real (MB51) no se puede separar por línea. '+
+    '<b>ΣReal 4w</b> sigue siendo el consumo real total del SKU.'+
+    (ppaActive()?' · El toggle <b>Excluir PPA</b> está activo: los SKU exclusivos de Pan de Pascua no se listan aunque la línea los tenga; desactívalo para ver la línea completa.':'');
 }
 function sPLT(v){PLTF.s=v;PLTF.p=1;rndPLT();}
 function sPLTOC(v){PLTF.oc=v;PLTF.p=1;rndPLT();}
@@ -3256,6 +3374,7 @@ function _cobInlineCell(v){
 }
 function rndPLT(){
   if(!PLT||!PLT.rows){return;}
+  pltLnInit();                       // combo de líneas productivas (idempotente)
   var cw=PLT.cons_weeks||[], fw=PLT.fc_weeks||[], sem=PLT.sem;
   var th=el('pltth'), tb=el('plttb');
   // ── Header de 2 filas: frozen + singles + grupos semanales + resumen ──
@@ -3343,8 +3462,10 @@ function rndPLT(){
   }).join('')||'<tr><td colspan="'+(10+nC+nF+13)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
   var ordTxt='';
   if(PLTF.sortCol!==null){var nm={38:'Cob. FC 4w',40:'Cob. FC 12w',41:'Cob. 12w c/tránsito'}[PLTF.sortCol]||'';ordTxt=' · orden: '+nm+(PLTF.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
-  var info='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+(PLTF.s?' · búsqueda: "'+PLTF.s+'"':'')+(PLTF.oc?' · OC: "'+PLTF.oc+'"':'')+ordTxt;
+  var lnTxt=pltLnSel().length?(' · FC: <strong>'+pltLnSel().map(pltLnLabel).join(' + ')+'</strong>'):'';
+  var info='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+lnTxt+(PLTF.s?' · búsqueda: "'+PLTF.s+'"':'')+(PLTF.oc?' · OC: "'+PLTF.oc+'"':'')+ordTxt;
   if(el('plt-info')) el('plt-info').innerHTML=info;
+  pltLnUI(tot);
   // Paginación (50 por página)
   var div=el('pltpag');
   if(pages<=1){div.innerHTML='<span class="pi">'+tot+' SKUs</span>';return;}
@@ -3368,7 +3489,9 @@ function expPLT(){
     var ws=XLSX.utils.aoa_to_sheet(aoa);
     var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Planificacion');
     var stamp=new Date().toISOString().slice(0,10);
-    XLSX.writeFile(wb,'planificacion_por_sku_'+stamp+'.xlsx');
+    // El nombre deja constancia del FC exportado: sin sufijo = SumExpl (FC completo).
+    var suf=pltLnSel().length?('_'+pltLnSel().join('-')):'';
+    XLSX.writeFile(wb,'planificacion_por_sku'+suf+'_'+stamp+'.xlsx');
   }catch(e){alert('Error exportando: '+e.message);}
 }
 
