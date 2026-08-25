@@ -621,6 +621,33 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 #rs-host .chtip .tw2,#ih-cats-grid .chtip .tw2{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:800}
 #rs-host .chtip .tv,#ih-cats-grid .chtip .tv{font-size:.9rem;font-weight:900;color:#fff}
 #rs-host .chtip .tx,#ih-cats-grid .chtip .tx{color:#9fabc6}
+/* Selector por línea productiva (bloque Servicio) */
+#rs-host .plctl{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-bottom:12px;flex-wrap:wrap}
+#rs-host .plctl .plcl{font-size:.62rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+#rs-host .plctl select{background:#161b2e;color:#fff;border:1px solid var(--border);border-radius:6px;padding:4px 9px;font-size:.7rem;font-weight:700;font-family:inherit;cursor:pointer}
+#rs-host .pltg2{display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+#rs-host .plt2{background:transparent;color:var(--muted);border:0;padding:4px 12px;font-size:.68rem;font-weight:700;cursor:pointer;font-family:inherit}
+#rs-host .plt2.on{background:#6366f1;color:#fff}
+#rs-host .pltbl{width:100%;border-collapse:collapse;font-size:.7rem}
+#rs-host .pltbl th{color:var(--muted);font-weight:700;text-align:right;padding:7px 9px;font-size:.58rem;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border)}
+#rs-host .pltbl td{text-align:right;padding:7px 9px;border-bottom:1px solid rgba(45,52,82,.5);font-variant-numeric:tabular-nums;color:#c9d3e8}
+#rs-host .pltbl .lft{text-align:left}
+#rs-host .pltbl tr.tot td{border-top:2px solid var(--border);font-weight:800;color:#fff}
+#rs-host .pltbl td.bad{color:#E24B4A;font-weight:800}
+#rs-host .pltbl .plmpc{cursor:pointer;color:#E24B4A}
+#rs-host .pltbl .plmpc .u{text-decoration:underline dotted;text-underline-offset:2px}
+#rs-host .pltbl .plbar{display:inline-block;height:7px;border-radius:3px;background:var(--q);margin-right:7px;vertical-align:middle}
+.rsplov{position:fixed;inset:0;background:rgba(3,6,14,.72);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.rsplmodal{background:#141a2b;border:1px solid #2d3452;border-radius:12px;max-width:680px;width:100%;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.6);font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
+.rsplmh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid #2d3452}
+.rsplt{font-weight:800;font-size:.9rem;color:#fff}
+.rsplsub{font-size:.68rem;color:#8892b0;margin-top:3px}
+.rsplx{background:none;border:0;color:#8892b0;font-size:1.1rem;cursor:pointer;line-height:1}
+.rsplmb{overflow:auto;padding:4px 10px 12px}
+.rsplmb table{width:100%;border-collapse:collapse;font-size:.68rem;color:#c9d3e8}
+.rsplmb th{color:#8892b0;text-align:left;padding:6px 9px;font-size:.58rem;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid #2d3452;position:sticky;top:0;background:#141a2b}
+.rsplmb td{padding:6px 9px;border-bottom:1px solid rgba(45,52,82,.5);text-align:right;font-variant-numeric:tabular-nums;vertical-align:top}
+.rsplmb td.lft{text-align:left}
 /* La sparkline mide 38px: el tooltip va DEBAJO para no tapar la línea que se inspecciona.
    La tarjeta sube de z-index al hover para que no la pisen las tarjetas siguientes. */
 #ih-cats-grid .chtip{top:100%;margin-top:5px;white-space:normal;max-width:230px}
@@ -1844,6 +1871,136 @@ document.addEventListener('mouseout',function(e){
   var t=e.target; if(t&&t.tagName==='rect'&&t.hasAttribute('data-tip')) rsTip(t,false);
 });
 
+// ── Desglose por línea productiva del bloque Servicio (mismo diseño, vía rsLine) ──
+function svcEntity(code){
+  var b=RESUMEN.B1, PL=b.por_linea;
+  if(code==='CIA'){
+    return {code:'CIA',name:'Compañía',
+      d_dsg:'NDS-1 · total de SKU requeridos',
+      d_serie:b.t_serie,d_prom:b.t_prom,d_min:b.t_min,d_max:b.t_max,d_val:b.t_val,d_sem:b.sem,dn:b.t_n,
+      d_meta:b.t_meta,d_mlbl:'referencia '+b.t_meta+'%',d_markBelow:true,
+      d_hint:'Mide <b>líneas de material requeridas que sí estaban disponibles</b>, contando cada requerimiento. Por SKU único, sin duplicados, el promedio es <b>'+b.u_prom+'%</b>. <b>La referencia es la mediana histórica</b>, no una meta acordada.',
+      d_tip:function(p){return '<div class="tw2">Semana '+p.s+'</div><div class="tv">'+(p.v==null?'sin dato':p.v+'% disponibilidad')+'</div>'+
+        (p.v==null?'':'<div class="tx"><b>'+rsN(p.q)+'</b> quiebres registrados · <b>'+rsN(p.qs)+'</b> SKU distintos</div>'+
+        '<div class="tx">sobre '+rsN(p.lin)+' líneas de material requeridas</div>'+
+        (p.sev?'<div class="tx">persistencia: '+p.sev+' días por SKU quebrado</div>':''));},
+      i_serie:b.i_serie,i_prom:b.i_prom,i_min:b.i_min,i_max:b.i_max,i_val:b.i_val,i_sem:b.i_sem,in:b.i_n,
+      i_meta:(b.i_ref||{}).p50,i_mlbl:'mediana '+((b.i_ref||{}).p50)+'%',
+      i_tip:function(p){return '<div class="tw2">Semana '+p.s+'</div><div class="tv">'+(p.v==null?'sin dato':p.v+'% del plan sin producir')+'</div>'+
+        (p.v==null?'':'<div class="tx"><b>'+rsN(p.mp)+'</b> unidades no producidas por falta de MP</div>'+
+        '<div class="tx">de un plan de '+rsN(p.plan)+' unidades</div>'+
+        '<div class="tx"><b>'+rsN(p.atr)+'</b> de '+rsN(p.inc)+' órdenes incumplidas son por materia prima</div>');},
+      un_mp:b.un_mp,un_plan:b.un_plan,un_pct:b.un_mp_pct};
+  }
+  var L=null,i; for(i=0;i<PL.lines.length;i++){ if(PL.lines[i].code===code) L=PL.lines[i]; }
+  var wks=PL.weeks, lastW=wks[wks.length-1];
+  var ds=wks.map(function(w,ix){return {s:w,v:L.disp[ix]};});
+  var is=wks.map(function(w,ix){return {s:w,v:L.imp[ix]};});
+  var nn=L.disp.filter(function(x){return x!=null;}).length;
+  return {code:code,name:L.name,
+    d_dsg:'NDS-1 · líneas de material (afectadas/requeridas)',
+    d_serie:ds,d_prom:L.disp_prom,d_min:L.disp_min,d_max:L.disp_max,d_val:L.disp_last,d_sem:lastW,dn:nn,
+    d_meta:L.disp_prom,d_mlbl:'promedio '+L.disp_prom+'%',d_markBelow:false,
+    d_hint:'Disponibilidad de MP de <b>'+L.name+'</b> por líneas de material (afectadas/requeridas). <b>No suma</b> al total de compañía: una MP compartida cuenta en cada línea que la usa.',
+    d_tip:function(p){return '<div class="tw2">Semana '+p.s+'</div><div class="tv">'+(p.v==null?'sin dato':p.v+'% disponibilidad')+'</div>';},
+    i_serie:is,i_prom:L.imp_prom,i_min:0,i_max:L.imp_max,i_val:L.imp_last,i_sem:lastW,in:nn,
+    i_meta:null,i_tip:function(p){return '<div class="tw2">Semana '+p.s+'</div><div class="tv">'+(p.v==null?'sin dato':p.v+'% del plan sin producir por MP')+'</div>';},
+    un_mp:L.un_mp,un_plan:L.un_plan,un_pct:L.pct};
+}
+function svcDuo(e){
+  var porMil=e.un_plan?e.un_mp/e.un_plan*1000:0;
+  var dOpts={color:'#378ADD',h:150,cap:100,mcol:'#8892b0',
+    fmtY:function(v){return v.toFixed(2)+'%';},fmtL:function(v){return v+'%';},fmtX:function(p){return 'S'+p.s;},tip:e.d_tip};
+  if(e.d_meta!=null){dOpts.meta=e.d_meta;dOpts.mlbl=e.d_mlbl;dOpts.markBelow=e.d_markBelow;}
+  var iOpts={color:'#E24B4A',h:150,zero:true,mcol:'#8892b0',
+    fmtY:function(v){return v.toFixed(2)+'%';},fmtL:function(v){return v+'%';},fmtX:function(p){return 'S'+p.s;},tip:e.i_tip};
+  if(e.i_meta!=null){iOpts.meta=e.i_meta;iOpts.mlbl=e.i_mlbl;}
+  var imp = e.un_mp>0
+    ? '<div class="imp"><div class="ii">📉</div><div class="it">'+
+        '<div class="ih">'+rsN(e.un_mp)+' unidades no se produjeron '+(e.code==='CIA'?'este año':'en '+e.name)+' por falta de material</div>'+
+        '<div class="id2">Sobre un plan de <b>'+rsN(e.un_plan)+'</b> unidades = <b>'+e.un_pct+'%</b>. '+
+        (e.code==='CIA'?'Es el impacto de Abastecimiento sobre producción, medido en producto que no salió.':'Impacto de la falta de MP en esta línea.')+'</div></div></div>'
+    : '<div class="imp" style="background:linear-gradient(135deg,rgba(127,181,44,.10),rgba(127,181,44,.04));border-color:rgba(127,181,44,.32);border-left-color:#7FB52C"><div class="ii">✅</div><div class="it">'+
+        '<div class="ih">Sin impacto de MP este año en '+e.name+'</div>'+
+        '<div class="id2">De un plan de <b>'+rsN(e.un_plan)+'</b> unidades, ninguna se dejó de producir por falta de materia prima.</div></div></div>';
+  var sig = e.code==='CIA'
+    ? '<div class="sig"><b>Qué significa:</b> de cada 1.000 unidades planificadas, <b>'+porMil.toFixed(0)+' no se hicieron porque faltó material</b>. La disponibilidad se ve alta porque se mide sobre miles de líneas, pero <b>el impacto se concentra</b>: pocas semanas malas explican casi todo el daño.</div>'
+    : '<div class="sig"><b>'+e.name+':</b> disponibilidad de MP por líneas de material y % del plan no producido por MP. La disponibilidad por línea <b>no suma</b> al total (una MP compartida cuenta en cada línea que la usa); la fila Compañía usa el NDS-1b oficial.</div>';
+  return '<div class="duo">'+
+     '<div class="dp"><div class="dh"><span class="dl">Disponibilidad de materiales</span><span class="dsg">'+e.d_dsg+'</span></div>'+
+       '<div class="drow"><div class="dnum" style="color:var(--s)">'+e.d_prom+'<small>%</small></div>'+
+       '<div class="dmeta"><div>promedio de <b>'+e.dn+'</b> semanas</div><div>Rango <b>'+e.d_min+'%</b> – <b>'+e.d_max+'%</b></div><div>Última (W'+e.d_sem+'): <b>'+e.d_val+'%</b></div></div></div>'+
+       rsLine(e.d_serie,dOpts)+
+       '<div class="hint">'+e.d_hint+'</div></div>'+
+     '<div class="dp"><div class="dh"><span class="dl">Impacto en producción</span><span class="dsg">NDS-4 · % del plan no producido por falta de MP</span></div>'+
+       '<div class="drow"><div class="dnum" style="color:var(--q)">'+e.i_prom+'<small>%</small></div>'+
+       '<div class="dmeta"><div>promedio de <b>'+e.in+'</b> semanas</div><div>Rango <b>'+e.i_min+'%</b> – <b>'+e.i_max+'%</b></div><div>Última (W'+e.i_sem+'): <b>'+e.i_val+'%</b></div></div></div>'+
+       rsLine(e.i_serie,iOpts)+
+       '<div class="hint">Del total de unidades planificadas cada semana, cuánto <b>no se produjo por falta de materia prima</b>. <b>Escala distinta a la del panel izquierdo</b>.</div></div>'+
+   '</div>'+imp+sig;
+}
+function svcTableHTML(){
+  var b=RESUMEN.B1, PL=b.por_linea, maxmp=Math.max.apply(null,PL.lines.map(function(l){return l.un_mp;}).concat([1]));
+  var h='<table class="pltbl"><thead><tr><th class="lft">Línea</th><th>% plan</th><th>NDS-1 disp.</th><th>NDS-4 impacto</th><th>Peor sem.</th><th>Uds no prod. MP (año)</th></tr></thead><tbody>';
+  PL.lines.forEach(function(l){
+    var bar=l.un_mp>0?'<span class="plbar" style="width:'+Math.max(3,Math.round(46*l.un_mp/maxmp))+'px"></span>':'';
+    var cell=l.un_mp>0?'<td class="plmpc" data-code="'+l.code+'">'+bar+'<span class="u">'+rsN(l.un_mp)+'</span></td>':'<td style="color:var(--muted)">0</td>';
+    h+='<tr><td class="lft">'+l.code+' · '+l.name+'</td><td>'+l.plan_share+'%</td><td'+(l.disp_prom<98?' class="bad"':'')+'>'+l.disp_prom+'%</td><td>'+l.imp_prom+'%</td><td>'+l.imp_max+'%</td>'+cell+'</tr>';
+  });
+  h+='<tr class="tot"><td class="lft">Compañía (total)</td><td>100%</td><td>'+b.t_prom+'%</td><td>'+b.i_prom+'%</td><td>'+b.i_max+'%</td><td class="plmpc" data-code="CIA"><span class="u">'+rsN(b.un_mp)+'</span></td></tr>';
+  h+='</tbody></table><div class="hint" style="margin-top:9px"><b>Clic en «Uds no prod. por MP»</b> para el detalle de SKU. NDS-1 por línea = líneas de material afectadas/requeridas (<b>no suma</b> al total; Compañía usa el NDS-1b oficial). NDS-4 sí particiona.</div>';
+  return h;
+}
+function ensureRsModal(){
+  if(document.getElementById('rsPlOv')) return;
+  var ov=document.createElement('div'); ov.id='rsPlOv'; ov.className='rsplov';
+  ov.innerHTML='<div class="rsplmodal"><div class="rsplmh"><div><div class="rsplt" id="rsPlmT"></div><div class="rsplsub" id="rsPlmS"></div></div><button class="rsplx" id="rsPlmX" type="button">✕</button></div>'+
+    '<div class="rsplmb"><table><thead><tr><th>SKU</th><th>Producto terminado</th><th style="text-align:right">Uds</th><th>MP en quiebre</th></tr></thead><tbody id="rsPlmB"></tbody></table></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(ev){if(ev.target.id==='rsPlOv')ov.style.display='none';});
+  document.getElementById('rsPlmX').addEventListener('click',function(){ov.style.display='none';});
+  document.addEventListener('keydown',function(ev){if(ev.key==='Escape')ov.style.display='none';});
+}
+function openRsDet(code){
+  var PL=RESUMEN.B1.por_linea, rows=(PL.detail||{})[code]||[];
+  var tot=rows.reduce(function(s,r){return s+r.uds;},0), nm='Compañía (total)',i;
+  if(code!=='CIA'){for(i=0;i<PL.lines.length;i++){if(PL.lines[i].code===code)nm=code+' · '+PL.lines[i].name;}}
+  document.getElementById('rsPlmT').textContent='Detalle · '+nm;
+  document.getElementById('rsPlmS').textContent=rows.length+' productos terminados · '+rsN(tot)+' uds no producidas por MP (año)';
+  var h=''; if(!rows.length) h='<tr><td colspan="4" style="color:var(--muted)">Sin PT frenados por MP.</td></tr>';
+  rows.forEach(function(r){h+='<tr><td class="lft">'+r.sku+'</td><td class="lft">'+r.desc+'</td><td>'+rsN(r.uds)+'</td><td class="lft" style="color:#9fabc6">'+r.mps.join('<br>')+'</td></tr>';});
+  document.getElementById('rsPlmB').innerHTML=h;
+  document.getElementById('rsPlOv').style.display='flex';
+}
+function rsSvcInit(){
+  var b=(typeof RESUMEN!=='undefined')?RESUMEN&&RESUMEN.B1:null;
+  var sel=document.getElementById('rsPlSel');
+  if(!sel) return;
+  if(!b||!b.por_linea||!b.por_linea.lines||!b.por_linea.lines.length){
+    var c=document.querySelector('#rs-host .plctl'); if(c) c.style.display='none'; return;
+  }
+  var opts='<option value="CIA">▸ Compañía (total)</option>';
+  b.por_linea.lines.forEach(function(l){opts+='<option value="'+l.code+'">'+l.code+' · '+l.name+'</option>';});
+  sel.innerHTML=opts;
+  var st={view:'charts',code:'CIA'};
+  function draw(){
+    var dyn=document.getElementById('rsSvcDyn'); if(!dyn) return;
+    dyn.innerHTML=(st.view==='table')?svcTableHTML():svcDuo(svcEntity(st.code));
+  }
+  sel.addEventListener('change',function(){st.code=sel.value; if(st.view==='charts') draw();});
+  Array.prototype.forEach.call(document.querySelectorAll('#rs-host .plt2'),function(bn){
+    bn.addEventListener('click',function(){
+      Array.prototype.forEach.call(document.querySelectorAll('#rs-host .plt2'),function(x){x.classList.remove('on');});
+      bn.classList.add('on'); st.view=bn.getAttribute('data-v');
+      sel.style.display=(st.view==='table')?'none':'';
+      draw();
+    });
+  });
+  ensureRsModal();
+  var dyn=document.getElementById('rsSvcDyn');
+  if(dyn) dyn.addEventListener('click',function(ev){var t=ev.target.closest?ev.target.closest('.plmpc'):null; if(t) openRsDet(t.getAttribute('data-code'));});
+}
+
 // ── Render de la portada. RESUMEN viene de data.json; si falta, se avisa sin romper. ──
 function rsRender(){
   var host=el('rs-host'); if(!host) return;
@@ -1876,6 +2033,9 @@ function rsRender(){
       '<span class="ti">Servicio a producción</span><span class="qq">¿le estamos cumpliendo?</span>'+
       '<span class="rt"><span class="pill pn">dato al cierre de W'+B1.sem+'</span>'+
       '<button class="go" onclick="showTab(14)">Ver NDS →</button></span></div><div class="B-b">'+
+      '<div class="plctl"><span class="plcl">Ver por línea:</span><select id="rsPlSel"></select>'+
+        '<span class="pltg2"><button class="plt2 on" type="button" data-v="charts">Gráficos</button><button class="plt2" type="button" data-v="table">Tabla</button></span></div>'+
+      '<div id="rsSvcDyn">'+
       '<div class="duo">'+
         '<div class="dp"><div class="dh"><span class="dl">Disponibilidad de materiales</span>'+
           '<span class="dsg">NDS-1 · total de SKU requeridos</span></div>'+
@@ -1917,6 +2077,7 @@ function rsRender(){
         'Es el impacto de Abastecimiento sobre producción, medido en producto que no salió.</div></div></div>'+
       '<div class="sig"><b>Qué significa:</b> de cada 1.000 unidades planificadas, <b>'+porMil.toFixed(0)+' no se hicieron porque faltó material</b>. '+
         'La disponibilidad se ve alta porque se mide sobre miles de líneas, pero <b>el impacto se concentra</b>: pocas semanas malas explican casi todo el daño.</div>'+
+      '</div>'+
       '</div></div>');
   }
 
@@ -2070,6 +2231,7 @@ function rsRender(){
       '</div></div>');
   }
   host.innerHTML=H.join('');
+  try{ rsSvcInit(); }catch(_e){ /* selector por línea best-effort */ }
 }
 
 // % del bucket sobre los SKUs c/FC del comprador. Se omite en 0 (la tarjeta ya va apagada)
