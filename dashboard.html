@@ -628,6 +628,16 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 #rs-host .pltg2{display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden}
 #rs-host .plt2{background:transparent;color:var(--muted);border:0;padding:4px 12px;font-size:.68rem;font-weight:700;cursor:pointer;font-family:inherit}
 #rs-host .plt2.on{background:#6366f1;color:#fff}
+#rs-host .plcombo{position:relative;display:inline-block}
+#rs-host .plcombo-btn{background:#161b2e;color:#fff;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:.7rem;font-weight:700;font-family:inherit;cursor:pointer;min-width:150px;text-align:left;display:flex;justify-content:space-between;gap:8px;align-items:center}
+#rs-host .plcombo-btn .cv{color:var(--muted);font-size:.6rem}
+#rs-host .plcombo-pan{position:absolute;top:calc(100% + 4px);right:0;z-index:30;background:#12172a;border:1px solid #2d3452;border-radius:8px;padding:6px;min-width:230px;max-height:320px;overflow:auto;box-shadow:0 16px 40px rgba(0,0,0,.55);display:none}
+#rs-host .plcombo-pan.open{display:block}
+#rs-host .plopt{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;font-size:.72rem;color:#c9d3e8;cursor:pointer;font-weight:600;white-space:nowrap}
+#rs-host .plopt:hover{background:#1c2238}
+#rs-host .plopt input{accent-color:#6366f1;cursor:pointer}
+#rs-host .plsep{height:1px;background:#2d3452;margin:5px 2px}
+#rs-host .plopt .pc{color:var(--muted);font-weight:700;font-size:.66rem;margin-left:auto}
 #rs-host .pltbl{width:100%;border-collapse:collapse;font-size:.7rem}
 #rs-host .pltbl th{color:var(--muted);font-weight:700;text-align:right;padding:7px 9px;font-size:.58rem;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border)}
 #rs-host .pltbl td{text-align:right;padding:7px 9px;border-bottom:1px solid rgba(45,52,82,.5);font-variant-numeric:tabular-nums;color:#c9d3e8}
@@ -1972,33 +1982,87 @@ function openRsDet(code){
   document.getElementById('rsPlmB').innerHTML=h;
   document.getElementById('rsPlOv').style.display='flex';
 }
+function svcRound(v,d){if(v==null)return null;var m=Math.pow(10,d);return Math.round(v*m)/m;}
+function subsetEntity(codes){
+  if(!codes||!codes.length) return svcEntity('CIA');
+  var PL=RESUMEN.B1.por_linea, wks=PL.weeks, byc={};
+  PL.lines.forEach(function(l){byc[l.code]=l;});
+  var sel=codes.map(function(c){return byc[c];}).filter(Boolean);
+  if(sel.length===1) return svcEntity(sel[0].code);      // una sola línea = vista single
+  var disp=[],imp=[],un_mp=0,un_plan=0,i;
+  for(i=0;i<wks.length;i++){
+    var rq=0,af=0,pl=0,mp=0;
+    sel.forEach(function(l){rq+=(l.req[i]||0);af+=(l.af[i]||0);pl+=(l.plan[i]||0);mp+=(l.mp[i]||0);});
+    disp.push(rq>0?svcRound(100*(1-af/rq),2):null);
+    imp.push(pl>0?svcRound(100*mp/pl,3):null);
+    un_mp+=mp; un_plan+=pl;
+  }
+  var dv=disp.filter(function(x){return x!=null;}), iv=imp.filter(function(x){return x!=null;});
+  var dl=null,il=null; for(i=disp.length-1;i>=0;i--){if(dl==null&&disp[i]!=null)dl=disp[i];if(il==null&&imp[i]!=null)il=imp[i];}
+  var mean=function(a){return a.length?a.reduce(function(x,y){return x+y;},0)/a.length:null;};
+  var nm=sel.length+' líneas', wksL=wks[wks.length-1];
+  return {code:'__SUBSET__',name:nm,codes:codes,
+    d_dsg:'NDS-1 · líneas de material (Σ afectadas / Σ requeridas) · '+sel.length+' líneas',
+    d_serie:wks.map(function(w,ix){return {s:w,v:disp[ix]};}),
+    d_prom:svcRound(mean(dv),2),d_min:dv.length?Math.min.apply(null,dv):null,d_max:dv.length?Math.max.apply(null,dv):null,d_val:dl,d_sem:wksL,dn:dv.length,
+    d_meta:svcRound(mean(dv),2),d_mlbl:'promedio '+svcRound(mean(dv),2)+'%',d_markBelow:false,
+    d_hint:'Disponibilidad de MP combinada de <b>'+nm+'</b> por líneas de material (Σ afectadas / Σ requeridas). <b>No suma</b> al total de compañía: una MP compartida cuenta en cada línea que la usa.',
+    d_tip:function(p){return '<div class="tw2">Semana '+p.s+'</div><div class="tv">'+(p.v==null?'sin dato':p.v+'% disponibilidad')+'</div>';},
+    i_serie:wks.map(function(w,ix){return {s:w,v:imp[ix]};}),
+    i_prom:svcRound(mean(iv),3),i_min:0,i_max:iv.length?Math.max.apply(null,iv):null,i_val:il,i_sem:wksL,in:iv.length,
+    i_meta:null,i_tip:function(p){return '<div class="tw2">Semana '+p.s+'</div><div class="tv">'+(p.v==null?'sin dato':p.v+'% del plan sin producir por MP')+'</div>';},
+    un_mp:Math.round(un_mp),un_plan:Math.round(un_plan),un_pct:un_plan?svcRound(100*un_mp/un_plan,2):0,
+    plan_share:RESUMEN.B1.un_plan?svcRound(100*un_plan/RESUMEN.B1.un_plan,1):0};
+}
 function rsSvcInit(){
   var b=(typeof RESUMEN!=='undefined')?RESUMEN&&RESUMEN.B1:null;
-  var sel=document.getElementById('rsPlSel');
-  if(!sel) return;
+  var combo=document.getElementById('rsPlCombo');
+  if(!combo) return;
   if(!b||!b.por_linea||!b.por_linea.lines||!b.por_linea.lines.length){
-    var c=document.querySelector('#rs-host .plctl'); if(c) c.style.display='none'; return;
+    var cc=document.querySelector('#rs-host .plctl'); if(cc) cc.style.display='none'; return;
   }
-  var opts='<option value="CIA">▸ Compañía (total)</option>';
-  b.por_linea.lines.forEach(function(l){opts+='<option value="'+l.code+'">'+l.code+' · '+l.name+'</option>';});
-  sel.innerHTML=opts;
-  var st={view:'charts',code:'CIA'};
+  var lines=b.por_linea.lines, pan=document.getElementById('rsPlPan'), btn=document.getElementById('rsPlBtn');
+  var ph='<label class="plopt" data-cia="1"><input type="checkbox" id="rsCiaCk" checked> <b>Compañía (total)</b></label><div class="plsep"></div>';
+  lines.forEach(function(l){ph+='<label class="plopt"><input type="checkbox" class="rsLnCk" value="'+l.code+'"> '+l.code+' · '+l.name+' <span class="pc">'+l.plan_share+'%</span></label>';});
+  pan.innerHTML=ph;
+  var st={view:'charts',codes:[]};
+  function selText(){
+    if(!st.codes.length) return 'Compañía (total)';
+    if(st.codes.length===1){var l=lines.filter(function(x){return x.code===st.codes[0];})[0];return l?(l.code+' · '+l.name):st.codes[0];}
+    return st.codes.length+' líneas seleccionadas';
+  }
   function draw(){
     var dyn=document.getElementById('rsSvcDyn'); if(!dyn) return;
-    dyn.innerHTML=(st.view==='table')?svcTableHTML():svcDuo(svcEntity(st.code));
+    btn.innerHTML=selText()+' <span class="cv">▾</span>';
+    dyn.innerHTML=(st.view==='table')?svcTableHTML():svcDuo(subsetEntity(st.codes));
   }
-  sel.addEventListener('change',function(){st.code=sel.value; if(st.view==='charts') draw();});
+  btn.addEventListener('click',function(ev){ev.stopPropagation();pan.classList.toggle('open');});
+  document.addEventListener('click',function(ev){if(!combo.contains(ev.target))pan.classList.remove('open');});
+  var ciaCk=document.getElementById('rsCiaCk');
+  ciaCk.addEventListener('change',function(){
+    if(ciaCk.checked){st.codes=[];Array.prototype.forEach.call(pan.querySelectorAll('.rsLnCk'),function(c){c.checked=false;});}
+    else{ciaCk.checked=true;}                              // no permitir vacío total: Compañía es el default
+    draw();
+  });
+  Array.prototype.forEach.call(pan.querySelectorAll('.rsLnCk'),function(ck){
+    ck.addEventListener('change',function(){
+      var codes=[]; Array.prototype.forEach.call(pan.querySelectorAll('.rsLnCk'),function(c){if(c.checked)codes.push(c.value);});
+      st.codes=codes; ciaCk.checked=(codes.length===0);
+      draw();
+    });
+  });
   Array.prototype.forEach.call(document.querySelectorAll('#rs-host .plt2'),function(bn){
     bn.addEventListener('click',function(){
       Array.prototype.forEach.call(document.querySelectorAll('#rs-host .plt2'),function(x){x.classList.remove('on');});
       bn.classList.add('on'); st.view=bn.getAttribute('data-v');
-      sel.style.display=(st.view==='table')?'none':'';
+      combo.style.display=(st.view==='table')?'none':'';
       draw();
     });
   });
   ensureRsModal();
   var dyn=document.getElementById('rsSvcDyn');
   if(dyn) dyn.addEventListener('click',function(ev){var t=ev.target.closest?ev.target.closest('.plmpc'):null; if(t) openRsDet(t.getAttribute('data-code'));});
+  draw();
 }
 
 // ── Render de la portada. RESUMEN viene de data.json; si falta, se avisa sin romper. ──
@@ -2033,7 +2097,9 @@ function rsRender(){
       '<span class="ti">Servicio a producción</span><span class="qq">¿le estamos cumpliendo?</span>'+
       '<span class="rt"><span class="pill pn">dato al cierre de W'+B1.sem+'</span>'+
       '<button class="go" onclick="showTab(14)">Ver NDS →</button></span></div><div class="B-b">'+
-      '<div class="plctl"><span class="plcl">Ver por línea:</span><select id="rsPlSel"></select>'+
+      '<div class="plctl"><span class="plcl">Ver por línea:</span>'+
+        '<div class="plcombo" id="rsPlCombo"><button class="plcombo-btn" id="rsPlBtn" type="button">Compañía (total) <span class="cv">▾</span></button>'+
+        '<div class="plcombo-pan" id="rsPlPan"></div></div>'+
         '<span class="pltg2"><button class="plt2 on" type="button" data-v="charts">Gráficos</button><button class="plt2" type="button" data-v="table">Tabla</button></span></div>'+
       '<div id="rsSvcDyn">'+
       '<div class="duo">'+
