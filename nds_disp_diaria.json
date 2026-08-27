@@ -1,5 +1,5 @@
 {
- "generado": "2026-08-26T10:37:06",
+ "generado": "2026-08-27T09:49:03",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -3171,6 +3171,100 @@
     {
      "sku": "400495",
      "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    },
+    {
+     "sku": "400650",
+     "desc": "ETIQ CAST ENS POLLO & ARROZ 12.25"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-08-27",
+   "disp": 95.6,
+   "n_solic": 475,
+   "n_cero": 21,
+   "n_excl_granel": 9,
+   "n_anom_neg": 3,
+   "skus_cero": [
+    {
+     "sku": "300134",
+     "desc": "ENELDO"
+    },
+    {
+     "sku": "300160",
+     "desc": "ALBAHACA DESHIDRATADA PICADA"
+    },
+    {
+     "sku": "300181",
+     "desc": "COLOR ZAPALLO NATURAL"
+    },
+    {
+     "sku": "300305",
+     "desc": "SABORIZANTE POLLO EN POLVO"
+    },
+    {
+     "sku": "300318",
+     "desc": "CILANTRO FRESCO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300348",
+     "desc": "GRANOFIBRA"
+    },
+    {
+     "sku": "300425",
+     "desc": "HARINA DE PAPA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "300529",
+     "desc": "KIWI PELADO"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400100",
+     "desc": "ETIQ CAST CHAPARRITA 02.21"
+    },
+    {
+     "sku": "400190",
+     "desc": "ETIQ. CAST COCADA CHOC 06.22"
+    },
+    {
+     "sku": "400255",
+     "desc": "ETIQ CAS SW MIGA AVE PIMENTÓN 100G 03.24"
+    },
+    {
+     "sku": "400398",
+     "desc": "PP ETIQ. AZUL  80x100MM"
+    },
+    {
+     "sku": "400434",
+     "desc": "BOLSA PP CAS ENSENADA FC 800G 09.24"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400495",
+     "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    },
+    {
+     "sku": "400578",
+     "desc": "ETIQ CAS GALL AMAPOLA LIMÓN 90G 8.25 POS"
+    },
+    {
+     "sku": "400621",
+     "desc": "BOLSA CAS PITA MULTIGRANO 10.25 CPP35"
     },
     {
      "sku": "400650",
