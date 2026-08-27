@@ -1252,6 +1252,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
     <th style="text-align:right" title="Cons. promedio últimas 4 sem">Cons. 4w</th>
     <th style="text-align:center" title="Consumo real por semana · últimas 12 sem (clic para ver números)">Tendencia 12w</th>
     <th style="text-align:right" title="OC en tránsito">OC trán.</th>
+    <th style="text-align:right" title="Precio unitario de la última OC generada (ME2M: precio neto ÷ cantidad base)">Precio últ. OC</th>
   </tr></thead><tbody id="ti-tb"></tbody></table></div>
   <div style="display:flex;gap:14px;font-size:.65rem;color:var(--muted);margin-top:6px;flex-wrap:wrap">
     <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#378ADD;margin-right:4px"></span>Consumo desde CD (mov 601)</span>
@@ -5465,7 +5466,7 @@ function opBloqDw(comp){
 // ── TERCEROS E INSUMOS ────────────────────────────────────────────────────
 var _tiCharts = {don:null, par:null};
 function buildTI(){
-  if(!TI || !TI.skus){ el('ti-tb').innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:18px">Sin datos de Terceros e Insumos</td></tr>'; return; }
+  if(!TI || !TI.skus){ el('ti-tb').innerHTML='<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:18px">Sin datos de Terceros e Insumos</td></tr>'; return; }
   // KPIs
   var f0 = function(n){return Math.round(n).toLocaleString('es-CL');};
   var k = el('ti-kpis');
@@ -5585,7 +5586,7 @@ function tiToggleHist(ev, sku){
   }).join('');
   var htr = document.createElement('tr');
   htr.className = 'ti-histrow';
-  htr.innerHTML = '<td colspan="11" style="background:#1a1f33;padding:8px 12px">'
+  htr.innerHTML = '<td colspan="12" style="background:#1a1f33;padding:8px 12px">'
     + '<div style="font-size:.6rem;color:var(--muted);margin-bottom:5px">'
     +   'Consumo real por semana · <b style="color:#c0caf5">'+(s.desc||s.sku)+'</b> · últimas 12 sem completas</div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">'+cells+'</div></td>';
@@ -5613,7 +5614,10 @@ function rndTI(){
     var col = fc==='cd_601'?'#378ADD':(fc==='plantas'?'#63992288':'#475670');
     return '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+col+';margin-right:5px;vertical-align:middle"></span>';
   }
+  // Precio unitario de la última OC (ME2M) — mismo cálculo que las pastillas de Planificadores (B.7.10)
+  var vendorMap=window._vendorMap||(window._vendorMap=_buildVendorMap());
   el('ti-tb').innerHTML = rows.map(function(s){
+    var vinfo=vendorMap[s.sku]||null;
     return '<tr>'+
       '<td><b>'+s.sku+'</b></td>'+
       '<td>'+s.desc+'</td>'+
@@ -5626,6 +5630,7 @@ function rndTI(){
       '<td style="text-align:right">'+srcDot(s.fc)+(s.c4r>0?f2(s.c4r):'—')+'</td>'+
       '<td style="text-align:center;cursor:pointer" onclick="tiToggleHist(event,\''+s.sku+'\')" title="Clic para ver el consumo por semana">'+spark12(s.h12)+'</td>'+
       '<td style="text-align:right">'+(s.oc>0?f2(s.oc):'—')+'</td>'+
+      '<td style="text-align:right;color:var(--muted)">'+_fmtOCPrice(vinfo)+'</td>'+
     '</tr>';
   }).join('');
   el('ti-info').textContent = rows.length+' SKUs'+((q||cat)?(' (filtrado de '+TI.skus.length+')'):'');
