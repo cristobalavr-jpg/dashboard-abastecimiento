@@ -724,14 +724,14 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="plk-pill" onclick="togPlk('fcw')"><span class="plk-ico" id="ico-fcw">▸</span>Forecast por semana — todos los SKU <button class="pbtn" onclick="event.stopPropagation();expFCW()" style="background:#1D9E7530;color:#1D9E75;border:1px solid #1D9E75">📥 Excel</button></div>
   <div class="plk-body" id="body-fcw" style="display:none">
   <div class="fr"><input type="text" class="si" id="fcws" placeholder="Buscar por SKU o descripción..." oninput="sFCW(this.value)" style="width:320px"></div>
-  <div class="tw" style="margin-bottom:6px;max-height:520px;overflow:auto"><table><thead id="fcwth"></thead><tbody id="fcwtb"></tbody></table></div>
+  <div class="tw" style="margin-bottom:6px;max-height:520px;overflow:auto"><table id="fcw-table"><thead id="fcwth"></thead><tbody id="fcwtb"></tbody></table></div>
   <div class="pag" id="fcwpag"></div>
   </div>
 
   <div class="plk-pill" onclick="togPlk('ocm')"><span class="plk-ico" id="ico-ocm">▸</span>Órdenes de Compra (ME2M) <button class="pbtn" onclick="event.stopPropagation();expOCM()" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9">📥 Excel</button></div>
   <div class="plk-body" id="body-ocm" style="display:none">
   <div class="fr"><input type="text" class="si" id="ocms" placeholder="Buscar por SKU, Proveedor, Descripción o Documento compras..." oninput="sOCM(this.value)" style="width:420px"></div>
-  <div class="tw" style="margin-bottom:6px;max-height:560px;overflow:auto"><table><thead id="ocmth"></thead><tbody id="ocmtb"></tbody></table></div>
+  <div class="tw" style="margin-bottom:6px;max-height:560px;overflow:auto"><table id="ocm-table"><thead id="ocmth"></thead><tbody id="ocmtb"></tbody></table></div>
   <div class="pag" id="ocmpag"></div>
   </div>
 
@@ -8464,5 +8464,385 @@ fetch('data.json?v='+Date.now())
 <aside id="so-dw"><div class="dwh"><button class="x" id="so-dwx">&#10005;</button>
 <h3 id="so-dwt">&mdash;</h3><div class="m" id="so-dwm"></div></div>
 <div class="dwb" id="so-dwb"></div></aside>
+
+<!-- ═══════════ VISTA MÓVIL — "Ficha SKU" (B.27) ═══════════
+     Problema: las tablas de Planificadores congelan 4-5 columnas (sticky-left). Ese
+     bloque mide 470px (Planificación por SKU / sin FC), 516px (PPA) y 626px (Luxo).
+     Un teléfono tiene ~390px, así que el bloque congelado es MÁS ANCHO que la pantalla:
+     tapa el 100% del viewport y por más que deslices nunca aparece una columna de datos.
+     Solución: bajo 820px la tabla se reemplaza por una lista compacta (SKU · descripción
+     · métrica con semáforo) y al tocar una fila se abre una ficha a pantalla completa con
+     todos los campos, agrupados por el encabezado superior de la propia tabla.
+     Es una capa de presentación pura: lee el <table> ya renderizado, no toca ninguna
+     función rnd*() y se re-arma sola vía MutationObserver, así que nunca se desincroniza
+     del dato ni de los filtros/orden/paginación existentes. -->
+<style>
+@media(max-width:820px){
+  /* — Cabecera: era flex sin wrap y su contenido (630px) desbordaba el viewport,
+       lo que hacía que TODA la página se desplazara en horizontal en cada swipe. — */
+  .header{flex-wrap:wrap;padding:10px 12px;gap:8px}
+  .header h1{font-size:.92rem}
+  .hsem{margin-left:0;width:100%;font-size:.66rem}
+  /* — 13 pestañas envueltas ocupaban 153px de alto (≈1/4 de pantalla). Ahora es un
+       carrusel horizontal de una sola línea con la pestaña activa auto-centrada. — */
+  .tabs{flex-wrap:nowrap;overflow-x:auto;padding:0 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{padding:9px 12px;font-size:.72rem;flex:0 0 auto}
+  .pg{padding:12px 10px}
+  .stt{font-size:.72rem}
+  .qsub{padding:7px 13px;font-size:.74rem}
+  /* — Buscadores con width inline fijo (320px/420px) que desbordaban su fila. — */
+  .fr{gap:6px}
+  .fr .si{width:100%!important;min-width:0;flex:1 1 100%;padding:8px 10px;font-size:.8rem}
+  .plk-pill{font-size:.75rem;padding:9px 13px;gap:7px;border-radius:12px;flex-wrap:wrap}
+  /* — Drawers de ancho fijo (470px y 1000px) con max-width:none. Ojo: el estado
+       cerrado es un `right` negativo calculado sobre el ancho original, así que hay
+       que mover AMBOS o el panel queda asomado en pantalla. — */
+  .dw,.mc-dw{width:100vw!important;max-width:100vw!important;right:-102vw!important}
+  .dw-wrap.open .dw,.mc-dw-wrap.open .mc-dw{right:0!important}
+  .tw.mcl-off{display:none}
+}
+/* Lista compacta ------------------------------------------------------------ */
+.mcl{display:none;flex-direction:column;gap:6px;margin-bottom:6px}
+.mcl.on{display:flex}
+.mci{width:100%;text-align:left;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 11px;cursor:pointer;font-family:inherit;color:inherit}
+.mci:active{background:#212844}
+.mci-top{display:flex;align-items:center;gap:10px}
+.mci-x{border-color:#39415f;background:#171d2f}
+.mci-l{flex:1;min-width:0}
+.mci-sku{font-family:monospace;font-size:.78rem;font-weight:700;color:#fff}
+.mci-desc{font-size:.72rem;color:#c9d3e8;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mci-chips{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
+.mci-chips span{font-size:.6rem;color:var(--muted);background:#232840;border:1px solid var(--border);border-radius:4px;padding:1px 6px;white-space:nowrap}
+.mci-r{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.mci-hl{font-size:.76rem;font-weight:800;border-radius:6px;padding:4px 9px;white-space:nowrap;min-width:52px;text-align:center}
+.mci-go{color:#4a5578;font-size:1rem}
+.mcl-empty{text-align:center;color:var(--muted);padding:18px;font-size:.75rem;background:var(--card);border:1px solid var(--border);border-radius:10px}
+.mcl-more{text-align:center;color:var(--muted);font-size:.66rem;padding:4px}
+/* Barra de la lista: cuántos resultados + alternar compacta/expandida */
+.mcl-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:1px 2px 3px;font-size:.68rem;color:var(--muted)}
+.mcl-tg{background:#232840;border:1px solid var(--border);border-radius:6px;color:#c0caf5;font-size:.66rem;cursor:pointer;padding:4px 10px;font-family:inherit}
+.mcl-tg:active{background:#2e3654}
+/* Mosaico de KPIs dentro de la tarjeta (modo expandido) */
+.mck{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:9px}
+.mckt{background:#10162a;border:1px solid rgba(45,52,82,.8);border-radius:7px;padding:5px 6px;min-width:0}
+.mckt b{display:block;font-size:.55rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mckt span{display:block;font-size:.78rem;font-weight:700;color:#e2e8f0;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mckt-bg{border-color:transparent}
+.mckt-bg b{color:inherit;opacity:.75}
+.mckt-bg span{color:inherit}
+.mckt-a span{text-decoration:underline dotted;text-underline-offset:2px}
+/* Ficha a pantalla completa -------------------------------------------------- */
+.mcsh-ov{position:fixed;inset:0;background:rgba(6,9,17,.82);z-index:600;display:flex;align-items:flex-end;justify-content:center}
+.mcsh{background:#141a2b;border:1px solid var(--border);border-radius:14px 14px 0 0;width:100%;max-width:640px;height:94vh;display:flex;flex-direction:column;box-shadow:0 -14px 44px rgba(0,0,0,.55)}
+.mcsh-h{display:flex;align-items:flex-start;gap:10px;padding:13px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.mcsh-x{background:#232840;border:1px solid var(--border);border-radius:8px;color:#c0caf5;font-size:1rem;cursor:pointer;padding:5px 11px;flex-shrink:0;font-family:inherit}
+.mcsh-sku{font-family:monospace;font-size:.92rem;font-weight:800;color:#fff}
+.mcsh-desc{font-size:.76rem;color:#c9d3e8;margin-top:3px;line-height:1.4}
+.mcsh-b{flex:1;overflow-y:auto;padding:12px 14px 20px}
+.mcs-r{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(45,52,82,.5)}
+.mcs-k{font-size:.71rem;color:var(--muted);flex:1;min-width:0;line-height:1.35}
+.mcv{font-size:.8rem;font-weight:700;color:#e2e8f0;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.mcv-bg{border-radius:5px;padding:3px 9px;min-width:56px;display:inline-block}
+.mcs-grp{margin-top:14px;border:1px solid var(--border);border-radius:10px;background:var(--card);overflow:hidden}
+.mcs-grp>summary{padding:9px 12px;font-size:.72rem;font-weight:700;color:#c0caf5;cursor:pointer;background:#1c2338;list-style:none}
+.mcs-grp>summary::-webkit-details-marker{display:none}
+.mcs-grp>summary::before{content:'▸ ';color:var(--muted)}
+.mcs-grp[open]>summary::before{content:'▾ '}
+.mcs-wk{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:5px;padding:10px 12px 12px}
+.mcs-wki{background:#10162a;border:1px solid rgba(45,52,82,.75);border-radius:6px;padding:5px 3px;text-align:center;min-width:0}
+.mcs-wki b{display:block;font-size:.58rem;color:var(--muted);font-weight:700;margin-bottom:3px}
+.mcs-wki span{display:block;font-size:.72rem;color:#e2e8f0;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}
+.mcs-wki-ed{border-color:#2478c9}
+.mcs-wki-ed span,.mcv-ed{color:#7fc0f0;border-bottom:1px dashed #2478c9}
+.mcs-wki span[contenteditable]:focus,.mcv-ed:focus{outline:none;background:#1d2b45;color:#fff}
+.mcs-sect{font-size:.62rem;font-weight:800;color:#8b9bdd;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 2px}
+.mcs-sect:first-child{margin-top:0}
+.mcsh-f{display:flex;align-items:center;gap:8px;padding:9px 14px;border-top:1px solid var(--border);flex-shrink:0;background:#111728}
+.mcsh-f .nv{background:#232840;border:1px solid var(--border);border-radius:7px;color:#c0caf5;font-size:.72rem;cursor:pointer;padding:7px 13px;font-family:inherit}
+.mcsh-f .nv:disabled{opacity:.35}
+.mcsh-pos{font-size:.68rem;color:var(--muted);margin:0 auto}
+</style>
+<script>
+// ═══════════ Vista móvil de tablas anchas — "Ficha SKU" (B.27) ═══════════
+// sku/desc = columnas de identidad · chips = contexto secundario en la lista
+// hl = columna que se muestra como badge con semáforo (se busca por texto de encabezado,
+//      no por índice, para que no se rompa si cambia el orden de columnas)
+// wk = a partir de esa columna todo es serie semanal (tablas de encabezado plano)
+// kpis = columnas que se muestran DENTRO de la tarjeta al filtrar poco (modo expandido).
+// Son las que responden "¿me alcanza el stock?" sin abrir la ficha: se eligieron por
+// pastilla según la decisión que gatilla cada una, y se buscan por texto de encabezado.
+var MCL_CFG={
+  'plt-table':    {sku:0,desc:1,chips:[3,2],hl:'Cob. FC 12w',
+                   kpis:['Stock total','OC tránsito','$Stock','Cob. FC 4w','Cob. FC 12w','Cob. 12w c/tránsito','Desv. %','ΣFC 4w','ΣReal 4w']},
+  'sfc-table':    {sku:0,desc:1,chips:[3,2],hl:'Cob. Real 12w',
+                   kpis:['Stock total','OC tránsito','$Stock','Cob. Real 4w','Cob. Real 12w','Cob. 12w c/tránsito','ΣReal 4w','ΣReal 12w']},
+  'conan-table':  {sku:0,desc:1,chips:[2],  hl:'Total año',
+                   kpis:['Σ Real','Σ FC','Total año','Últ. Precio']},
+  'ppap-table':   {sku:0,desc:1,chips:[2],  hl:'Semana Quiebre',
+                   kpis:['Stock total','OC tránsito','Semana Quiebre','Cob. FC 4w','Cob. Plan PPA','Saldo Final','ΣFC Plan PPA','$Stock']},
+  'luxo-table':   {sku:0,desc:1,chips:[3,2],hl:'Semana Quiebre',
+                   kpis:['Stock total','OC tránsito','Semana Quiebre','Cob. FC 4w','Cob. FC 12w','Desv. %','ΣFC 4w','$Stock']},
+  'llegppa-table':{sku:0,desc:1,chips:[],   hl:'Sobrante', wk:8, wkTit:'Llegadas por semana',
+                   kpis:['Stock','Demanda','Sobrante','Total llegadas','OC en tránsito (SAP)','Dif. OC−Llegadas']},
+  'fcw-table':    {sku:0,desc:1,chips:[2],  hl:'', wk:3, wkTit:'FC por semana'},
+  'ocm-table':    {sku:3,desc:4,chips:[0,1],hl:'Por entregar (cantidad)',
+                   kpis:['Por entregar (cantidad)','Cantidad de pedido','Precio neto','Valor neto de orden','Fecha documento','Centro']}
+};
+var MCL_MAX=120;                                    // tope de fichas por render
+var MCL_EXP_MAX=12;                                 // ≤ N resultados ⇒ tarjeta expandida
+var MCL_EXP={};                                     // override manual por tabla (true/false)
+var MCL_MQ=window.matchMedia('(max-width:820px)');
+function mclOn(){return MCL_MQ.matches;}
+function mclNorm(s){return String(s||'').replace(/[⇅▲▼•]/g,'').replace(/\s+/g,' ').trim().toLowerCase();}
+// Aplana un <thead> con rowspan/colspan a un array plano alineado 1:1 con los <td>
+// del <tbody>. Devuelve "Grupo|Etiqueta" cuando la columna vive bajo un encabezado
+// agrupador (ej. "Consumo real (sem)|S34"), que es lo que luego separa las secciones.
+function mclFlat(t){
+  if(!t||!t.tHead||!t.tHead.rows.length) return null;
+  var grid=[];
+  Array.prototype.forEach.call(t.tHead.rows,function(tr,r){
+    if(!grid[r])grid[r]=[];
+    var c=0;
+    Array.prototype.forEach.call(tr.cells,function(cell){
+      while(grid[r][c]!==undefined)c++;
+      var rs=cell.rowSpan||1,cs=cell.colSpan||1,txt=(cell.textContent||'').trim();
+      for(var i=0;i<rs;i++){for(var j=0;j<cs;j++){if(!grid[r+i])grid[r+i]=[];grid[r+i][c+j]=txt;}}
+      c+=cs;
+    });
+  });
+  if(!grid.length) return null;
+  var n=0; grid.forEach(function(g){if(g.length>n)n=g.length;});
+  var out=[];
+  for(var c2=0;c2<n;c2++){
+    var p=[];
+    for(var r2=0;r2<grid.length;r2++){var v=grid[r2]&&grid[r2][c2];if(v&&p.indexOf(v)<0)p.push(v);}
+    out.push(p.join('|'));
+  }
+  return out;
+}
+function mclHdr(tblId){
+  var t=document.getElementById(tblId); if(!t) return null;
+  var h=mclFlat(t);
+  if(!h) return null;
+  var cfg=MCL_CFG[tblId];
+  if(cfg&&cfg.wk!==undefined){                       // encabezado plano → agrupar la cola
+    for(var i=cfg.wk;i<h.length;i++) h[i]=(cfg.wkTit||'Semanas')+'|'+h[i];
+  }
+  return h;
+}
+function mclEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// Etiqueta limpia: fuera la flecha de ordenamiento, que sólo tiene sentido en la tabla.
+function mclLbl(s){return String(s||'').replace(/[⇅▲▼]/g,'').replace(/\s+/g,' ').trim();}
+// Fondo "de verdad" = semáforo de cobertura. Se descarta el fondo de las columnas
+// congeladas (#111a2e) y el rayado de las bandas semanales: son chrome de la tabla,
+// no información, y como chip en la ficha sólo ensucian.
+function mclBg(td){
+  if(getComputedStyle(td).position==='sticky') return '';
+  var bg=td.style.background||td.style.backgroundColor||'';
+  return /^rgba|^transparent/.test(bg)?'':bg;
+}
+// Traspasa los atributos que hacen interactiva a la celda original: handlers inline
+// (ocPop del detalle ME2M), contenteditable + data-* (celdas de llegadas de bolsas PPA,
+// que lppaEdit lee por atributo y no necesitan ser un <td>) y el title explicativo.
+function mclAttrs(td){
+  var s='';
+  for(var i=0;i<td.attributes.length;i++){
+    var a=td.attributes[i], n=a.name;
+    if(n.indexOf('data-')===0||n.indexOf('on')===0||n==='contenteditable'||n==='title')
+      s+=' '+n+'="'+mclEsc(a.value)+'"';
+  }
+  return s;
+}
+function mclEditable(td){return td.getAttribute('contenteditable')==='true';}
+// Reconstruye una celda conservando su semáforo, su color de texto y su interactividad.
+function mclCell(td){
+  var bg=mclBg(td);
+  var col=td.style.color||'';
+  var act=td.getAttribute('onclick')||mclEditable(td);
+  var st=(bg?'background:'+bg+';':'')+(col&&!bg?'color:'+col+';':'')+(act?'cursor:pointer;':'');
+  return '<span class="mcv'+(bg?' mcv-bg':'')+(mclEditable(td)?' mcv-ed':'')+'"'
+       + (st?' style="'+mclEsc(st)+'"':'')+mclAttrs(td)+'>'+td.innerHTML+'</span>';
+}
+function mclHost(tblId){
+  var t=document.getElementById(tblId); if(!t) return null;
+  var tw=t.closest('.tw'); if(!tw) return null;
+  var h=document.getElementById('mcl-'+tblId);
+  if(!h){
+    h=document.createElement('div'); h.id='mcl-'+tblId; h.className='mcl';
+    tw.parentNode.insertBefore(h,tw.nextSibling);
+  }
+  return {host:h,tw:tw,tbl:t};
+}
+// Índice de una columna por texto de encabezado (tolera ⇅ y espacios)
+function mclIdx(hdr,name){
+  for(var i=0;i<hdr.length;i++){ if(mclNorm(hdr[i])===mclNorm(name)) return i; }
+  return -1;
+}
+// Mosaico de KPIs dentro de la tarjeta. Conserva el semáforo de cobertura y el clic
+// de OC en tránsito; stopPropagation para que ese clic no abra además la ficha.
+function mclKpis(tblId,cfg,hdr,tds){
+  if(!cfg.kpis||!cfg.kpis.length) return '';
+  var t=cfg.kpis.map(function(name){
+    var i=mclIdx(hdr,name); if(i<0||!tds[i]) return '';
+    var td=tds[i], bg=mclBg(td), oc=td.getAttribute('onclick')||'';
+    var val=(td.textContent||'').trim()||'—';
+    var st=bg?'background:'+bg+';color:'+(mclLum(bg)>0.6?'#10141e':'#fff')+';':'';
+    return '<div class="mckt'+(bg?' mckt-bg':'')+(oc?' mckt-a':'')+'"'+(st?' style="'+mclEsc(st)+'"':'')
+         + (oc?' onclick="event.stopPropagation();'+mclEsc(oc)+'"':'')
+         + '><b>'+mclEsc(mclLbl(name))+'</b><span>'+mclEsc(val)+'</span></div>';
+  }).filter(Boolean).join('');
+  return t?'<div class="mck">'+t+'</div>':'';
+}
+// Luminancia de un 'rgb(r,g,b)' para decidir texto claro/oscuro sobre el semáforo
+function mclLum(bg){
+  var m=/(\d+)\D+(\d+)\D+(\d+)/.exec(bg||''); if(!m) return 0;
+  return (0.299*+m[1]+0.587*+m[2]+0.114*+m[3])/255;
+}
+function mclToggleExp(tblId){
+  var h=document.getElementById('mcl-'+tblId);
+  var cur=h&&h.getAttribute('data-exp')==='1';
+  MCL_EXP[tblId]=!cur;
+  mclBuild(tblId);
+}
+function mclBuild(tblId){
+  var r=mclHost(tblId); if(!r) return;
+  if(!mclOn()){ r.host.classList.remove('on'); r.tw.classList.remove('mcl-off'); return; }
+  r.tw.classList.add('mcl-off'); r.host.classList.add('on');
+  var cfg=MCL_CFG[tblId], hdr=mclHdr(tblId);
+  var tb=r.tbl.tBodies[0];
+  if(!hdr||!tb||!tb.rows.length){ r.host.innerHTML='<div class="mcl-empty">Sin resultados</div>'; return; }
+  var hli=cfg.hl?mclIdx(hdr,cfg.hl):-1;
+  var rows=Array.prototype.slice.call(tb.rows);
+  var datos=rows.filter(function(x){return x.cells.length===hdr.length;});
+  // Expandida por defecto cuando el filtro dejó pocos SKU: ahí sobra alto de pantalla
+  // y lo que se quiere es leer los números, no barrer una lista.
+  var exp=(MCL_EXP[tblId]!==undefined)?MCL_EXP[tblId]:(datos.length<=MCL_EXP_MAX);
+  if(!cfg.kpis||!cfg.kpis.length) exp=false;
+  r.host.setAttribute('data-exp',exp?'1':'0');
+  var out=[], shown=0;
+  if(cfg.kpis&&cfg.kpis.length&&datos.length){
+    out.push('<div class="mcl-bar"><span>'+datos.length+' SKU'+(datos.length===1?'':'s')+'</span>'
+      +'<button class="mcl-tg" onclick="mclToggleExp(\''+tblId+'\')">'
+      +(exp?'▤ Compacta':'▦ Ver cifras')+'</button></div>');
+  }
+  for(var k=0;k<rows.length&&shown<MCL_MAX;k++){
+    var tds=rows[k].cells;
+    if(tds.length!==hdr.length){                     // fila "Sin resultados" / totales con colspan
+      if(tds.length===1) out.push('<div class="mcl-empty">'+tds[0].innerHTML+'</div>');
+      continue;
+    }
+    var hl='';
+    if(hli>=0&&!exp){
+      var c=tds[hli], bg=mclBg(c), cl=c.style.color||'';
+      hl='<span class="mci-hl" style="'+mclEsc((bg?'background:'+bg+';':'background:#232840;')+(cl?'color:'+cl:'color:#c0caf5'))+'">'
+        +((c.textContent||'').trim()||'—')+'</span>';
+    }
+    var chips=(cfg.chips||[]).map(function(ci){
+      var v=tds[ci]?(tds[ci].textContent||'').trim():''; return v?'<span>'+mclEsc(v)+'</span>':'';
+    }).join('');
+    out.push('<div class="mci'+(exp?' mci-x':'')+'" onclick="mclOpen(\''+tblId+'\','+k+')">'
+      +'<div class="mci-top"><div class="mci-l">'
+      +'<div class="mci-sku">'+mclEsc((tds[cfg.sku].textContent||'').trim())+'</div>'
+      +'<div class="mci-desc">'+mclEsc((tds[cfg.desc].textContent||'').trim())+'</div>'
+      +(chips?'<div class="mci-chips">'+chips+'</div>':'')+'</div>'
+      +'<div class="mci-r">'+hl+'<span class="mci-go">›</span></div></div>'
+      +(exp?mclKpis(tblId,cfg,hdr,tds):'')+'</div>');
+    shown++;
+  }
+  if(shown>=MCL_MAX) out.push('<div class="mcl-more">Mostrando '+MCL_MAX+' — afina la búsqueda o usa la paginación</div>');
+  r.host.innerHTML=out.join('')||'<div class="mcl-empty">Sin resultados</div>';
+}
+// Ficha a pantalla completa de una fila. Las secciones salen del propio encabezado
+// agrupador de la tabla, así que no hay mapeo de campos que mantener por pastilla.
+function mclOpen(tblId,rowIdx){
+  var t=document.getElementById(tblId); if(!t) return;
+  var tb=t.tBodies[0]; if(!tb||!tb.rows[rowIdx]) return;
+  var cfg=MCL_CFG[tblId], hdr=mclHdr(tblId), tds=tb.rows[rowIdx].cells;
+  if(!hdr||tds.length!==hdr.length) return;
+  var skip={}; skip[cfg.sku]=1; skip[cfg.desc]=1; (cfg.chips||[]).forEach(function(c){skip[c]=1;});
+  var flat=[], groups=[], gmap={};
+  for(var i=0;i<hdr.length;i++){
+    if(skip[i]) continue;
+    var p=hdr[i].split('|');
+    if(p.length>1){
+      var g=p[0];
+      if(!gmap[g]){gmap[g]={t:g,it:[]};groups.push(gmap[g]);}
+      gmap[g].it.push({l:mclLbl(p.slice(1).join(' ')),td:tds[i]});
+    } else flat.push({l:mclLbl(hdr[i]),td:tds[i]});
+  }
+  var body='';
+  if(flat.length){
+    body+='<div class="mcs-sect">Detalle</div>'+flat.map(function(f){
+      return '<div class="mcs-r"><span class="mcs-k">'+mclEsc(f.l)+'</span>'+mclCell(f.td)+'</div>';
+    }).join('');
+  }
+  body+=groups.map(function(g){
+    return '<details class="mcs-grp" open><summary>'+mclEsc(mclLbl(g.t))+'</summary><div class="mcs-wk">'
+      +g.it.map(function(it){
+          // Se conservan semáforo e interactividad: en Llegadas Bolsas PPA la celda
+          // semanal es editable (simulación local) y en PLT/PPA marca la semana en curso.
+          // Los atributos van en el <span> del valor, no en el chip: lppaEdit lee
+          // textContent y con la etiqueta de semana dentro leería "35" + cantidad.
+          var bg=mclBg(it.td), ed=mclEditable(it.td), act=it.td.getAttribute('onclick')||ed;
+          var st=(bg?'background:'+bg+';':'')+(act?'cursor:pointer;':'');
+          return '<div class="mcs-wki'+(ed?' mcs-wki-ed':'')+'"'+(st?' style="'+mclEsc(st)+'"':'')
+               + '><b>'+mclEsc(it.l)+'</b><span'+mclAttrs(it.td)+'>'
+               + ((it.td.textContent||'').trim()||'—')+'</span></div>';
+        }).join('')+'</div></details>';
+  }).join('');
+  var chips=(cfg.chips||[]).map(function(ci){
+    var v=(tds[ci].textContent||'').trim(); return v?'<span>'+mclEsc(v)+'</span>':'';
+  }).join('');
+  var n=0, idxs=[];
+  for(var k=0;k<tb.rows.length;k++){ if(tb.rows[k].cells.length===hdr.length){ idxs.push(k); if(k===rowIdx) n=idxs.length; } }
+  var pi=idxs.indexOf(rowIdx), prev=pi>0?idxs[pi-1]:-1, next=pi<idxs.length-1?idxs[pi+1]:-1;
+  var ov=document.getElementById('mcl-sheet'); if(ov) ov.remove();
+  var d=document.createElement('div');
+  d.id='mcl-sheet'; d.className='mcsh-ov';
+  d.setAttribute('onclick','if(event.target===this)this.remove()');
+  d.innerHTML='<div class="mcsh">'
+    +'<div class="mcsh-h"><button class="mcsh-x" onclick="document.getElementById(\'mcl-sheet\').remove()">‹</button>'
+      +'<div style="min-width:0"><div class="mcsh-sku">'+mclEsc((tds[cfg.sku].textContent||'').trim())+'</div>'
+      +'<div class="mcsh-desc">'+mclEsc((tds[cfg.desc].textContent||'').trim())+'</div>'
+      +(chips?'<div class="mci-chips">'+chips+'</div>':'')+'</div></div>'
+    +'<div class="mcsh-b">'+body+'</div>'
+    +'<div class="mcsh-f">'
+      +'<button class="nv" '+(prev<0?'disabled':'onclick="mclOpen(\''+tblId+'\','+prev+')"')+'>‹ Anterior</button>'
+      +'<span class="mcsh-pos">'+n+' de '+idxs.length+'</span>'
+      +'<button class="nv" '+(next<0?'disabled':'onclick="mclOpen(\''+tblId+'\','+next+')"')+'>Siguiente ›</button>'
+    +'</div></div>';
+  document.body.appendChild(d);
+}
+function mclSyncAll(){ for(var id in MCL_CFG){ try{ mclBuild(id); }catch(e){} } }
+// Centra la pestaña activa en el carrusel horizontal (móvil)
+function mclScrollTab(){
+  if(!mclOn()) return;
+  var a=document.querySelector('.tabs .tab.active');
+  if(a&&a.scrollIntoView) try{ a.scrollIntoView({inline:'center',block:'nearest'}); }catch(e){}
+}
+(function mclInit(){
+  // Las tablas están vacías cuando se parsea este módulo (data.json aún no resuelve),
+  // así que cada render de rnd*() dispara el observer y reconstruye la lista. Con esto
+  // búsqueda, orden, paginación y filtro global siguen funcionando sin tocar su código.
+  for(var id in MCL_CFG){
+    (function(id){
+      var t=document.getElementById(id); if(!t||!t.tBodies[0]) return;
+      new MutationObserver(function(){ try{ mclBuild(id); }catch(e){} })
+        .observe(t.tBodies[0],{childList:true});
+    })(id);
+  }
+  var _st=window.showTab;
+  if(typeof _st==='function'){
+    window.showTab=function(){ var r=_st.apply(this,arguments); mclScrollTab(); mclSyncAll(); return r; };
+  }
+  if(MCL_MQ.addEventListener) MCL_MQ.addEventListener('change',function(){mclSyncAll();mclScrollTab();});
+  else if(MCL_MQ.addListener) MCL_MQ.addListener(function(){mclSyncAll();mclScrollTab();});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){var s=document.getElementById('mcl-sheet'); if(s)s.remove();}
+  });
+  mclSyncAll();
+})();
+</script>
 </body>
 </html>
