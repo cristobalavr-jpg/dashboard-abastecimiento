@@ -1,5 +1,5 @@
 {
- "generado": "2026-08-27T09:49:03",
+ "generado": "2026-08-28T10:58:52",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -3269,6 +3269,36 @@
     {
      "sku": "400650",
      "desc": "ETIQ CAST ENS POLLO & ARROZ 12.25"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-08-28",
+   "disp": 97.1,
+   "n_solic": 174,
+   "n_cero": 5,
+   "n_excl_granel": 1,
+   "n_anom_neg": 3,
+   "skus_cero": [
+    {
+     "sku": "300007",
+     "desc": "PP ESENCIA PP NT"
+    },
+    {
+     "sku": "300348",
+     "desc": "GRANOFIBRA"
+    },
+    {
+     "sku": "300425",
+     "desc": "HARINA DE PAPA"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400662",
+     "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
     }
    ]
   }
