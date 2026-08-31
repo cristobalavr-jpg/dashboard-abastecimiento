@@ -1,5 +1,5 @@
 {
- "generado": "2026-08-28T10:58:52",
+ "generado": "2026-08-31T09:48:07",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -3299,6 +3299,96 @@
     {
      "sku": "400662",
      "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-08-31",
+   "disp": 95.7,
+   "n_solic": 467,
+   "n_cero": 20,
+   "n_excl_granel": 8,
+   "n_anom_neg": 6,
+   "skus_cero": [
+    {
+     "sku": "300068",
+     "desc": "CLAVOS DE OLOR"
+    },
+    {
+     "sku": "300134",
+     "desc": "ENELDO"
+    },
+    {
+     "sku": "300208",
+     "desc": "ESENCIA FRUTILLA"
+    },
+    {
+     "sku": "300305",
+     "desc": "SABORIZANTE POLLO EN POLVO"
+    },
+    {
+     "sku": "300317",
+     "desc": "CEBOLLA MORADA"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300339",
+     "desc": "ESENCIA COCADA BELGA CRAMER"
+    },
+    {
+     "sku": "300348",
+     "desc": "GRANOFIBRA"
+    },
+    {
+     "sku": "300416",
+     "desc": "CLEMENTINA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "300529",
+     "desc": "KIWI PELADO"
+    },
+    {
+     "sku": "300576",
+     "desc": "CEBOLLIN GOHAN"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400100",
+     "desc": "ETIQ CAST CHAPARRITA 02.21"
+    },
+    {
+     "sku": "400190",
+     "desc": "ETIQ. CAST COCADA CHOC 06.22"
+    },
+    {
+     "sku": "400436",
+     "desc": "BOLSA PP CAST ENSENADA FSECOS 800G 09.24"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400495",
+     "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    },
+    {
+     "sku": "400662",
+     "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
+    },
+    {
+     "sku": "400665",
+     "desc": "BOLSA KING PROTEÍNA INTEGRAL 04.26 PEBD4"
     }
    ]
   }
