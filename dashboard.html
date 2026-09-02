@@ -6381,20 +6381,60 @@ function ppaStockoutWeek(code, stock, sem){
   for(var i=0;i<weeks.length;i++){ run-=(d[String(weeks[i])]||0); if(run<0) return weeks[i]; }
   return null;
 }
-function ppaItems(codes){
-  var idx=ppaSkuIdx(), sem=ppaCurWeek(), out=[];
+// Precios de respaldo para valorizar la demanda: última OC pagada por SKU (CONSUMO_ANUAL, que
+// guarda `pu_oc` + proveedor de la última compra) y mediana por grupo de artículo. Se construye
+// una sola vez por carga. Ver PARAMETRO.MD B.16.4.
+var _ppaPuIdx=null;
+function ppaPuIdx(){
+  if(_ppaPuIdx) return _ppaPuIdx;
+  var ult={}, porGrupo={};
+  if(CONAN && CONAN.rows) CONAN.rows.forEach(function(r){
+    var v=+r.pu_oc||0; if(v>0) ult[String(r.sku)]={pu:v, prov:r.prov||''};
+  });
+  (SKUS||[]).forEach(function(s){
+    var u=ult[String(s.sku)];
+    var pu=(+s.pu||0)||(+s.pu_oc||0)||((u&&u.pu)||0);
+    if(pu>0){ var g=s.grupo||'—'; (porGrupo[g]=porGrupo[g]||[]).push(pu); }
+  });
+  var med={};
+  for(var g in porGrupo){ if(!Object.prototype.hasOwnProperty.call(porGrupo,g)) continue;
+    var a=porGrupo[g].sort(function(x,y){return x-y;}); med[g]=a[Math.floor(a.length/2)]; }
+  _ppaPuIdx={ult:ult, med:med};
+  return _ppaPuIdx;
+}
+// SKU del universo del plan que NO existen en SKUS (sin data de stock). Se devuelven aparte en vez
+// de desaparecer: su demanda queda fuera del embudo, y un drop silencioso subestima el déficit sin
+// que nadie lo note. Ver PARAMETRO.MD B.16.4.
+function ppaMissing(codes){
+  var idx=ppaSkuIdx(), out=[];
   (codes||[]).forEach(function(code){
-    var c=String(code), s=idx[c]; if(!s) return; // sin data de stock → se omite
+    var c=String(code); if(idx[c]) return;
+    var pe=PLAN_PPA && PLAN_PPA.dem[c];
+    out.push({sku:c, desc:(pe&&pe.nom)||'—', und:(pe&&pe.und)||'', rest:ppaDemRest(c, ppaCurWeek())});
+  });
+  return out;
+}
+function ppaItems(codes){
+  var idx=ppaSkuIdx(), sem=ppaCurWeek(), P=ppaPuIdx(), out=[];
+  (codes||[]).forEach(function(code){
+    var c=String(code), s=idx[c]; if(!s) return; // sin data de stock → ver ppaMissing()
     var demProm=ppaDemProm(c, sem, 12);
     var cob=(demProm && demProm>0) ? (s.stock||0)/demProm : null;
     var pe=PLAN_PPA && PLAN_PPA.dem[c];
-    // Precio de referencia para valorizar la DEMANDA del programa: el stock en bodega se valoriza
-    // a MOBIDIC (`pu`), el stock en tránsito a precio de OC (`pu_oc`). Un SKU sin stock en bodega
-    // tiene pu=0 por construcción (val/qty con qty=0) → sin `pu_oc` su demanda valdría $0 y el SKU
-    // se caía del embudo y de la cobertura por categoría, justo los que están en quiebre total.
-    var puB=s.pu||0, puO=s.pu_oc||0, puR=puB>0?puB:puO;
+    // Precio de referencia para valorizar la DEMANDA del programa, en cascada: stock en bodega a
+    // MOBIDIC (`pu`) → stock en tránsito a precio de OC abierta (`pu_oc`) → última OC pagada
+    // (CONSUMO_ANUAL) → mediana del grupo. Un SKU sin stock en bodega tiene pu=0 por construcción
+    // (val/qty con qty=0); si además no tiene OC abierta, los dos primeros escalones fallan y su
+    // demanda valía $0 → se caía del embudo y de la cobertura por categoría, justo los que están
+    // en quiebre TOTAL (sin stock y sin OC). En S36-2026 eran 4 bolsas PPA con 862.941 un de
+    // demanda ≈ $42 MM de déficit que no se reportaba. Los dos últimos escalones son estimados y
+    // se marcan con `pu_est` para que la cifra nunca se lea como precio en firme.
+    var puB=s.pu||0, puO=s.pu_oc||0, puR=puB>0?puB:puO, puSrc=(puB>0?'bodega':(puO>0?'oc':''));
+    if(puR<=0){ var u=P.ult[c]; if(u && u.pu>0){ puR=u.pu; puSrc='ult_oc'; } }
+    if(puR<=0){ var m=P.med[s.grupo||'—']||0; if(m>0){ puR=m; puSrc='mediana'; } }
     out.push({sku:c, desc:s.desc||(pe?pe.nom:''), comp:s.comp||'—', grupo:s.grupo||'—', und:(pe&&pe.und)||'', stock:s.stock||0, val:s.val||0,
-      oc:s.oc||0, pu:puR, pu_bod:puB, pu_oc:puO, c4_real:s.c4_real||0, c8_real:s.c8_real||0, cob:cob, demProm:demProm,
+      oc:s.oc||0, pu:puR, pu_bod:puB, pu_oc:puO, pu_src:puSrc, pu_est:(puSrc==='ult_oc'||puSrc==='mediana'),
+      c4_real:s.c4_real||0, c8_real:s.c8_real||0, cob:cob, demProm:demProm,
       lt:s.lt||0, ltw:(s.lt>0?Math.ceil(s.lt/7):0), lt_src:s.lt_src||'', lt_low:!!s.lt_low});
   });
   return out;
@@ -6605,7 +6645,8 @@ function ppaDetRender(){
 function ppaToggleExcl(){
   var det=document.getElementById('ppa-excl-dt'); if(!det) return;
   if(det.classList.contains('open')){ det.classList.remove('open'); det.innerHTML=''; return; }
-  var other=document.getElementById('ppa-bolsaq-dt'); if(other){ other.classList.remove('open'); other.innerHTML=''; }  // solo un panel abierto a la vez
+  ['ppa-bolsaq-dt','ppa-miss-dt'].forEach(function(id){                 // solo un panel abierto a la vez
+    var o=document.getElementById(id); if(o){ o.classList.remove('open'); o.innerHTML=''; } });
   window._ppaExclSort=window._ppaExclSort||{col:'ev',dir:-1};  // default: sobre-abast $ desc
   det.classList.add('open'); ppaExclRender();
   det.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -6641,7 +6682,7 @@ function ppaExclRender(){
       + '<td style="text-align:right;font-weight:700;color:'+pcol(x.pct_over)+'"'
       +   (x.pct_over==null?'':' title="'+f0(x.pct_over)+'% — sobran '+f0(x.over_u)+' '+(x.und||'u')+' sobre un volumen total de temporada de '+f0(x.dem_tot)+' '+(x.und||'u')+' (demanda restante hoy: '+f0(x.rest)+')"')+'>'
       +   (x.pct_over==null?'—':(x.pct_over>=1000?'&gt;999':f0(x.pct_over))+'%')+'</td>'
-      + '<td style="text-align:right;color:var(--muted)">$ '+f0(x.pu)+'</td>'
+      + '<td style="text-align:right;color:'+(x.pu_est?'#E8C52A':'var(--muted)')+'"'+(x.pu_est?' title="Precio estimado: el SKU no tiene stock en bodega ni OC abierta, se valoriza con la última OC pagada"':'')+'>$ '+f0(x.pu)+(x.pu_est?' ≈':'')+'</td>'
       + '<td style="text-align:right;color:#f0c98a;font-weight:800">$ '+f0(x.ev)+'</td>'
       + '<td style="text-align:center">'+(x.oc>0?'<span style="color:#639922;font-weight:700">Sí · en OC</span>':'<span style="color:#8892b0">No · en bodega</span>')+'</td>'
       + '</tr>';
@@ -6669,7 +6710,8 @@ function ppaExclRender(){
 function ppaToggleBolsaQ(){
   var det=document.getElementById('ppa-bolsaq-dt'); if(!det) return;
   if(det.classList.contains('open')){ det.classList.remove('open'); det.innerHTML=''; return; }
-  var other=document.getElementById('ppa-excl-dt'); if(other){ other.classList.remove('open'); other.innerHTML=''; }  // solo un panel abierto a la vez
+  ['ppa-excl-dt','ppa-miss-dt'].forEach(function(id){                   // solo un panel abierto a la vez
+    var o=document.getElementById(id); if(o){ o.classList.remove('open'); o.innerHTML=''; } });
   window._ppaBolsaQSort=window._ppaBolsaQSort||{col:'firstD',dir:1};  // default: la que se necesita antes
   det.classList.add('open'); ppaBolsaQRender();
   det.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -6723,6 +6765,36 @@ function ppaBolsaQRender(){
     + th('Stock hoy','stock') + th('OC tránsito','oc') + th('Demanda restante','demR')
     + th('Se necesita en','firstD') + th('% cub. c/OC','pct') + th('¿La OC alcanza?','saldo')
     + '</tr></thead><tbody id="ppa-bolsaq-tb">'+rows+'</tbody></table></div>';
+}
+// ── Panel de detalle al hacer clic en "N sin data" de la tarjeta de stock ──
+// Un SKU del universo del plan que no está en SKUS se caía en silencio: su demanda desaparecía del
+// denominador del embudo y el déficit quedaba subestimado sin aviso. Hoy son aguas de proceso
+// (impacto $0), pero si mañana se cae un SKU real hay que verlo. Ver PARAMETRO.MD B.16.4.
+function ppaToggleMiss(){
+  var det=document.getElementById('ppa-miss-dt'); if(!det) return;
+  if(det.classList.contains('open')){ det.classList.remove('open'); det.innerHTML=''; return; }
+  ['ppa-excl-dt','ppa-bolsaq-dt'].forEach(function(id){                 // solo un panel abierto a la vez
+    var o=document.getElementById(id); if(o){ o.classList.remove('open'); o.innerHTML=''; } });
+  var items=(window._ppaMissDet||[]).slice().sort(function(a,b){return b.rest-a.rest;});
+  var rows=items.map(function(x){
+    return '<tr>'
+      + '<td style="font-family:monospace;font-weight:700;color:#c0caf5">'+x.sku+'</td>'
+      + '<td>'+(x.desc||'—')+'</td>'
+      + '<td style="text-align:right;color:var(--muted)">'+(x.und||'')+'</td>'
+      + '<td style="text-align:right;font-weight:700;color:'+(x.rest>0?'#E8C52A':'var(--muted)')+'">'+f0(x.rest)+'</td>'
+      + '</tr>';
+  }).join('');
+  det.classList.add('open');
+  det.innerHTML=''
+    + '<h4><span>SKU del plan sin data de stock · '+items.length+' SKU</span>'
+    + '<span style="display:flex;gap:8px;align-items:center">'
+    +   '<button class="cov-cl" onclick="ppaToggleMiss()">✕ Cerrar</button>'
+    + '</span></h4>'
+    + '<div style="font-size:.62rem;color:var(--muted);margin:2px 0 8px">Están en el universo del plan (hoja <b>Ex.PPA</b>) pero <b>no existen en la base de stock</b>, así que quedan fuera de las tarjetas, del embudo y de la cobertura — <b>su demanda no suma al déficit</b>. Normalmente son materiales fantasma sin compra asociada (aguas de proceso), y ahí el impacto en $ es nulo. Si aparece acá un insumo que sí se compra, el déficit del embudo está subestimado: revisa que el SKU esté en el maestro de materiales y en MOBIDIC.</div>'
+    + '<div class="tw"><table><thead><tr>'
+    + '<th>SKU</th><th>Descripción</th><th style="text-align:right">Un.</th><th style="text-align:right">Demanda restante</th>'
+    + '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+  det.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 // Cobertura del plan semana a semana: asignación CRONOLÓGICA del inventario (cada semana consume
 // primero; el sobrante pasa a la siguiente). Devuelve, por semana con demanda, el % value-weighted
@@ -7112,25 +7184,34 @@ function buildPPA(){
   var host=el('ppa-host'); if(!host) return;
   if(!PLAN_PPA){ host.innerHTML='<div style="color:var(--muted);padding:14px">No se pudo cargar el Plan PPA (<code>plan_ppa.json</code>). Corre <code>python Dashboard/generar_plan_ppa.py</code> y recarga.</div>'; return; }
   if(!Array.isArray(SKUS)){ host.innerHTML='<div style="color:var(--muted);padding:14px">Sin SKUs cargados.</div>'; return; }
-  _ppaSkuIdx=null; // reconstruye índice por si SKUS cambió
+  _ppaSkuIdx=null; _ppaPuIdx=null; // reconstruye índices por si SKUS cambió
   var sem=ppaCurWeek();
   var itemsA=ppaItems(PLAN_PPA.universeA||[]);
   var itemsB=ppaItems(PLAN_PPA.universeB||[]);
+  var missA=ppaMissing(PLAN_PPA.universeA||[]);   // SKU del plan sin data de stock (drop visible)
   var setB={}; (PLAN_PPA.universeB||[]).forEach(function(c){setB[String(c)]=1;});
   // KPIs sobre universo A (todos los que se usan en PPA)
   var valA=itemsA.reduce(function(a,it){return a+it.val;},0);
   var valExcl=itemsA.filter(function(it){return setB[it.sku];}).reduce(function(a,it){return a+it.val;},0);
   var valShared=valA-valExcl;
   var num=0,den=0, covStock=0, excExclTot=0,excExclCnt=0, exclCnt=0;
+  // Puente tarjeta → embudo: la tarjeta "Stock PPA en bodega (total)" vale TODO el stock a MOBIDIC;
+  // el embudo sólo reconoce la parte que el plan va a consumir (capada en la demanda restante).
+  // Sin este desglose quedan dos cifras azules casi homónimas que no cuadran y nada las explica.
+  var stkCap=0, stkSinDem=0, sinDemCnt=0;
+  var estDem=0, estCnt=0;                          // demanda valorizada con precio ESTIMADO
   var exclDet=[];  // detalle de SKU exclusivos con sobre-stock (para el panel clic en la tarjeta)
   itemsA.forEach(function(it){
     if(setB[it.sku]) exclCnt++;
-    var rest=ppaDemRest(it.sku, sem); if(rest<=0) return;
-    var restVal=rest*(it.pu||0); if(restVal<=0) return;
+    var rest=ppaDemRest(it.sku, sem);
+    var restVal=rest*(it.pu||0);
+    if(rest<=0 || restVal<=0){ if(it.val>0){ stkSinDem+=it.val; sinDemCnt++; } return; }
     var avail=(it.stock||0)+(it.oc||0);
     num+=Math.min(avail, rest)*(it.pu||0);
     covStock+=Math.min(it.stock||0, rest)*(it.pu||0);
     den+=restVal;
+    stkCap+=Math.max(0, (it.stock||0)-rest)*(it.pu||0);
+    if(it.pu_est){ estDem+=restVal; estCnt++; }
     var overU=Math.max(0, avail-rest);
     var ev=overU*(it.pu||0);  // sobre-abast
     if(ev>0 && setB[it.sku]){  // sólo exclusivos = merma real (no reutilizable)
@@ -7140,7 +7221,7 @@ function buildPPA(){
       // anual de este insumo me va a sobrar al cierre". demTot ≥ rest > 0, así que nunca divide 0.
       var demTot=ppaDemTotal(it.sku);
       exclDet.push({sku:it.sku, desc:it.desc, comp:it.comp, und:it.und||'',
-        stock:it.stock||0, oc:it.oc||0, rest:rest, dem_tot:demTot, over_u:overU, pu:it.pu||0, ev:ev,
+        stock:it.stock||0, oc:it.oc||0, rest:rest, dem_tot:demTot, over_u:overU, pu:it.pu||0, pu_est:!!it.pu_est, ev:ev,
         pct_over: demTot>0 ? overU/demTot*100 : null});
     }
   });
@@ -7171,6 +7252,7 @@ function buildPPA(){
     });
   }
   window._ppaBolsaQDet=bolsaQDet;
+  window._ppaMissDet=missA;
   var kc=function(color,val,label,sub,click){
     var clk=click?';cursor:pointer':'';
     var oc=click?' onclick="'+click+'" title="Click para ver el detalle de SKUs"':'';
@@ -7210,6 +7292,16 @@ function buildPPA(){
     // etiqueta de monto ARRIBA del segmento cuando es muy angosto para mostrarlo adentro
     var segTop=function(v,color){var p=pcf(v);return '<div style="flex:0 0 '+p+'%;min-width:0;position:relative">'+((p>0 && p<13) ? '<span style="position:absolute;left:0;bottom:0;white-space:nowrap;font-weight:700;font-size:.6rem;color:'+color+'">$'+fMM(v)+'&nbsp;▾</span>' : '')+'</div>';};
     var anyNarrow=[covStock,covOConly,defFun].some(function(v){return pcf(v)>0 && pcf(v)<13;});
+    // Puente explícito entre la tarjeta de stock y el segmento azul del embudo: son dos cifras
+    // azules casi homónimas que NO coinciden (en S36-2026, $1.183,6 MM vs $942,2 MM). Ambas están
+    // bien: la tarjeta mide plata inmovilizada, el embudo mide cobertura de demanda. Sin esta
+    // línea el lector no tiene cómo saberlo y asume que una de las dos está mala.
+    var puente = (Math.abs(valA-covStock) > 1e6)
+      ? '<div style="font-size:.58rem;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)">'
+        + '<b style="color:#9fc0ea">Stock en bodega $'+fMM(covStock)+' MM</b> es la parte del stock que el plan consume, no el stock total: '
+        + 'tarjeta $'+fMM(valA)+' MM − $'+fMM(stkCap)+' MM que exceden la demanda restante'
+        + (stkSinDem>0 ? ' − $'+fMM(stkSinDem)+' MM de '+sinDemCnt+' SKU ya sin demanda' : '')+'.</div>'
+      : '';
     funnelPanel=''
       + '<div class="cb" style="flex:1 1 auto;min-width:360px;padding:9px 14px;display:flex;flex-direction:column;justify-content:center">'
       +   '<div class="ct" style="margin-bottom:5px">Embudo de abastecimiento <span style="font-weight:400;color:var(--muted);font-size:.6rem">· Demanda del programa $'+fMM(den)+' (S'+sem+'→S'+ppaLastWeek()+', valorizada)</span></div>'
@@ -7224,12 +7316,16 @@ function buildPPA(){
       +     lg('#2f6f3f','OC en tránsito',covOConly)
       +     lg('#E24B4A','Déficit · comprar',defFun)
       +   '</div>'
+      +   puente
+      +   (estCnt>0 ? '<div style="font-size:.58rem;color:#E8C52A;margin-top:4px">≈ '+estCnt+' SKU sin precio en bodega ni en OC abierta se valorizan con la <b>última OC pagada</b>'
+            +' ($'+fMM(estDem)+' MM de la demanda, '+(estDem/den*100).toFixed(1).replace('.',',')+'%). Sin este respaldo caían del embudo y el déficit se subestimaba.</div>' : '')
       + '</div>';
   }
   host.innerHTML=''
     + ppaFcStamp()
     + '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin-bottom:16px">'
-    +   kc('#378ADD','$'+fMM(valA),'Stock valorizado PPA','Todo el programa · '+itemsA.length+' SKU')
+    +   kc('#378ADD','$'+fMM(valA),'Stock PPA en bodega (total)','Todo el programa · '+itemsA.length+' de '+(PLAN_PPA.universeA||[]).length+' SKU'
+          + (missA.length ? ' · <span style="color:#E8C52A">'+missA.length+' sin data</span>' : ''), missA.length?'ppaToggleMiss()':'')
     +   kc('#38bdf8','$'+fMM(valExcl),'Stock valorizado Exclusivos PPA','Uso exclusivo · '+exclCnt+' SKU · no reutilizable')
     +   kc('#E87B2A','$'+fMM(excExclTot),'Sobre-abastec. exclusivos PPA','riesgo merma real · '+excExclCnt+' SKU', excExclCnt>0?'ppaToggleExcl()':'')
     +   kc('#a855f7',f0(bolsasQ),'Bolsas PPA sin stock','stock 0 en bodega · de '+bolsasTot+' bolsas con demanda', bolsasQ>0?'ppaToggleBolsaQ()':'')
@@ -7238,6 +7334,7 @@ function buildPPA(){
     + '</div>'
     + '<div class="cov-detail" id="ppa-excl-dt"></div>'
     + '<div class="cov-detail" id="ppa-bolsaq-dt"></div>'
+    + '<div class="cov-detail" id="ppa-miss-dt"></div>'
     + '<div id="ppa-weekly"></div>'
     + '<div id="ppa-program"></div>'
     + '<div id="ppa-secs"></div>'
