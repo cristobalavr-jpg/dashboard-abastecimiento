@@ -1,5 +1,5 @@
 {
- "generado": "2026-09-03T09:48:56",
+ "generado": "2026-09-04T09:48:05",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -3549,6 +3549,28 @@
     {
      "sku": "400665",
      "desc": "BOLSA KING PROTEÍNA INTEGRAL 04.26 PEBD4"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-09-04",
+   "disp": 98.2,
+   "n_solic": 165,
+   "n_cero": 3,
+   "n_excl_granel": 1,
+   "n_anom_neg": 1,
+   "skus_cero": [
+    {
+     "sku": "300537",
+     "desc": "SABORIZANTE MANJAR"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400606",
+     "desc": "BOLSA CAS PITA LINAZA CHIA 09.25 CPP35"
     }
    ]
   }
