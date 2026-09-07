@@ -897,7 +897,7 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   </div>
 
   <div id="inv-opt" style="display:none">
-    <div class="so-lede">Cuánto inventario <b>deberíamos</b> tener por SKU, contra cuánto tenemos. La banda es el diente de sierra del ciclo de reposición: <b>mínimo</b> = colchón de seguridad (justo antes de recibir), <b>máximo</b> = recién recibido el lote, <b>óptimo</b> = el promedio del ciclo, que es la meta de capital. Metodología completa en <code>PARAMETRO.MD</code> B.20.</div>
+    <div class="so-lede">Cuánto inventario <b>deberíamos</b> tener por SKU, contra cuánto tenemos. La banda es el diente de sierra del ciclo de reposición: <b>mínimo</b> = colchón de seguridad (justo antes de recibir), <b>máximo</b> = recién recibido el lote, <b>óptimo</b> = el promedio del ciclo, que es la meta de capital. Metodología completa en <code>PARAMETRO.MD</code> B.20. La versión vigente incorpora la <b>revisión referencia por referencia de los compradores</b>: donde ellos declararon cuántas semanas de cobertura y de reposición quieren, esa decisión manda sobre el cálculo estadístico.</div>
     <div id="so-sello" style="margin:-4px 0 12px"></div>
     <div id="so-load" style="color:var(--muted);font-size:.78rem;padding:24px 0">Cargando bandas…</div>
     <div id="so-nodata" style="display:none;color:var(--q);font-size:.78rem;padding:20px 0">⚠️ No se encontró <code>stock_optimo.json</code>. Corre <code>python Dashboard/calcular_stock_optimo.py</code>.</div>
@@ -7904,8 +7904,12 @@ function soV(r,k){ return r[SOC[k]]; }
 function soCat(id){ var c=(SO.cats||[]).filter(function(x){return x.id===id;})[0]; return c?c.label:id; }
 
 function soLoad(){
-  fetch('stock_optimo.json?v='+Date.now())
-    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+  // Se prefiere la V2 (bandas con los ajustes de los compradores). Si no esta
+  // publicada, cae a la V1 estadistica para no dejar la seccion vacia.
+  fetch('stock_optimo_v2.json?v='+Date.now())
+    .then(function(r){ if(r.ok) return r.json(); throw 0; })
+    .catch(function(){ return fetch('stock_optimo.json?v='+Date.now())
+        .then(function(r){ if(!r.ok) throw 0; return r.json(); }); })
     .then(function(d){
       SO=d; SO.cols.forEach(function(c,i){ SOC[c]=i; });
       return fetch('stock_optimo_series.json?v='+Date.now())
@@ -8167,7 +8171,11 @@ function soSello(){
        +'Corre <code>Actualizar Bandas Stock Óptimo.bat</code> para recalcularlas.';
     col='#F0A868'; bg='rgba(232,123,42,.10)'; ico='⚠️ ';
   }
-  el('so-sello').innerHTML =
+  var ver = SO.version ? SO.version : 'V1 · bandas estadísticas';
+  var vtxt = '<span style="display:inline-block;background:#232840;border:1px solid var(--border);'
+    + 'border-radius:20px;padding:3px 11px;font-size:.68rem;font-weight:700;color:#a5b4fc;'
+    + 'margin-right:8px">' + soE(ver) + '</span>';
+  el('so-sello').innerHTML = vtxt +
     '<div style="display:inline-block;background:'+bg+';border:1px solid '+col+'33;border-left:3px solid '+col
     +';border-radius:7px;padding:7px 12px;font-size:.71rem;color:'+col+'">'+ico+txt+'</div>';
 }
@@ -8249,6 +8257,14 @@ function soEjes(){
 /* ── Anexo D: simulaciones de NS ── */
 function soSim(){
   var m=SO.metodologia||{};
+  // La simulacion mueve `z` (nivel de servicio). En la V2 la banda la fija una
+  // decision en semanas, no z, asi que el ejercicio no representa nada: la
+  // pastilla se retira entera en vez de mostrar tablas vacias.
+  if(!m.sim_celda_a_normal || !m.sim_fila_a){
+    var d = el('so-sim1') && el('so-sim1').closest('details.so-an');
+    if(d) d.remove();
+    return;
+  }
   var pinta=function(id,arr,lab){
     var tb=document.querySelector('#'+id+' tbody'); if(!tb||!arr) return;
     tb.innerHTML=arr.map(function(x){
