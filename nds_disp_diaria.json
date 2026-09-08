@@ -1,5 +1,5 @@
 {
- "generado": "2026-09-07T09:54:55",
+ "generado": "2026-09-08T10:42:54",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -3645,6 +3645,80 @@
     {
      "sku": "400709",
      "desc": "BOLSA KING MOLDE INT PROT 06.26 PEBD40"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-09-08",
+   "disp": 96.4,
+   "n_solic": 447,
+   "n_cero": 16,
+   "n_excl_granel": 8,
+   "n_anom_neg": 3,
+   "skus_cero": [
+    {
+     "sku": "300134",
+     "desc": "ENELDO"
+    },
+    {
+     "sku": "300247",
+     "desc": "COLORANTE GLASE ROJO NAVIDAD"
+    },
+    {
+     "sku": "300305",
+     "desc": "SABORIZANTE POLLO EN POLVO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300348",
+     "desc": "GRANOFIBRA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400054",
+     "desc": "FILM BOPP TPTE 300X0,035"
+    },
+    {
+     "sku": "400291",
+     "desc": "BOLSA CAS MIGA G BCO 05.24 PEBD40"
+    },
+    {
+     "sku": "400374",
+     "desc": "PP ETIQ. PRODUCTO CALIPSO 80X100MM"
+    },
+    {
+     "sku": "400398",
+     "desc": "PP ETIQ. AZUL  80x100MM"
+    },
+    {
+     "sku": "400440",
+     "desc": "BOLSA CEN COUS CONF 700G 09.24"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400495",
+     "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    },
+    {
+     "sku": "400662",
+     "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
+    },
+    {
+     "sku": "400672",
+     "desc": "ETIQ CAS MUFFIN CHOC PISTACHO 05.26"
     }
    ]
   }
