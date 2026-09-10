@@ -1,5 +1,5 @@
 {
- "generado": "2026-09-09T09:46:52",
+ "generado": "2026-09-10T12:00:27",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -3789,6 +3789,68 @@
     {
      "sku": "400562",
      "desc": "ETIQ CAS GALL FINAS 200 G 07.25 FRO"
+    },
+    {
+     "sku": "400672",
+     "desc": "ETIQ CAS MUFFIN CHOC PISTACHO 05.26"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-09-10",
+   "disp": 97.2,
+   "n_solic": 467,
+   "n_cero": 13,
+   "n_excl_granel": 8,
+   "n_anom_neg": 3,
+   "skus_cero": [
+    {
+     "sku": "300097",
+     "desc": "SUCRALOSA GRANULADA POLVO"
+    },
+    {
+     "sku": "300134",
+     "desc": "ENELDO"
+    },
+    {
+     "sku": "300247",
+     "desc": "COLORANTE GLASE ROJO NAVIDAD"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300348",
+     "desc": "GRANOFIBRA"
+    },
+    {
+     "sku": "300409",
+     "desc": "ENZIMA PROTEASA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "300569",
+     "desc": "SABORIZANTE POLLO ASADO ID-701455"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400485",
+     "desc": "BOLSA CAS MOLDE FAM INTEG XL 03.25 PEBD"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400495",
+     "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
     },
     {
      "sku": "400672",
