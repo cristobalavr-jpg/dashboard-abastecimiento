@@ -418,6 +418,99 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .mc-err{color:var(--q);font-size:.7rem;margin-top:6px;display:none}
 .mc-err.show{display:block}
 .mc-hint{font-size:.65rem;color:var(--muted);margin-top:6px;line-height:1.4}
+/* ── Tareas Gerencia (t16) ─────────────────────────────────────────────────
+   Sección privada Cristóbal ↔ Meni. Todo lo que se ve acá llega por fetch tras
+   autenticar: el HTML publicado no contiene ninguna tarea. */
+.tg-lock{max-width:400px;margin:60px auto;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px}
+.tg-lock h3{font-size:1rem;color:#fff;margin-bottom:4px}
+.tg-lock p{font-size:.7rem;color:var(--muted);line-height:1.5;margin-bottom:16px}
+.tg-lock label{display:block;font-size:.68rem;color:var(--muted);margin:10px 0 4px}
+.tg-lock input,.tg-lock select{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid var(--border);border-radius:6px;padding:9px 11px;color:#e2e8f0;font-size:.8rem;font-family:inherit}
+.tg-lock input:focus,.tg-lock select:focus{outline:none;border-color:#6366f1}
+.tg-lock select option{background:#0f1117 !important;color:#e2e8f0 !important}
+.tg-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.tg-eyebrow{font-size:.6rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#6366f1}
+.tg-hd h2{font-size:1.15rem;color:#fff;margin:2px 0 3px}
+.tg-sub{font-size:.68rem;color:var(--muted)}
+.tg-who{font-size:.66rem;color:var(--muted);text-align:right;white-space:nowrap}
+.tg-who b{color:#e2e8f0}
+.tg-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.tg-kc{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px 13px}
+.tg-kl{display:flex;align-items:center;gap:5px;font-size:.6rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.tg-kn{font-size:1.5rem;font-weight:800;color:#fff;line-height:1.15;margin-top:7px}
+.tg-kf{font-size:.6rem;color:var(--muted);margin-top:3px}
+.tg-kc.danger .tg-kn{color:var(--q)}.tg-kc.danger .tg-kl{color:var(--q)}
+.tg-kc.warn .tg-kn{color:var(--m)}.tg-kc.warn .tg-kl{color:var(--m)}
+.tg-kc.ok .tg-kn{color:var(--n)}.tg-kc.ok .tg-kl{color:var(--n)}
+.tg-kc.info .tg-kn{color:var(--s)}.tg-kc.info .tg-kl{color:var(--s)}
+.tg-bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.tg-bar select,.tg-bar input{background:#0f1117;border:1px solid var(--border);border-radius:6px;padding:5px 9px;color:#e2e8f0;font-size:.68rem;font-family:inherit}
+.tg-bar select:focus,.tg-bar input:focus{outline:none;border-color:#6366f1}
+.tg-bar select option{background:#0f1117 !important;color:#e2e8f0 !important}
+.tg-btn{background:#232840;border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:#e2e8f0;font-size:.68rem;font-weight:600;cursor:pointer;font-family:inherit}
+.tg-btn:hover{border-color:#6366f1}
+.tg-btn.primary{background:#6366f1;border-color:#6366f1;color:#fff}
+.tg-btn.ghost{background:transparent}
+.tg-wrap{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tg-cap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 13px;border-bottom:1px solid var(--border);font-size:.68rem;font-weight:700;color:#e2e8f0}
+.tg-cap span{font-weight:400;color:var(--muted)}
+.tg-scroll{overflow-x:auto}
+table.tg-t{width:100%;border-collapse:collapse;font-size:.71rem;min-width:900px}
+.tg-t th{background:#141827;text-align:left;padding:8px 11px;font-size:.58rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+.tg-t td{padding:9px 11px;border-bottom:1px solid #232840;vertical-align:middle;color:#cbd5e1}
+.tg-t tr:last-child td{border-bottom:0}
+.tg-t tbody tr:hover{background:#1e2436}
+.tg-t tr.done td{opacity:.45}
+.tg-t tr.done .tg-tx{text-decoration:line-through}
+.tg-tx{color:#e2e8f0;font-weight:600}
+.tg-cm{display:block;font-size:.61rem;color:var(--muted);margin-top:2px;line-height:1.35}
+.tg-av{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:.56rem;font-weight:800;color:#fff;margin-right:7px;flex:0 0 auto}
+.tg-rp{display:flex;align-items:center;white-space:nowrap}
+.tg-f{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.68rem;white-space:nowrap}
+.tg-ch{display:inline-block;padding:2px 8px;border-radius:11px;font-size:.6rem;font-weight:700;white-space:nowrap}
+.tg-ch.alta{background:rgba(226,75,74,.16);color:#f08b8a}
+.tg-ch.media{background:rgba(232,123,42,.16);color:#f0a96b}
+.tg-ch.baja{background:rgba(136,146,176,.16);color:#a8b2c8}
+.tg-ch.venc{background:rgba(226,75,74,.16);color:#f08b8a}
+.tg-ch.hoy{background:rgba(232,123,42,.18);color:#f0a96b}
+.tg-ch.pron{background:rgba(232,197,42,.15);color:#e0cf6a}
+.tg-ch.lejos{background:rgba(136,146,176,.14);color:#a8b2c8}
+.tg-ch.done{background:rgba(99,153,34,.18);color:#8fc44f}
+.tg-ch.canc{background:rgba(136,146,176,.12);color:#7a839b}
+.tg-rg{background:none;border:0;font-family:inherit;font-size:.68rem;font-weight:700;cursor:default;padding:0}
+.tg-rg.n0{color:#5b647e;font-weight:400}
+.tg-rg.n1{color:var(--rT);cursor:pointer;text-decoration:underline dotted}
+.tg-rg.n2{color:var(--m);cursor:pointer;text-decoration:underline dotted}
+.tg-rg.n3{color:var(--q);cursor:pointer;text-decoration:underline dotted}
+.tg-ac{display:flex;gap:3px;justify-content:flex-end}
+.tg-ic{background:none;border:1px solid transparent;border-radius:5px;padding:3px 5px;font-size:.72rem;cursor:pointer;line-height:1;opacity:.55}
+.tg-ic:hover{opacity:1;border-color:var(--border);background:#232840}
+/* El ✓ es un glifo monocromo y al 55% junto a emoji a color se leía como ruido.
+   Va con color propio y opacidad plena: es la acción más frecuente de la fila. */
+.tg-ic.ok{opacity:1;color:var(--n);font-size:.85rem;font-weight:700}
+.tg-ic.ok:hover{background:rgba(99,153,34,.15);border-color:var(--n)}
+.tg-empty{padding:34px 16px;text-align:center;font-size:.72rem;color:var(--muted)}
+.tg-note{font-size:.63rem;color:var(--muted);margin-top:10px;line-height:1.5}
+.tg-mbox{background:#1a1f2e;border:1px solid var(--border);border-radius:10px;padding:22px;width:460px;max-width:94vw;max-height:90vh;overflow-y:auto}
+.tg-mbox h3{font-size:.95rem;color:#fff;margin-bottom:12px}
+.tg-mbox label{display:block;font-size:.68rem;color:var(--muted);margin:10px 0 4px}
+.tg-mbox input,.tg-mbox select,.tg-mbox textarea{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:#e2e8f0;font-size:.76rem;font-family:inherit}
+.tg-mbox textarea{resize:vertical;min-height:52px;line-height:1.45}
+.tg-mbox input:focus,.tg-mbox select:focus,.tg-mbox textarea:focus{outline:none;border-color:#6366f1}
+.tg-mbox select option{background:#0f1117 !important;color:#e2e8f0 !important}
+.tg-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tg-warnbox{background:rgba(232,123,42,.09);border:1px solid rgba(232,123,42,.3);border-radius:7px;padding:9px 11px;margin-top:12px;font-size:.65rem;color:#f0a96b;line-height:1.45}
+.tg-histbox{background:#0f1117;border:1px solid var(--border);border-radius:7px;padding:10px 12px;margin-top:6px;font-size:.65rem;color:#cbd5e1;line-height:1.6;max-height:210px;overflow-y:auto}
+.tg-histbox .l{display:flex;gap:8px;padding:3px 0;border-bottom:1px solid #1d2233}
+.tg-histbox .l:last-child{border-bottom:0}
+.tg-histbox .d{color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.6rem;white-space:nowrap}
+.tg-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(70px);background:#1a1f2e;border:1px solid var(--n);color:#8fc44f;padding:9px 18px;border-radius:8px;font-size:.72rem;font-weight:600;z-index:1200;opacity:0;transition:all .22s;pointer-events:none}
+.tg-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.tg-toast.bad{border-color:var(--q);color:#f08b8a}
+@media(max-width:720px){
+  .tg-row2{grid-template-columns:1fr}
+  .tg-k{grid-template-columns:repeat(2,1fr)}
+}
 .mc-notif{position:fixed;bottom:18px;right:18px;background:#1a1f2e;border:1px solid var(--n);border-radius:8px;padding:10px 16px;color:var(--n);font-size:.75rem;font-weight:600;box-shadow:0 4px 18px rgba(0,0,0,.5);opacity:0;transform:translateY(10px);transition:all .25s;z-index:1100;pointer-events:none}
 .mc-notif.show{opacity:1;transform:translateY(0)}
 /* Drawer izquierdo · detalle mermas */
@@ -521,6 +614,10 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div class="tab" onclick="showTab(14)">📊 NDS</div>
   <div class="tab" onclick="showTab(13)">✅ Plan Semanal</div>
   <div class="tab" onclick="showTab(15)">🎄 PPA</div>
+  <!-- Tareas Gerencia: oculta por defecto. Se revela con el deep-link #tareas o si
+       este navegador ya tiene sesión. El link público del DA se comparte con todo el
+       equipo; no tiene por qué invitar al resto a golpear una puerta cerrada. -->
+  <div class="tab" id="tg-tab" style="display:none" onclick="showTab(16)">🎯 Tareas Gerencia</div>
 </div>
 
 <!-- ═══════════ RESUMEN (B.19) — portada gerencial en 3 bloques ═══════════
@@ -1305,6 +1402,147 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
   <div id="ppa-host"></div>
 </div>
 
+<!-- 🎯 Tareas Gerencia · seguimiento de compromisos Cristóbal ↔ Meni -->
+<div id="t16" class="pg">
+  <!-- Pantalla de bloqueo. Es lo ÚNICO que existe en el HTML publicado: las tareas
+       llegan por fetch después de autenticar contra el Apps Script. -->
+  <div class="tg-lock" id="tg-lock">
+    <h3>🔒 Tareas Gerencia</h3>
+    <p>Seguimiento de compromisos del área. Acceso restringido — identifícate para continuar.</p>
+    <label>Usuario</label>
+    <select id="tg-user">
+      <option value="">-- selecciona --</option>
+      <option value="Cristobal">Cristóbal</option>
+      <option value="Meni">Meni</option>
+    </select>
+    <label>Clave</label>
+    <input type="password" id="tg-pass" autocomplete="current-password" placeholder="••••••••">
+    <div class="mc-err" id="tg-lockerr">Usuario o clave incorrectos.</div>
+    <div class="mc-mbtns" style="justify-content:stretch">
+      <button class="mc-mbtn primary" style="flex:1" onclick="tgLogin()" id="tg-loginbtn">Entrar</button>
+    </div>
+    <div class="mc-hint">La sesión dura 12 horas en este navegador. Las tareas se guardan en la nube: lo que edite uno lo ve el otro.</div>
+  </div>
+
+  <!-- Panel real, se muestra sólo con sesión válida -->
+  <div id="tg-panel" style="display:none">
+    <div class="tg-hd">
+      <div>
+        <div class="tg-eyebrow">Gerencia de Abastecimiento</div>
+        <h2>Seguimiento de tareas</h2>
+        <div class="tg-sub">Compromisos acordados entre Cristóbal y Meni · el contador de reagendas lo lleva el sistema, no las personas</div>
+      </div>
+      <div class="tg-who">
+        <span id="tg-conn"></span> Sesión: <b id="tg-whoami">—</b><br>
+        <span id="tg-sem"></span>
+        <button class="tg-btn ghost" style="margin-top:6px;padding:3px 9px;font-size:.62rem" onclick="tgLogout()">Salir</button>
+      </div>
+    </div>
+
+    <div class="tg-k" id="tg-kpis"></div>
+
+    <div class="tg-bar">
+      <button class="tg-btn primary" onclick="tgNueva()">+ Nueva tarea</button>
+      <select id="tg-f-resp" onchange="tgRender()"><option value="">Todos los responsables</option></select>
+      <select id="tg-f-crit" onchange="tgRender()">
+        <option value="">Toda criticidad</option><option>Alta</option><option>Media</option><option>Baja</option>
+      </select>
+      <select id="tg-f-est" onchange="tgRender()">
+        <option value="activas">Activas (pendientes)</option>
+        <option value="todas">Todas</option>
+        <option value="completada">Completadas</option>
+        <option value="vencidas">Sólo vencidas</option>
+        <option value="reagendadas">Sólo reagendadas</option>
+        <option value="cancelada">Canceladas</option>
+      </select>
+      <input id="tg-f-q" placeholder="Buscar tarea..." oninput="tgRender()" style="min-width:170px">
+      <div style="flex:1"></div>
+      <button class="tg-btn" onclick="tgReload()" title="Traer los últimos cambios de la nube">🔄 Recargar</button>
+      <button class="tg-btn" onclick="tgCopiar()" title="Copia la vista actual como texto, listo para pegar en un correo o en la minuta de la reunión">📋 Copiar resumen</button>
+    </div>
+
+    <div class="tg-wrap">
+      <div class="tg-cap">
+        <div>Alertas — ordenadas por urgencia</div>
+        <span id="tg-count"></span>
+      </div>
+      <div class="tg-scroll">
+        <table class="tg-t">
+          <thead><tr>
+            <th style="width:135px">Responsable</th>
+            <th>Tarea / acción</th>
+            <th style="width:90px">Criticidad</th>
+            <th style="width:115px">Fecha acordada</th>
+            <th style="width:95px" title="Cuántas veces se movió la fecha comprometida. Lo cuenta el backend cada vez que se reagenda una tarea pendiente.">Reagendas</th>
+            <th style="width:115px">Estado</th>
+            <th style="width:95px"></th>
+          </tr></thead>
+          <tbody id="tg-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tg-note" id="tg-note"></div>
+  </div>
+</div>
+
+<!-- Modal alta/edición de tarea -->
+<div class="mc-modal" id="tg-modal">
+  <div class="tg-mbox">
+    <h3 id="tg-mtit">Nueva tarea</h3>
+    <label>Tarea / acción</label>
+    <textarea id="tg-m-tarea" placeholder="Ej: Resolver quiebre SKU 401220 — Harinas"></textarea>
+    <div class="tg-row2">
+      <div>
+        <label>Responsable</label>
+        <select id="tg-m-resp"></select>
+      </div>
+      <div>
+        <label>Criticidad</label>
+        <select id="tg-m-crit"><option>Alta</option><option selected>Media</option><option>Baja</option></select>
+      </div>
+    </div>
+    <div class="tg-row2">
+      <div>
+        <label>Fecha acordada</label>
+        <input type="date" id="tg-m-fecha">
+      </div>
+      <div>
+        <label>Estado</label>
+        <select id="tg-m-est">
+          <option value="pendiente">Pendiente</option>
+          <option value="completada">Completada</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+      </div>
+    </div>
+    <label>Comentario / avance <span style="color:#5b647e">(opcional)</span></label>
+    <textarea id="tg-m-com" placeholder="Contexto, bloqueo o estado de avance"></textarea>
+    <!-- Aparece sólo al mover la fecha de una tarea pendiente: es el momento en que
+         el contador va a subir, y conviene que quede el motivo escrito. -->
+    <div class="tg-warnbox" id="tg-m-warn" style="display:none">
+      ⚠️ Estás moviendo la fecha comprometida de <b id="tg-m-warn-de"></b> a <b id="tg-m-warn-a"></b>.
+      Esto cuenta como <b>reagenda #<span id="tg-m-warn-n"></span></b> y queda registrado.
+      <input id="tg-m-motivo" placeholder="Motivo del cambio de fecha" style="margin-top:7px">
+    </div>
+    <div class="mc-err" id="tg-m-err"></div>
+    <div class="mc-mbtns">
+      <button class="mc-mbtn" onclick="tgCerrarModal()">Cancelar</button>
+      <button class="mc-mbtn primary" id="tg-m-save" onclick="tgGuardar()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal historial de reagendas -->
+<div class="mc-modal" id="tg-hmodal">
+  <div class="tg-mbox" style="width:430px">
+    <h3>🕑 Historial de la tarea</h3>
+    <div style="font-size:.72rem;color:#e2e8f0;font-weight:600;margin-bottom:2px" id="tg-h-tarea"></div>
+    <div class="tg-histbox" id="tg-h-body"></div>
+    <div class="mc-mbtns"><button class="mc-mbtn primary" onclick="tgCerrarHist()">Cerrar</button></div>
+  </div>
+</div>
+<div class="tg-toast" id="tg-toast"></div>
+
 <!-- DRAWER -->
 <div class="dw-wrap" id="dww">
   <div class="dw-ov" onclick="closeDw()"></div>
@@ -1658,7 +1896,7 @@ function distBar(segs,w,h){var tot=Math.max(segs.reduce(function(a,s){return a+s
 // hashchange, evitando el loop showTab -> hash -> showTab).
 var TAB_ALIAS = {resumen:0, planificadores:1, inventarios:2, mermas:3, capital:4,
   forecast:5, bloqueado:7, terceros:9, coberturas:10, quiebres:12,
-  plan:13, nds:14, ppa:15};
+  plan:13, nds:14, ppa:15, tareas:16};
 var TAB_NOMBRE = Object.keys(TAB_ALIAS).reduce(function(m,k){m[TAB_ALIAS[k]]=k;return m;},{});
 function tabDesdeHash(){
   var h=(location.hash||'').replace(/^#/,'').toLowerCase();
@@ -1695,6 +1933,13 @@ function showTab(i){
     if(nf&&!nf.src){nf.src=nf.getAttribute('data-src')+'?v='+Date.now();}}
   // Lazy render de PPA (t15) — SKUS y LLEG_PPA ya vienen en data.json; sólo falta el plan
   if(i===15){ ppaLoadPlan().then(function(){ try{ buildPPA(); }catch(e){ console.error('PPA build:',e); } }); }
+  // Tareas Gerencia (t16): revela la pestaña (venía oculta) y arranca el módulo.
+  // El fetch al backend privado se hace acá y no en el load del DA: el resto del
+  // equipo abre el dashboard todos los días y no tiene por qué golpear ese endpoint.
+  if(i===16){
+    var tgt=document.getElementById('tg-tab'); if(tgt) tgt.style.display='';
+    if(typeof tgInit==='function'){ try{ tgInit(); }catch(e){ console.error('Tareas init:',e); } }
+  }
 }
 // Subsecciones de "Quiebres" (Día / SEM / Histórico) — iframes aislados, lazy load
 function showQSub(name){
@@ -8955,6 +9200,512 @@ function mclScrollTab(){
     if(e.key==='Escape'){var s=document.getElementById('mcl-sheet'); if(s)s.remove();}
   });
   mclSyncAll();
+})();
+
+// ════════════════════════════════════════════════════════════════════════════
+// 🎯 TAREAS GERENCIA (t16) — seguimiento de compromisos Cristóbal ↔ Meni
+//
+// MODELO DE ACCESO. El DA se publica en un repo público de GitHub Pages, así que
+// un PIN escrito acá se lee con Ctrl+U. Por eso el control real no es la pantalla
+// de bloqueo sino DÓNDE viven los datos: ninguna tarea está en este archivo. El
+// backend (apps_script_tareas.gs) exige usuario+clave, devuelve un token de 12 h,
+// y sin ese token no entrega ni una fila. Quien abra el link público ve un
+// formulario vacío y nada más.
+//
+// REAGENDAS. El contador lo lleva el servidor: cada vez que se mueve la fecha de
+// una tarea pendiente, incrementa y escribe una línea en la hoja de auditoría
+// (append-only). Si el conteo dependiera del navegador, recargar o editar dos
+// veces lo desincronizaría — y es el único número que la reunión con el gerente
+// mira en serio.
+// ════════════════════════════════════════════════════════════════════════════
+(function(){
+  // ⬇️ URL /exec del Web App de apps_script_tareas.gs. Vacío = sección deshabilitada.
+  var TG_URL = 'https://script.google.com/macros/s/AKfycbwlVkJl919s_mJIjaWOIdr2bAnc-Jzxq9isK4SqDKj92mFfLhxhhvDKZe_xv4caCJy7Ng/exec';
+
+  var TG_LS_TOK = 'tg_sesion_v1';
+  var TG_RESP = ['Cristóbal','Meni','Héctor','Vicente','Javiera','José','Matías'];
+  var TG_AVCOL = ['#6366f1','#E87B2A','#378ADD','#639922','#7c3aed','#E24B4A','#0d9488','#C9A800'];
+
+  var TG = { tok:null, user:null, nombre:null, exp:0, tareas:[], edit:null, conn:'?' };
+
+  function el(id){ return document.getElementById(id); }
+  function tgEsc(s){
+    return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function tgToast(msg, bad){
+    var t=el('tg-toast'); if(!t) return;
+    t.textContent=msg; t.classList.toggle('bad', !!bad); t.classList.add('show');
+    clearTimeout(t._h); t._h=setTimeout(function(){ t.classList.remove('show'); }, 2600);
+  }
+
+  // ── Fechas ────────────────────────────────────────────────────────────────
+  // Todo se compara a mediodía local. Construir Date desde 'yyyy-MM-dd' con el
+  // parser nativo lo interpreta como UTC y en Chile corre la fecha un día atrás.
+  function tgD(iso){
+    if(!iso) return null;
+    var m=String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/); if(!m) return null;
+    return new Date(+m[1], +m[2]-1, +m[3], 12, 0, 0);
+  }
+  function tgHoy(){ var d=new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0); }
+  function tgHoyISO(){
+    var d=new Date(), p=function(n){ return (n<10?'0':'')+n; };
+    return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  }
+  function tgDias(iso){
+    var d=tgD(iso); if(!d) return null;
+    return Math.round((d - tgHoy())/86400000);
+  }
+  var TG_MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  function tgFmt(iso){
+    var d=tgD(iso); if(!d) return '—';
+    return d.getDate()+' '+TG_MES[d.getMonth()]+' '+d.getFullYear();
+  }
+  // Semana ISO, para el encabezado (mismo criterio que el resto del DA).
+  function tgSemISO(){
+    var d=new Date(), t=new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    t.setDate(t.getDate()+4-(t.getDay()||7));
+    var y0=new Date(t.getFullYear(),0,1);
+    return Math.ceil((((t-y0)/86400000)+1)/7);
+  }
+
+  // Estado visual derivado — nunca se persiste: dependería del día y quedaría rancio.
+  function tgEstado(t){
+    if(t.estado==='completada') return {k:'done', cls:'done', txt:'Completada', ord:9};
+    if(t.estado==='cancelada')  return {k:'canc', cls:'canc', txt:'Cancelada', ord:10};
+    var n=tgDias(t.fecha);
+    if(n===null) return {k:'sf', cls:'lejos', txt:'Sin fecha', ord:5};
+    if(n<0)  return {k:'venc', cls:'venc',  txt:'Atrasada · '+Math.abs(n)+(Math.abs(n)===1?' día':' días'), ord:0};
+    if(n===0) return {k:'hoy',  cls:'hoy',   txt:'Vence hoy', ord:1};
+    if(n===1) return {k:'man',  cls:'pron',  txt:'Vence mañana', ord:2};
+    if(n<=7)  return {k:'pron', cls:'pron',  txt:'En '+n+' días', ord:3};
+    return {k:'lejos', cls:'lejos', txt:'En '+n+' días', ord:4};
+  }
+
+  function tgAv(nombre){
+    var s=String(nombre||'?'), h=0;
+    for(var i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
+    var ini=s.trim().split(/\s+/).map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    return '<span class="tg-av" style="background:'+TG_AVCOL[h%TG_AVCOL.length]+'">'+tgEsc(ini)+'</span>';
+  }
+
+  // ── Sesión ────────────────────────────────────────────────────────────────
+  function tgGuardarSesion(){
+    try{ localStorage.setItem(TG_LS_TOK, JSON.stringify(
+      {tok:TG.tok, user:TG.user, nombre:TG.nombre, exp:TG.exp})); }catch(e){}
+  }
+  function tgLeerSesion(){
+    try{
+      var o=JSON.parse(localStorage.getItem(TG_LS_TOK)||'null');
+      if(o && o.tok && o.exp && Date.now()<o.exp) return o;
+    }catch(e){}
+    return null;
+  }
+  function tgBorrarSesion(){ try{ localStorage.removeItem(TG_LS_TOK); }catch(e){} }
+
+  // ── Backend ───────────────────────────────────────────────────────────────
+  // text/plain evita el preflight CORS: Apps Script no responde OPTIONS.
+  function tgPost(payload){
+    if(!TG_URL) return Promise.resolve({ok:false, error:'backend_no_configurado'});
+    return fetch(TG_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+                          body:JSON.stringify(payload)})
+      .then(function(r){ return r.json(); })
+      .then(function(j){ TG.conn = j && j.ok!==undefined ? 'ok' : 'fail'; return j; })
+      .catch(function(e){ console.warn('[tareas] POST fail', e); TG.conn='fail';
+                          return {ok:false, error:'sin_conexion'}; });
+  }
+
+  // Toda respuesta pasa por acá: si el token murió (12 h) hay que volver al candado
+  // en vez de dejar al usuario con una tabla que ya no puede guardar nada.
+  function tgChequearSesion(j){
+    if(j && j.error==='sesion_expirada'){
+      tgBorrarSesion(); TG.tok=null;
+      tgMostrarLock('Tu sesión expiró. Vuelve a entrar.');
+      return false;
+    }
+    return true;
+  }
+
+  function tgMostrarLock(msg){
+    var lk=el('tg-lock'), pn=el('tg-panel'); if(!lk) return;
+    lk.style.display=''; if(pn) pn.style.display='none';
+    var e=el('tg-lockerr');
+    if(msg && e){ e.textContent=msg; e.classList.add('show'); }
+    else if(e){ e.classList.remove('show'); }
+  }
+  function tgMostrarPanel(){
+    var lk=el('tg-lock'), pn=el('tg-panel');
+    if(lk) lk.style.display='none';
+    if(pn) pn.style.display='';
+    var w=el('tg-whoami'); if(w) w.textContent=TG.nombre||TG.user||'—';
+    var s=el('tg-sem'); if(s) s.textContent='Semana '+tgSemISO()+' · '+tgFmt(tgHoyISO());
+    var tab=el('tg-tab'); if(tab) tab.style.display='';
+    tgRender();
+  }
+
+  window.tgLogin=function(){
+    var u=el('tg-user').value, p=el('tg-pass').value, err=el('tg-lockerr'), b=el('tg-loginbtn');
+    err.classList.remove('show');
+    if(!u || !p){ err.textContent='Selecciona usuario y escribe tu clave.'; err.classList.add('show'); return; }
+    if(!TG_URL){ err.textContent='Falta configurar TG_URL con la URL del Apps Script (ver SETUP_BACKEND_TAREAS.md).'; err.classList.add('show'); return; }
+    b.disabled=true; b.textContent='Entrando...';
+    tgPost({action:'login', usuario:u, clave:p}).then(function(j){
+      b.disabled=false; b.textContent='Entrar';
+      if(!j || !j.ok){
+        err.textContent = (j&&j.error==='sin_conexion') ? 'No hay conexión con el backend.'
+                        : (j&&j.error) || 'Usuario o clave incorrectos.';
+        err.classList.add('show'); return;
+      }
+      TG.tok=j.token; TG.user=j.usuario; TG.nombre=j.nombre||j.usuario; TG.exp=j.exp;
+      TG.tareas=j.tareas||[];
+      el('tg-pass').value='';
+      tgGuardarSesion(); tgMostrarPanel();
+    });
+  };
+
+  window.tgLogout=function(){
+    if(TG.tok) tgPost({action:'logout', token:TG.tok});
+    TG.tok=null; TG.tareas=[]; tgBorrarSesion();
+    tgMostrarLock(''); tgToast('Sesión cerrada');
+  };
+
+  window.tgReload=function(){
+    if(!TG.tok) return;
+    tgPost({action:'list', token:TG.tok}).then(function(j){
+      if(!tgChequearSesion(j)) return;
+      if(j && j.ok){ TG.tareas=j.tareas||[]; tgRender(); tgToast('Actualizado ✓'); }
+      else tgToast('No se pudo recargar', true);
+    });
+  };
+
+  // ── KPIs ──────────────────────────────────────────────────────────────────
+  // Todos se calculan sobre el universo COMPLETO, no sobre la vista filtrada:
+  // el encabezado tiene que decir lo mismo esté quien esté mirando qué filtro.
+  function tgKpis(){
+    var act=TG.tareas.filter(function(t){ return t.estado==='pendiente'; });
+    var comp=TG.tareas.filter(function(t){ return t.estado==='completada'; });
+    var venc=act.filter(function(t){ var n=tgDias(t.fecha); return n!==null && n<0; });
+    var sem =act.filter(function(t){ var n=tgDias(t.fecha); return n!==null && n>=0 && n<=7; });
+    var reag=act.reduce(function(a,t){ return a+(t.reagendas||0); },0);
+    var conReag=act.filter(function(t){ return (t.reagendas||0)>0; }).length;
+    // Cumplimiento contra la fecha ORIGINAL comprometida, no contra la última
+    // reagendada: medir contra la fecha ya movida haría que reagendar sea gratis
+    // y el indicador daría 100% siempre.
+    var aTiempo=comp.filter(function(t){
+      var base=t.fecha_original||t.fecha, fin=(t.completado_ts||'').slice(0,10);
+      if(!base||!fin) return false;
+      return tgD(fin) <= tgD(base);
+    }).length;
+    var pct = comp.length ? Math.round(aTiempo/comp.length*100) : null;
+    return {act:act.length, comp:comp.length, venc:venc.length, sem:sem.length,
+            reag:reag, conReag:conReag, pct:pct, aTiempo:aTiempo};
+  }
+
+  function tgPintarKpis(k){
+    var c=[
+      {cls:'danger', l:'⚠ Vencidas',      n:k.venc, f:k.venc? 'requieren atención hoy':'nada atrasado'},
+      {cls:'warn',   l:'◷ Vencen ≤ 7 días', n:k.sem,  f:'próximos 7 días corridos'},
+      {cls:'',       l:'≡ Activas',        n:k.act,  f:'pendientes en total'},
+      {cls:k.reag? 'warn':'', l:'↻ Reagendas', n:k.reag,
+       f:k.conReag? k.conReag+(k.conReag===1?' tarea movida':' tareas movidas'):'ninguna movida'},
+      {cls:'ok',     l:'✓ Completadas',    n:k.comp, f:'histórico'},
+      {cls:(k.pct===null?'':(k.pct>=80?'ok':(k.pct>=60?'warn':'danger'))),
+       l:'↗ Cumplimiento', n:(k.pct===null?'—':k.pct+'%'),
+       f:k.pct===null? 'sin tareas cerradas aún' : k.aTiempo+' de '+k.comp+' en fecha original'}
+    ];
+    el('tg-kpis').innerHTML = c.map(function(x){
+      return '<div class="tg-kc '+x.cls+'"><div class="tg-kl">'+tgEsc(x.l)+'</div>'+
+             '<div class="tg-kn">'+tgEsc(String(x.n))+'</div>'+
+             '<div class="tg-kf">'+tgEsc(x.f)+'</div></div>';
+    }).join('');
+  }
+
+  // ── Filtros y orden ───────────────────────────────────────────────────────
+  function tgFiltradas(){
+    var fr=el('tg-f-resp').value, fc=el('tg-f-crit').value, fe=el('tg-f-est').value;
+    var q=(el('tg-f-q').value||'').toLowerCase().trim();
+    return TG.tareas.filter(function(t){
+      if(fr && t.responsable!==fr) return false;
+      if(fc && t.criticidad!==fc) return false;
+      if(fe==='activas'     && t.estado!=='pendiente') return false;
+      if(fe==='completada'  && t.estado!=='completada') return false;
+      if(fe==='cancelada'   && t.estado!=='cancelada') return false;
+      if(fe==='vencidas'){ var n=tgDias(t.fecha); if(t.estado!=='pendiente'||n===null||n>=0) return false; }
+      if(fe==='reagendadas' && !(t.reagendas>0)) return false;
+      if(q && (t.tarea+' '+t.responsable+' '+(t.comentario||'')).toLowerCase().indexOf(q)<0) return false;
+      return true;
+    }).sort(function(a,b){
+      var ea=tgEstado(a), eb=tgEstado(b);
+      if(ea.ord!==eb.ord) return ea.ord-eb.ord;              // urgencia primero
+      var da=tgDias(a.fecha), db=tgDias(b.fecha);
+      if(da!==db) return (da===null?1e9:da)-(db===null?1e9:db);
+      var pc={Alta:0, Media:1, Baja:2};                       // desempate por criticidad
+      return (pc[a.criticidad]||1)-(pc[b.criticidad]||1);
+    });
+  }
+
+  function tgLlenarFiltroResp(){
+    var s=el('tg-f-resp'), prev=s.value;
+    var nombres={};
+    TG_RESP.forEach(function(n){ nombres[n]=1; });
+    TG.tareas.forEach(function(t){ if(t.responsable) nombres[t.responsable]=1; });
+    s.innerHTML='<option value="">Todos los responsables</option>'+
+      Object.keys(nombres).sort().map(function(n){
+        return '<option'+(n===prev?' selected':'')+'>'+tgEsc(n)+'</option>'; }).join('');
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  window.tgRender=function(){
+    if(!el('tg-body')) return;
+    tgPintarKpis(tgKpis());
+    tgLlenarFiltroResp();
+    var arr=tgFiltradas();
+    el('tg-count').textContent = arr.length+' de '+TG.tareas.length+' tareas';
+
+    if(!arr.length){
+      el('tg-body').innerHTML='<tr><td colspan="7" class="tg-empty">'+
+        (TG.tareas.length? 'Ningún resultado con estos filtros.'
+                         : 'Sin tareas registradas. Usa <b>+ Nueva tarea</b> para empezar.')+'</td></tr>';
+    } else {
+      el('tg-body').innerHTML = arr.map(function(t){
+        var e=tgEstado(t);
+        var n=t.reagendas||0;
+        var rgCls = n===0?'n0':(n===1?'n1':(n===2?'n2':'n3'));
+        var rg = n===0
+          ? '<span class="tg-rg n0">—</span>'
+          : '<button class="tg-rg '+rgCls+'" onclick="tgHist(\''+tgEsc(t.id)+'\')" title="Ver el historial de cambios de fecha">'+
+            n+'×</button>';
+        var orig = (n>0 && t.fecha_original && t.fecha_original!==t.fecha)
+          ? '<span style="display:block;font-size:.58rem;color:#5b647e">orig. '+tgFmt(t.fecha_original)+'</span>' : '';
+        var com = t.comentario ? '<span class="tg-cm">'+tgEsc(t.comentario)+'</span>' : '';
+        var done = (t.estado==='pendiente') ? '' : ' class="done"';
+        var btnOk = t.estado==='pendiente'
+          ? '<button class="tg-ic ok" onclick="tgCompletar(\''+tgEsc(t.id)+'\')" title="Marcar completada">✓</button>' : '';
+        return '<tr'+done+'>'+
+          '<td><span class="tg-rp">'+tgAv(t.responsable)+tgEsc(t.responsable||'—')+'</span></td>'+
+          '<td><span class="tg-tx">'+tgEsc(t.tarea)+'</span>'+com+'</td>'+
+          '<td><span class="tg-ch '+t.criticidad.toLowerCase()+'">'+tgEsc(t.criticidad)+'</span></td>'+
+          '<td><span class="tg-f">'+tgFmt(t.fecha)+'</span>'+orig+'</td>'+
+          '<td>'+rg+'</td>'+
+          '<td><span class="tg-ch '+e.cls+'">'+tgEsc(e.txt)+'</span></td>'+
+          '<td><div class="tg-ac">'+btnOk+
+            '<button class="tg-ic" onclick="tgEditar(\''+tgEsc(t.id)+'\')" title="Editar">✏️</button>'+
+            '<button class="tg-ic" onclick="tgBorrar(\''+tgEsc(t.id)+'\')" title="Eliminar">🗑️</button>'+
+          '</div></td></tr>';
+      }).join('');
+    }
+
+    var k=tgKpis();
+    el('tg-note').innerHTML='<b>Reagendas</b>: las cuenta el backend cada vez que se mueve la fecha de una tarea pendiente — no es un campo editable. '+
+      '<b>Cumplimiento</b>: tareas cerradas en o antes de su <b>fecha original</b> comprometida ('+k.aTiempo+'/'+k.comp+'), no contra la fecha ya reagendada. '+
+      'Todo cambio queda registrado con autor y hora en la hoja de auditoría.';
+    var cn=el('tg-conn');
+    if(cn) cn.innerHTML = TG.conn==='ok'
+      ? '<span style="color:var(--n)" title="Nube conectada">●</span>'
+      : '<span style="color:var(--q)" title="Sin conexión con la nube">●</span>';
+  };
+
+  // ── Modal alta / edición ──────────────────────────────────────────────────
+  function tgLlenarRespModal(sel){
+    var nombres={}; TG_RESP.forEach(function(n){ nombres[n]=1; });
+    TG.tareas.forEach(function(t){ if(t.responsable) nombres[t.responsable]=1; });
+    el('tg-m-resp').innerHTML = Object.keys(nombres).sort().map(function(n){
+      return '<option'+(n===sel?' selected':'')+'>'+tgEsc(n)+'</option>'; }).join('');
+  }
+  function tgFind(id){
+    for(var i=0;i<TG.tareas.length;i++) if(TG.tareas[i].id===id) return TG.tareas[i];
+    return null;
+  }
+  function tgAbrirModal(){
+    el('tg-m-err').classList.remove('show');
+    el('tg-modal').classList.add('show');
+    setTimeout(function(){ el('tg-m-tarea').focus(); }, 60);
+  }
+  window.tgCerrarModal=function(){ el('tg-modal').classList.remove('show'); TG.edit=null; };
+
+  window.tgNueva=function(){
+    TG.edit=null;
+    el('tg-mtit').textContent='Nueva tarea';
+    el('tg-m-tarea').value=''; el('tg-m-com').value='';
+    el('tg-m-crit').value='Media'; el('tg-m-est').value='pendiente';
+    el('tg-m-fecha').value=tgHoyISO();
+    el('tg-m-warn').style.display='none'; el('tg-m-motivo').value='';
+    tgLlenarRespModal(TG.nombre);
+    tgAbrirModal();
+  };
+
+  window.tgEditar=function(id){
+    var t=tgFind(id); if(!t) return;
+    TG.edit=t;
+    el('tg-mtit').textContent='Editar tarea';
+    el('tg-m-tarea').value=t.tarea; el('tg-m-com').value=t.comentario||'';
+    el('tg-m-crit').value=t.criticidad; el('tg-m-est').value=t.estado;
+    el('tg-m-fecha').value=t.fecha;
+    el('tg-m-warn').style.display='none'; el('tg-m-motivo').value='';
+    tgLlenarRespModal(t.responsable);
+    tgAbrirModal();
+  };
+
+  // Aviso en vivo al mover la fecha: el usuario ve que va a incrementar el contador
+  // ANTES de guardar, no después. Sin esto la reagenda se siente como un castigo
+  // sorpresa y la gente empieza a borrar y recrear tareas para esquivarla.
+  document.addEventListener('change', function(ev){
+    if(ev.target && ev.target.id==='tg-m-fecha'){
+      var t=TG.edit, w=el('tg-m-warn');
+      if(!t || t.estado!=='pendiente' || el('tg-m-est').value!=='pendiente'){ w.style.display='none'; return; }
+      if(el('tg-m-fecha').value && el('tg-m-fecha').value!==t.fecha){
+        el('tg-m-warn-de').textContent=tgFmt(t.fecha);
+        el('tg-m-warn-a').textContent=tgFmt(el('tg-m-fecha').value);
+        el('tg-m-warn-n').textContent=(t.reagendas||0)+1;
+        w.style.display='';
+      } else w.style.display='none';
+    }
+  });
+
+  window.tgGuardar=function(){
+    var err=el('tg-m-err'), b=el('tg-m-save');
+    err.classList.remove('show');
+    var texto=el('tg-m-tarea').value.trim(), fecha=el('tg-m-fecha').value;
+    if(!texto){ err.textContent='Escribe la tarea.'; err.classList.add('show'); return; }
+    if(!fecha){ err.textContent='Falta la fecha acordada.'; err.classList.add('show'); return; }
+    var payload={
+      id: TG.edit? TG.edit.id : '',
+      responsable: el('tg-m-resp').value,
+      tarea: texto,
+      criticidad: el('tg-m-crit').value,
+      fecha: fecha,
+      estado: el('tg-m-est').value,
+      comentario: el('tg-m-com').value.trim(),
+      motivo: el('tg-m-motivo').value.trim()
+    };
+    b.disabled=true; b.textContent='Guardando...';
+    var reagPrev = TG.edit ? (TG.edit.reagendas||0) : -1;
+    tgPost({action:'save', token:TG.tok, tarea:payload}).then(function(j){
+      b.disabled=false; b.textContent='Guardar';
+      if(!tgChequearSesion(j)){ tgCerrarModal(); return; }
+      if(!j || !j.ok){
+        err.textContent=(j&&j.error)||'No se pudo guardar.'; err.classList.add('show'); return;
+      }
+      // Se reemplaza con lo que devolvió el servidor, no con lo que mandó el
+      // navegador: reagendas y timestamps sólo existen del lado del backend.
+      var i=-1;
+      for(var k=0;k<TG.tareas.length;k++) if(TG.tareas[k].id===j.tarea.id){ i=k; break; }
+      if(i>=0) TG.tareas[i]=j.tarea; else TG.tareas.push(j.tarea);
+      var subio = (reagPrev>=0 && j.tarea.reagendas>reagPrev);
+      tgCerrarModal(); tgRender();
+      tgToast(subio ? 'Guardado · reagenda #'+j.tarea.reagendas+' registrada ✓' : 'Guardado ✓');
+    });
+  };
+
+  window.tgCompletar=function(id){
+    var t=tgFind(id); if(!t) return;
+    tgPost({action:'save', token:TG.tok, tarea:{
+      id:t.id, responsable:t.responsable, tarea:t.tarea, criticidad:t.criticidad,
+      fecha:t.fecha, estado:'completada', comentario:t.comentario||''
+    }}).then(function(j){
+      if(!tgChequearSesion(j)) return;
+      if(j && j.ok){
+        for(var k=0;k<TG.tareas.length;k++) if(TG.tareas[k].id===j.tarea.id) TG.tareas[k]=j.tarea;
+        tgRender(); tgToast('Completada ✓');
+      } else tgToast('No se pudo completar', true);
+    });
+  };
+
+  window.tgBorrar=function(id){
+    var t=tgFind(id); if(!t) return;
+    var extra = (t.reagendas>0)
+      ? '\n\nOJO: esta tarea se reagendó '+t.reagendas+' vez/veces. Al borrarla desaparece de los KPIs (el rastro queda en la hoja de auditoría).'
+      : '';
+    if(!confirm('¿Eliminar esta tarea?\n\n"'+t.tarea+'"'+extra)) return;
+    tgPost({action:'delete', token:TG.tok, id:id}).then(function(j){
+      if(!tgChequearSesion(j)) return;
+      if(j && j.ok){
+        TG.tareas=TG.tareas.filter(function(x){ return x.id!==id; });
+        tgRender(); tgToast('Tarea eliminada');
+      } else tgToast('No se pudo eliminar', true);
+    });
+  };
+
+  // ── Historial de reagendas ────────────────────────────────────────────────
+  window.tgHist=function(id){
+    var t=tgFind(id); if(!t) return;
+    el('tg-h-tarea').textContent=t.tarea;
+    var h=t.hist||[];
+    var filas='<div class="l"><span class="d">'+tgFmt(t.fecha_original)+'</span><span>Fecha original comprometida</span></div>';
+    filas += h.map(function(x){
+      return '<div class="l"><span class="d">'+tgEsc((x.ts||'').slice(0,16))+'</span><span>'+
+        tgEsc(x.usuario||'?')+' movió <b>'+tgFmt(x.de)+'</b> → <b>'+tgFmt(x.a)+'</b>'+
+        (x.motivo? ' · <i>'+tgEsc(x.motivo)+'</i>' : ' · <span style="color:#5b647e">sin motivo registrado</span>')+
+        '</span></div>';
+    }).join('');
+    if(!h.length) filas += '<div class="l"><span>Sin reagendas registradas.</span></div>';
+    filas += '<div class="l"><span class="d">'+tgFmt(t.fecha)+'</span><span>Fecha vigente'+
+             (t.estado==='completada'? ' · cerrada el '+tgEsc((t.completado_ts||'').slice(0,10))+' por '+tgEsc(t.completado_por||'?') : '')+
+             '</span></div>';
+    el('tg-h-body').innerHTML=filas;
+    el('tg-hmodal').classList.add('show');
+  };
+  window.tgCerrarHist=function(){ el('tg-hmodal').classList.remove('show'); };
+
+  // ── Copiar resumen (para pegar en la minuta o el correo de la reunión) ─────
+  window.tgCopiar=function(){
+    var arr=tgFiltradas(), k=tgKpis();
+    var L=['SEGUIMIENTO DE TAREAS — Semana '+tgSemISO()+' ('+tgFmt(tgHoyISO())+')',
+           'Vencidas: '+k.venc+' | Vencen <=7d: '+k.sem+' | Activas: '+k.act+
+           ' | Reagendas: '+k.reag+' | Cumplimiento: '+(k.pct===null?'—':k.pct+'%'),
+           ''];
+    arr.forEach(function(t){
+      var e=tgEstado(t);
+      L.push('- ['+t.criticidad.toUpperCase()+'] '+(t.responsable||'—')+': '+t.tarea);
+      L.push('    '+tgFmt(t.fecha)+' · '+e.txt+
+             ((t.reagendas||0)>0 ? ' · reagendada '+t.reagendas+'x (orig. '+tgFmt(t.fecha_original)+')' : ''));
+      if(t.comentario) L.push('    Nota: '+t.comentario);
+    });
+    var txt=L.join('\n');
+    var ok=function(){ tgToast('Resumen copiado ✓'); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(ok, function(){ tgFallbackCopy(txt, ok); });
+    } else tgFallbackCopy(txt, ok);
+  };
+  function tgFallbackCopy(txt, ok){
+    var ta=document.createElement('textarea');
+    ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); ok(); }catch(e){ tgToast('No se pudo copiar', true); }
+    document.body.removeChild(ta);
+  }
+
+  // ── Arranque ──────────────────────────────────────────────────────────────
+  // Se dispara desde showTab(16) — no en el load del DA: sin esto cada persona
+  // del equipo que abre el dashboard pegaría un fetch al backend privado.
+  window.tgInit=function(){
+    if(TG._listo) return;
+    TG._listo=true;
+    var s=tgLeerSesion();
+    if(!s){ tgMostrarLock(''); return; }
+    TG.tok=s.tok; TG.user=s.user; TG.nombre=s.nombre; TG.exp=s.exp;
+    tgPost({action:'list', token:TG.tok}).then(function(j){
+      if(j && j.ok){ TG.tareas=j.tareas||[]; tgMostrarPanel(); }
+      else { tgBorrarSesion(); TG.tok=null;
+             tgMostrarLock(j && j.error==='sin_conexion' ? 'No hay conexión con el backend.' : ''); }
+    });
+  };
+
+  // Enter para enviar en las cajas de una sola línea
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape'){
+      if(el('tg-hmodal') && el('tg-hmodal').classList.contains('show')) tgCerrarHist();
+      else if(el('tg-modal') && el('tg-modal').classList.contains('show')) tgCerrarModal();
+    }
+    if(e.key!=='Enter') return;
+    if(el('tg-lock') && el('tg-lock').style.display!=='none' &&
+       document.activeElement && document.activeElement.id==='tg-pass'){ tgLogin(); }
+  });
+
+  // Si este navegador ya tiene sesión viva, la pestaña se muestra de entrada.
+  document.addEventListener('DOMContentLoaded', function(){
+    if(tgLeerSesion()){ var t=el('tg-tab'); if(t) t.style.display=''; }
+  });
 })();
 </script>
 </body>
