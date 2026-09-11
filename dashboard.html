@@ -1102,6 +1102,32 @@ table.tg-t{width:100%;border-collapse:collapse;font-size:.71rem;min-width:900px}
         </div>
       </details>
 
+      <details class="so-an"><summary>D · Proyección — cómo se mueve la meta <small id="so-phz"></small></summary>
+        <div class="so-anb">
+          <div class="so-lede">La banda no es un número fijo: se mueve con la demanda. Esta proyección aplica el
+            <b>FC vigente</b> a las <b>bandas actuales</b> y muestra hacia dónde va la meta. La curva arranca exactamente
+            en el valor de las tarjetas de arriba, y la línea <b>sin reponer</b> es el stock de hoy consumiéndose si no
+            se compra nada — es la que dice cuándo se rompe el mínimo.</div>
+          <div class="so-flt" style="align-items:center;gap:10px">
+            <div class="plcmb" id="so-pcmb">
+              <button type="button" class="plcmb-btn" id="so-pbtn"><span id="so-pbtx">Todas las categorías</span><span class="cv">▾</span></button>
+              <div class="plcmb-pan" id="so-ppan"></div>
+            </div>
+            <span id="so-pinfo" style="font-size:.66rem;color:var(--muted)"></span>
+          </div>
+          <div class="so-kpis" id="so-pkpis" style="margin-top:12px"></div>
+          <div style="height:330px;margin-top:4px"><canvas id="so-pchart"></canvas></div>
+          <div class="tw" style="margin-top:12px"><table id="so-ptab">
+            <thead><tr><th>Semana</th><th class="num">B. mínima</th><th class="num">Óptimo</th>
+              <th class="num">B. máxima</th><th class="num">Stock sin reponer</th><th>Posición</th></tr></thead>
+            <tbody></tbody></table></div>
+          <div class="so-note">La proyección mueve la <b>banda</b>, no simula compras: supone que las coberturas
+            decididas se mantienen y que sólo cambia la demanda del FC. <b>Stock sin reponer</b> descuenta el consumo
+            proyectado del stock de hoy sin sumar ninguna reposición — no es un pronóstico de inventario, es el plazo
+            que da el stock actual.</div>
+        </div>
+      </details>
+
       <details class="so-an"><summary>D · Simulación — mover el nivel de servicio <small>trade-off servicio ↔ capital, en pesos</small></summary>
         <div class="so-anb">
           <div class="so-lede">Como el SS escala con <code>z</code>, el efecto de cambiar el NS es calculable. Estas dos tablas muestran el trade-off servicio↔capital en pesos.</div>
@@ -8172,7 +8198,7 @@ function soBuild(){
   el('so-load').style.display='none';
   el('so-body').style.display='';
   soSello(); soKpis(); soHero(); soBullet(); soDvg(); soInitFiltros(); soDrawTB(); soDrawTS();
-  soMdesc(); soEjes(); soCeldas(); soDetA(); soSim();
+  soMdesc(); soEjes(); soCeldas(); soDetA(); soSim(); soProyInit(); soProy();
 }
 
 /* ── KPIs ── */
@@ -8500,6 +8526,130 @@ function soEjes(){
 }
 
 /* ── Anexo D: simulaciones de NS ── */
+/* ── D · Proyeccion del stock optimo ───────────────────────────────────────
+   SOPSEL vacio = total. El motor entrega la curva ya valorizada por categoria,
+   asi que filtrar es sumar vectores — no hay que recorrer SKU en el navegador. */
+var SOPSEL=[], _soPch=null;
+
+function soProyOk(){
+  var p=SO.proyeccion;
+  return !!(p && p.__total__ && p.__total__.weeks && p.__total__.weeks.length);
+}
+
+function soProyInit(){
+  var d=el('so-pchart'); d=d&&d.closest('details.so-an');
+  if(!soProyOk()){ if(d) d.remove(); return; }
+  var p=SO.proyeccion, cats=(SO.cats||[]).filter(function(c){ return p[c.id]; });
+  var ph='<label class="plcmb-opt" style="font-weight:800"><input type="checkbox" id="so-pall" checked> Todas las categorías</label><div class="plcmb-sep"></div>';
+  cats.forEach(function(c){
+    ph+='<label class="plcmb-opt"><input type="checkbox" class="so-pck" value="'+soE(c.id)+'"> '
+      +soE(c.label)+'<span class="pc">$'+soMM(c.opt)+'</span></label>';
+  });
+  ph+='<div class="plcmb-ft">Sin selección se muestra el total. Marcar una o más categorías acota la curva a ese universo.</div>';
+  el('so-ppan').innerHTML=ph;
+
+  el('so-pbtn').onclick=function(ev){ ev.stopPropagation(); el('so-ppan').classList.toggle('open'); };
+  document.addEventListener('click',function(ev){
+    var c=el('so-pcmb'); if(c && !c.contains(ev.target)) el('so-ppan').classList.remove('open');
+  });
+  el('so-pall').onchange=function(){
+    if(this.checked){ Array.prototype.forEach.call(document.querySelectorAll('.so-pck'),function(x){x.checked=false;}); }
+    soProySel();
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('.so-pck'),function(x){
+    x.onchange=function(){
+      var n=document.querySelectorAll('.so-pck:checked').length;
+      el('so-pall').checked=(n===0);
+      soProySel();
+    };
+  });
+  var w=p.__total__.weeks, i0=p.__total__.i0||0;
+  el('so-phz').textContent='FC vigente · S'+w[i0]+' a S'+w[w.length-1];
+}
+
+function soProySel(){
+  SOPSEL=Array.prototype.map.call(document.querySelectorAll('.so-pck:checked'),function(x){return x.value;});
+  var b=el('so-pbtn'), t=el('so-pbtx');
+  if(!SOPSEL.length){ t.textContent='Todas las categorías'; b.classList.remove('on'); }
+  else if(SOPSEL.length===1){ t.textContent=soCat(SOPSEL[0]); b.classList.add('on'); }
+  else { t.textContent=SOPSEL.length+' categorías seleccionadas'; b.classList.add('on'); }
+  soProy();
+}
+
+/* suma los vectores de las categorias elegidas (o devuelve el total) */
+function soProyDatos(){
+  var p=SO.proyeccion, T=p.__total__, K=['bmin','opt','bmax','sinrep'];
+  if(!SOPSEL.length) return {w:T.weeks, i0:T.i0||0, s:T};
+  var out={}; K.forEach(function(k){ out[k]=T.weeks.map(function(){return 0;}); });
+  SOPSEL.forEach(function(cid){
+    var c=p[cid]; if(!c) return;
+    K.forEach(function(k){ (c[k]||[]).forEach(function(v,j){ out[k][j]+=v; }); });
+  });
+  return {w:T.weeks, i0:T.i0||0, s:out};
+}
+
+function soProy(){
+  if(!soProyOk()) return;
+  var D=soProyDatos(), i0=D.i0, w=D.w.slice(i0), S=D.s;
+  var cut=function(a){ return (a||[]).slice(i0); };
+  var bmin=cut(S.bmin), opt=cut(S.opt), bmax=cut(S.bmax), sr=cut(S.sinrep);
+  var hoy=opt[0], fin=opt[opt.length-1], dl=fin-hoy;
+  var stk=sr[0];
+
+  /* primera semana en que el stock sin reponer cae bajo la banda minima */
+  var qb=-1; for(var i=0;i<w.length;i++){ if(sr[i]<bmin[i]){ qb=i; break; } }
+  var nsel=SOPSEL.length?SOPSEL.length:(SO.cats||[]).length;
+  el('so-pinfo').textContent=(SOPSEL.length? nsel+' de '+(SO.cats||[]).length+' categorías'
+                                           : 'universo completo')+' · '+w.length+' semanas';
+
+  var k=[
+    ['Stock hoy','$'+soMM(stk),'el que se proyecta consumiendo',''],
+    ['Meta hoy','$'+soMM(hoy),'óptimo en la semana en curso','tg'],
+    ['Meta en S'+w[w.length-1],'$'+soMM(fin),
+     (dl>=0?'sube $':'baja $')+soMM(Math.abs(dl))+' ('+(hoy>0?(dl>=0?'+':'')+(100*dl/hoy).toFixed(0):'—')+'%) por estacionalidad del FC',
+     dl<0?'hi':''],
+    ['Rompe el mínimo', qb<0?'no en el horizonte':'S'+w[qb],
+     qb<0?'el stock actual alcanza todo el horizonte sin reponer'
+         :'en '+qb+' semana'+(qb===1?'':'s')+' si no se repone nada', qb>=0&&qb<=4?'lo':'']
+  ];
+  el('so-pkpis').innerHTML=k.map(function(x){
+    return '<div class="so-kpi '+x[3]+'"><div class="l">'+x[0]+'</div><div class="v">'+x[1]+'</div><div class="d">'+x[2]+'</div></div>';
+  }).join('');
+
+  var MM=function(a){ return a.map(function(v){ return +(v/1e6).toFixed(1); }); };
+  var cv=el('so-pchart').getContext('2d');
+  if(_soPch) _soPch.destroy();
+  _soPch=new Chart(cv,{type:'line',
+    data:{labels:w.map(function(x){return 'S'+x;}),
+      datasets:[
+        {label:'Banda máxima',data:MM(bmax),borderColor:'rgba(129,140,248,.45)',borderWidth:1,
+         backgroundColor:'rgba(99,102,241,.13)',fill:'+1',pointRadius:0,tension:.25},
+        {label:'Banda mínima',data:MM(bmin),borderColor:'rgba(129,140,248,.45)',borderWidth:1,
+         fill:false,pointRadius:0,tension:.25},
+        {label:'Óptimo (meta)',data:MM(opt),borderColor:'#e2e8f0',borderWidth:2.5,
+         fill:false,pointRadius:0,tension:.25},
+        {label:'Stock sin reponer',data:MM(sr),borderColor:'#E87B2A',borderWidth:2,
+         borderDash:[5,4],fill:false,pointRadius:0,tension:.25}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#e2e8f0',font:{size:10},boxWidth:14,usePointStyle:false}},
+        tooltip:{callbacks:{label:function(x){ return x.dataset.label+': $'+x.raw.toLocaleString('es-CL',{maximumFractionDigits:1})+' MM'; }}}},
+      scales:{x:{ticks:{color:'#8892b0',font:{size:10}},grid:{color:'#2d345244'}},
+              y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+v+'MM';}},
+                 grid:{color:'#2d3452'},title:{display:true,text:'$ MM valorizado',color:'#8892b0',font:{size:10}}}}}});
+
+  var tb=el('so-ptab').querySelector('tbody');
+  tb.innerHTML=w.map(function(ws,i){
+    var pos, cl;
+    if(sr[i]<bmin[i]){ pos='Bajo el mínimo'; cl='var(--q)'; }
+    else if(sr[i]>bmax[i]){ pos='Sobre el máximo'; cl='var(--s)'; }
+    else { pos='En banda'; cl='#8bd5b0'; }
+    return '<tr'+(i===0?' style="background:#1d234033"':'')+'><td>S'+ws+(i===0?' <span style="color:var(--muted);font-size:.62rem">· hoy</span>':'')+'</td>'
+      +'<td class="num">$'+soMM(bmin[i])+'</td><td class="num" style="color:#c0caf5;font-weight:700">$'+soMM(opt[i])+'</td>'
+      +'<td class="num">$'+soMM(bmax[i])+'</td><td class="num">$'+soMM(sr[i])+'</td>'
+      +'<td style="color:'+cl+';font-weight:700">'+pos+'</td></tr>';
+  }).join('');
+}
+
 function soSim(){
   var m=SO.metodologia||{};
   // La simulacion mueve `z` (nivel de servicio). En la V2 la banda la fija una
