@@ -614,10 +614,11 @@ table.tg-t{width:100%;border-collapse:collapse;font-size:.71rem;min-width:900px}
   <div class="tab" onclick="showTab(14)">📊 NDS</div>
   <div class="tab" onclick="showTab(13)">✅ Plan Semanal</div>
   <div class="tab" onclick="showTab(15)">🎄 PPA</div>
-  <!-- Tareas Gerencia: oculta por defecto. Se revela con el deep-link #tareas o si
-       este navegador ya tiene sesión. El link público del DA se comparte con todo el
-       equipo; no tiene por qué invitar al resto a golpear una puerta cerrada. -->
-  <div class="tab" id="tg-tab" style="display:none" onclick="showTab(16)">🎯 Tareas Gerencia</div>
+  <!-- Tareas Gerencia: visible como cualquier otra pestaña. Quien no tenga clave ve
+       el candado y nada más — la protección real es que las tareas no están en este
+       HTML, viven en la nube tras autenticación. Esconder la pestaña sólo obligaba a
+       entrar por #tareas y hacía que el link oficial del DA no sirviera. -->
+  <div class="tab" id="tg-tab" onclick="showTab(16)">🎯 Tareas Gerencia</div>
 </div>
 
 <!-- ═══════════ RESUMEN (B.19) — portada gerencial en 3 bloques ═══════════
@@ -1933,11 +1934,10 @@ function showTab(i){
     if(nf&&!nf.src){nf.src=nf.getAttribute('data-src')+'?v='+Date.now();}}
   // Lazy render de PPA (t15) — SKUS y LLEG_PPA ya vienen en data.json; sólo falta el plan
   if(i===15){ ppaLoadPlan().then(function(){ try{ buildPPA(); }catch(e){ console.error('PPA build:',e); } }); }
-  // Tareas Gerencia (t16): revela la pestaña (venía oculta) y arranca el módulo.
-  // El fetch al backend privado se hace acá y no en el load del DA: el resto del
-  // equipo abre el dashboard todos los días y no tiene por qué golpear ese endpoint.
+  // Tareas Gerencia (t16): el fetch al backend privado se hace acá y no en el load
+  // del DA, porque todo el equipo abre el dashboard a diario y no tiene por qué
+  // golpear ese endpoint sin haber entrado a la sección.
   if(i===16){
-    var tgt=document.getElementById('tg-tab'); if(tgt) tgt.style.display='';
     if(typeof tgInit==='function'){ try{ tgInit(); }catch(e){ console.error('Tareas init:',e); } }
   }
 }
@@ -9339,7 +9339,6 @@ function mclScrollTab(){
     if(pn) pn.style.display='';
     var w=el('tg-whoami'); if(w) w.textContent=TG.nombre||TG.user||'—';
     var s=el('tg-sem'); if(s) s.textContent='Semana '+tgSemISO()+' · '+tgFmt(tgHoyISO());
-    var tab=el('tg-tab'); if(tab) tab.style.display='';
     tgRender();
   }
 
@@ -9702,10 +9701,6 @@ function mclScrollTab(){
        document.activeElement && document.activeElement.id==='tg-pass'){ tgLogin(); }
   });
 
-  // Si este navegador ya tiene sesión viva, la pestaña se muestra de entrada.
-  document.addEventListener('DOMContentLoaded', function(){
-    if(tgLeerSesion()){ var t=el('tg-tab'); if(t) t.style.display=''; }
-  });
 })();
 </script>
 </body>
