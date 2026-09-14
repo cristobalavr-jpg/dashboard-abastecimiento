@@ -1,5 +1,5 @@
 {
- "generado": "2026-09-11T09:49:20",
+ "generado": "2026-09-14T09:46:55",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -3901,6 +3901,72 @@
     {
      "sku": "400662",
      "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-09-14",
+   "disp": 97.0,
+   "n_solic": 473,
+   "n_cero": 14,
+   "n_excl_granel": 8,
+   "n_anom_neg": 5,
+   "skus_cero": [
+    {
+     "sku": "300068",
+     "desc": "CLAVOS DE OLOR"
+    },
+    {
+     "sku": "300231",
+     "desc": "SUERO DESMINERALIZADO"
+    },
+    {
+     "sku": "300314",
+     "desc": "COMINO MOLIDO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "300540",
+     "desc": "GRANOVIT BRD-5423 (VEGANO)"
+    },
+    {
+     "sku": "300569",
+     "desc": "SABORIZANTE POLLO ASADO ID-701455"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400398",
+     "desc": "PP ETIQ. AZUL  80x100MM"
+    },
+    {
+     "sku": "400443",
+     "desc": "PP CAJA CUADRADA CUISINE CHOC 09.24"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400495",
+     "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    },
+    {
+     "sku": "400634",
+     "desc": "FILM CAS CROCATA 4 UN 01.26"
+    },
+    {
+     "sku": "400672",
+     "desc": "ETIQ CAS MUFFIN CHOC PISTACHO 05.26"
     }
    ]
   }
