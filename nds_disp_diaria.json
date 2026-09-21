@@ -1,5 +1,5 @@
 {
- "generado": "2026-09-17T10:52:29",
+ "generado": "2026-09-21T09:18:46",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -4113,6 +4113,72 @@
     {
      "sku": "400374",
      "desc": "PP ETIQ. PRODUCTO CALIPSO 80X100MM"
+    },
+    {
+     "sku": "400634",
+     "desc": "FILM CAS CROCATA 4 UN 01.26"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-09-21",
+   "disp": 96.7,
+   "n_solic": 421,
+   "n_cero": 14,
+   "n_excl_granel": 8,
+   "n_anom_neg": 5,
+   "skus_cero": [
+    {
+     "sku": "300072",
+     "desc": "VAINILLINA POLVO"
+    },
+    {
+     "sku": "300306",
+     "desc": "ESPINACA EN POLVO"
+    },
+    {
+     "sku": "300314",
+     "desc": "COMINO MOLIDO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "300537",
+     "desc": "SABORIZANTE MANJAR"
+    },
+    {
+     "sku": "300569",
+     "desc": "SABORIZANTE POLLO ASADO ID-701455"
+    },
+    {
+     "sku": "400327",
+     "desc": "BLONDA REDONDA N° 6"
+    },
+    {
+     "sku": "400351",
+     "desc": "FILM CAST HAMBURGUESA PAPA 8 UN 12.24"
+    },
+    {
+     "sku": "400398",
+     "desc": "PP ETIQ. AZUL  80x100MM"
+    },
+    {
+     "sku": "400435",
+     "desc": "BOLSA PP CAST ENSENADA FROJOS 800G 09.24"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400495",
+     "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
     },
     {
      "sku": "400634",
