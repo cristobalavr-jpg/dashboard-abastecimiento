@@ -1,5 +1,5 @@
 {
- "generado": "2026-09-21T09:18:46",
+ "generado": "2026-09-22T09:50:45",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -4183,6 +4183,60 @@
     {
      "sku": "400634",
      "desc": "FILM CAS CROCATA 4 UN 01.26"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-09-22",
+   "disp": 97.6,
+   "n_solic": 464,
+   "n_cero": 11,
+   "n_excl_granel": 8,
+   "n_anom_neg": 6,
+   "skus_cero": [
+    {
+     "sku": "300087",
+     "desc": "POLENTA"
+    },
+    {
+     "sku": "300306",
+     "desc": "ESPINACA EN POLVO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "300569",
+     "desc": "SABORIZANTE POLLO ASADO ID-701455"
+    },
+    {
+     "sku": "400291",
+     "desc": "BOLSA CAS MIGA G BCO 05.24 PEBD40"
+    },
+    {
+     "sku": "400327",
+     "desc": "BLONDA REDONDA N° 6"
+    },
+    {
+     "sku": "400351",
+     "desc": "FILM CAST HAMBURGUESA PAPA 8 UN 12.24"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400495",
+     "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    },
+    {
+     "sku": "400662",
+     "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
     }
    ]
   }
