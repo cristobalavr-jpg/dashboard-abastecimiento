@@ -71,6 +71,73 @@ tr.ic-subh:hover{background:rgba(99,102,241,.14)}
 .inv-stab{background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:6px 14px;font-size:.78rem;color:#8892b0;cursor:pointer;font-weight:500;transition:color .15s,border-color .15s}
 .inv-stab.active{color:#c0caf5;border-bottom-color:#6366f1}
 .inv-stab:hover:not(.active){color:#a4b4ce}
+/* ── Sub-pestana Stock Optimo V2 (#inv-sov) — redefinicion de bandas ── */
+#inv-sov .sv-lede{color:var(--muted);font-size:.74rem;margin:6px 0 10px;max-width:108ch;line-height:1.6}
+#inv-sov .sv-lede b{color:#c0caf5}
+#inv-sov .sv-box{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:11px 15px;margin-bottom:11px}
+#inv-sov .sv-box.ok{border-left:3px solid #1D9E75}
+#inv-sov .sv-box h4{font-size:.78rem;margin-bottom:4px;color:#8bd5b0}
+#inv-sov .sv-box p{font-size:.72rem;color:var(--muted);line-height:1.5}
+#inv-sov .sv-box p b{color:#c0caf5}
+#inv-sov .sv-lock{display:flex;gap:9px;align-items:center;flex-wrap:wrap;background:#1a1526;
+  border:1px solid #3a2a55;border-radius:8px;padding:9px 13px;margin-bottom:11px;font-size:.73rem}
+#inv-sov .sv-lock b{color:#c7b9ff}
+#inv-sov .sv-tot{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:9px;margin-bottom:11px}
+#inv-sov .sv-t{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 13px}
+#inv-sov .sv-t .l{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+#inv-sov .sv-t .v{font-size:1.18rem;font-weight:800;color:#fff;margin-top:3px}
+#inv-sov .sv-t .d{font-size:.62rem;color:var(--muted);margin-top:2px}
+#inv-sov .sv-t.on{border-color:#E87B2A} #inv-sov .sv-t.on .v{color:#E87B2A}
+#inv-sov .sv-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:9px}
+#inv-sov input[type=text],#inv-sov select{background:#1a1f2e;border:1px solid var(--border);
+  border-radius:6px;padding:5px 9px;color:#e2e8f0;font-size:.72rem;font-family:inherit}
+#inv-sov input[type=text]{width:230px}
+#inv-sov input:focus,#inv-sov select:focus{outline:none;border-color:#6366f1}
+#inv-sov .sv-btn{background:#232840;border:1px solid var(--border);border-radius:6px;padding:5px 11px;
+  color:var(--txt,#c9d3e8);font-size:.7rem;font-weight:700;cursor:pointer;font-family:inherit}
+#inv-sov .sv-btn:hover{border-color:#6366f1}
+#inv-sov .sv-btn.on{background:#6366f1;border-color:#6366f1;color:#fff}
+#inv-sov .sv-cnt{font-size:.68rem;color:var(--muted);margin-left:auto}
+#inv-sov .sv-tw{overflow:auto;max-height:60vh;border:1px solid var(--border);border-radius:9px}
+#inv-sov table{width:100%;border-collapse:separate;border-spacing:0;font-size:.71rem;white-space:nowrap}
+#inv-sov th{position:sticky;top:0;z-index:2;background:#1a2036;color:var(--muted);font-size:.58rem;
+  text-transform:uppercase;letter-spacing:.5px;font-weight:700;padding:7px;text-align:left;
+  border-bottom:1px solid var(--border)}
+#inv-sov th.num,#inv-sov td.num{text-align:right;font-variant-numeric:tabular-nums}
+#inv-sov th.ed{color:#c7b9ff;background:#1f2140}
+#inv-sov td{padding:4px 7px;border-bottom:1px solid #22273f}
+#inv-sov tr:hover td{background:#1a2036}
+#inv-sov tr.mod td{background:#241d14} #inv-sov tr.mod:hover td{background:#2c2318}
+#inv-sov tr.mod td:first-child{box-shadow:inset 3px 0 0 #E87B2A}
+#inv-sov tr.ltm td{background:#141d27} #inv-sov tr.ltm:hover td{background:#18242f}
+#inv-sov tr.ltm td:first-child{box-shadow:inset 3px 0 0 #378ADD}
+#inv-sov .sv-sk{color:#fff;font-weight:700}
+#inv-sov .sv-ds{max-width:250px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:bottom}
+#inv-sov .sv-pill{display:inline-block;padding:1px 6px;border-radius:20px;font-size:.58rem;font-weight:700;border:1px solid}
+#inv-sov .sv-pa{color:#f0a868;border-color:#6b4a20;background:#2a1f12}
+#inv-sov .sv-pl{color:#7fb6ea;border-color:#25455f;background:#132230}
+#inv-sov .sv-po{color:#8bd5b0;border-color:#1f4a3a;background:#12241d}
+#inv-sov input.sv-n{background:#11162a;border:1px solid #333c5e;border-radius:4px;padding:2px 5px;
+  color:#e2e8f0;font-size:.71rem;width:66px;text-align:right;font-family:inherit;font-variant-numeric:tabular-nums}
+#inv-sov input.sv-n:focus{outline:none;border-color:#6366f1;background:#161d38}
+#inv-sov input.sv-n.chg{border-color:#E87B2A;background:#241d14;color:#f0a868;font-weight:700}
+#inv-sov input.sv-n:disabled{background:transparent;border-color:transparent;color:var(--muted)}
+#inv-sov input.sv-m{background:#11162a;border:1px solid #333c5e;border-radius:4px;padding:2px 6px;
+  color:#e2e8f0;font-size:.7rem;width:170px;font-family:inherit}
+#inv-sov input.sv-m:focus{outline:none;border-color:#6366f1}
+#inv-sov input.sv-m:disabled{background:transparent;border-color:transparent;color:var(--muted)}
+#inv-sov input.sv-m.falta{border-color:#E24B4A;background:#241416}
+#inv-sov .sv-calc{color:#c0caf5;font-weight:700}
+#inv-sov .sv-der{color:var(--muted);font-size:.66rem}
+#inv-sov th.sv-d2,#inv-sov td.sv-d2{background:#13182880;color:#7f8aa6;font-size:.67rem}
+#inv-sov tr.mod td.sv-d2{background:#1e190f} #inv-sov tr.ltm td.sv-d2{background:#11181f}
+#inv-sov .sv-rv{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.82rem;padding:0 3px}
+#inv-sov .sv-rv:hover{color:#E24B4A}
+#inv-sov .sv-est{font-weight:700;font-size:.66rem}
+#inv-sov .sv-eb{color:#E24B4A} #inv-sov .sv-en{color:#8bd5b0} #inv-sov .sv-es{color:#378ADD}
+#inv-sov .sv-msg{font-size:.7rem;padding:6px 10px;border-radius:6px;margin-left:8px}
+#inv-sov .sv-msg.err{background:#2a1416;color:#f0a0a0;border:1px solid #5c2b2e}
+#inv-sov .sv-msg.ok2{background:#12241d;color:#8bd5b0;border:1px solid #1f4a3a}
 /* ── Subseccion Stock Optimo (#inv-opt) ── namespaced para no chocar con nada ── */
 #inv-opt .so-lede{color:var(--muted);font-size:.74rem;margin:6px 0 12px;max-width:104ch}
 #inv-opt .so-lede b{color:#c0caf5}
@@ -914,6 +981,7 @@ table.tg-t{width:100%;border-collapse:collapse;font-size:.71rem;min-width:900px}
     <button class="inv-stab active" data-inv="hoy" onclick="showInvSub('hoy')">&#128202; Inventarios Hoy</button>
     <button class="inv-stab" data-inv="hist" onclick="showInvSub('hist')">&#128200; Hist&#243;rico de Inventarios</button>
     <button class="inv-stab" data-inv="opt" onclick="showInvSub('opt')">&#127919; Stock &#211;ptimo</button>
+    <button class="inv-stab" data-inv="sov" onclick="showInvSub('sov')">&#9881;&#65039; Stock &#211;ptimo V2</button>
   </div>
   <div id="inv-hoy">
   <div class="gk" id="gkpis"></div>
@@ -1142,6 +1210,47 @@ table.tg-t{width:100%;border-collapse:collapse;font-size:.71rem;min-width:900px}
       </details>
 
     </div>
+  </div>
+
+  <div id="inv-sov" style="display:none">
+    <div class="sv-lede">Para los SKU donde <b>la fórmula no sirve</b> — consumo errático, ítem de proyecto, repuesto
+      crítico — el criterio humano reemplaza al cálculo. Lo que se fija acá <b>queda fijo</b>: el motor no lo vuelve a
+      redefinir, y la meta y los informes de <b>Stock Óptimo</b> se recalculan con estos valores.</div>
+
+    <div class="sv-box ok">
+      <h4>Se redefine en semanas, no en kilos</h4>
+      <p>La decisión que se congela es <b>«a este material le quiero 4 semanas de piso»</b>, no una cantidad. Las unidades
+        se re-derivan con el FC de cada corrida — <code>banda = cobertura × demanda semanal</code> — así el criterio sigue
+        vigente aunque la demanda cambie. Las columnas en unidades y en $ son <b>derivadas, de referencia</b>.
+        <b style="color:#7fb6ea">Corregir el LT</b> es distinto: arregla un dato de entrada y la fórmula sigue mandando.</p>
+    </div>
+
+    <div class="sv-lock" id="sov-lock"></div>
+    <div class="sv-tot" id="sov-tot"></div>
+
+    <div class="sv-bar">
+      <input type="text" id="sov-q" placeholder="Buscar por SKU o descripción…">
+      <select id="sov-cat"><option value="">Todas las categorías</option></select>
+      <select id="sov-comp"><option value="">Todos los compradores</option></select>
+      <select id="sov-org"><option value="">Nacional + Importado</option><option>NACIONAL</option><option>IMPORTADO</option></select>
+      <button class="sv-btn" id="sov-fmod">Sólo redefinidos</button>
+      <span class="sv-cnt" id="sov-cnt"></span>
+    </div>
+
+    <div class="sv-tw"><table>
+      <thead><tr>
+        <th>SKU</th><th>Descripción</th><th>Cat.</th><th>Comprador</th><th class="num">Dem/sem</th><th class="num">Stock</th>
+        <th class="num ed">LT sem</th>
+        <th class="num ed">Cob. mín<br><span style="font-weight:600;text-transform:none;color:#9b8fd6">semanas</span></th>
+        <th class="num" style="color:#c0caf5">Cob. ópt<br><span style="font-weight:600;text-transform:none">semanas</span></th>
+        <th class="num ed">Cob. máx<br><span style="font-weight:600;text-transform:none;color:#9b8fd6">semanas</span></th>
+        <th class="num sv-d2">B. mín</th><th class="num sv-d2">Óptimo</th><th class="num sv-d2">B. máx</th>
+        <th class="num">$ Óptimo</th><th>Estado</th><th class="num">Fórmula hoy</th>
+        <th class="ed">Motivo de la redefinición</th><th></th>
+      </tr></thead>
+      <tbody id="sov-tb"></tbody>
+    </table></div>
+    <div class="sv-lede" id="sov-foot" style="margin-top:9px"></div>
   </div>
 </div>
 
@@ -4427,14 +4536,16 @@ function buildInvCat(){
 var _ihView='total';
 
 function showInvSub(name){
-  ['hoy','hist','opt'].forEach(function(n){
+  ['hoy','hist','opt','sov'].forEach(function(n){
     var p=el('inv-'+n); if(p) p.style.display=(n===name)?'':'none';
   });
   document.querySelectorAll('.inv-stab').forEach(function(b){
     b.classList.toggle('active',b.getAttribute('data-inv')===name);
   });
   if(name==='hist'&&!window._ihBuilt){buildHistInv();window._ihBuilt=true;}
-  if(name==='opt'&&!window._soBuilt){window._soBuilt=true;soLoad();}
+  if((name==='opt'||name==='sov')&&!window._soBuilt){window._soBuilt=true;soLoad();}
+  // la V2 comparte el dataset con Stock Optimo: si ya estaba cargado, solo repinta
+  if(name==='sov'&&window._soBuilt&&typeof SO!=='undefined'&&SO&&SO.rows){ sovInit(); sovLock(); sovRender(); }
 }
 
 function buildHistInv(){
@@ -8187,7 +8298,12 @@ function soLoad(){
         .then(function(r){ return r.ok?r.json():{series:{}}; })
         .catch(function(){ return {series:{}}; });
     })
-    .then(function(sr){ SOSER=sr.series||{}; soBuild(); })
+    .then(function(sr){
+      SOSER=sr.series||{};
+      // Las bandas redefinidas a mano se traen ANTES de dibujar: si llegaran
+      // despues, los KPIs se pintarian dos veces con numeros distintos.
+      return sovCargar().then(function(){ soBuild(); });
+    })
     .catch(function(){
       var l=el('so-load'); if(l) l.style.display='none';
       var n=el('so-nodata'); if(n) n.style.display='';
@@ -8195,10 +8311,11 @@ function soLoad(){
 }
 
 function soBuild(){
+  sovAplicar();
   el('so-load').style.display='none';
   el('so-body').style.display='';
   soSello(); soKpis(); soHero(); soBullet(); soDvg(); soInitFiltros(); soDrawTB(); soDrawTS();
-  soMdesc(); soEjes(); soCeldas(); soDetA(); soSim(); soProyInit(); soProy();
+  soMdesc(); soEjes(); soCeldas(); soDetA(); soSim(); soProyInit(); soProy(); sovInit(); sovLock(); sovRender();
 }
 
 /* ── KPIs ── */
@@ -8526,6 +8643,321 @@ function soEjes(){
 }
 
 /* ── Anexo D: simulaciones de NS ── */
+/* ═══ Stock Optimo V2 · redefinicion de bandas y lead time ══════════════════
+   El override se guarda en SEMANAS de cobertura. Las unidades se derivan con la
+   demanda vigente, asi que la decision no envejece cuando cambia el FC.
+   Leer es publico; escribir exige login contra el backend (la clave no vive en
+   este HTML, que es un repo publico). */
+
+// ⬇️ URL /exec del Web App de apps_script_bandas_override.gs.
+//    Vacio = la sub-pestana queda en solo lectura (no se rompe nada).
+var SOV_URL = '';
+var SOV_LS_TOK = 'sov_sesion_v1';
+var SOV = {};            // { sku: {cmin,cmax,lt,motivo,base,usuario,ts} }
+var SOV_TOK = null, SOV_USER = null, SOV_SOLO = false, SOV_LIM = 150, SOV_BASE = null;
+
+function sovN0(v){ return (v==null||isNaN(v))?'—':Math.round(v).toLocaleString('es-CL'); }
+function sovN1(v){ return (v==null||isNaN(v))?'—':(+v).toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1}); }
+function sovN2(v){ return (v==null||isNaN(v))?'—':(+v).toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function sovCargar(){
+  try{ var t=JSON.parse(localStorage.getItem(SOV_LS_TOK)||'null');
+       if(t&&t.exp>Date.now()){ SOV_TOK=t.token; SOV_USER=t.usuario; } }catch(e){}
+  if(!SOV_URL) return Promise.resolve();
+  return fetch(SOV_URL,{method:'GET'})
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if(d&&d.ok) SOV=d.ov||{}; })
+    .catch(function(){ /* sin backend la seccion sigue, sin ajustes */ });
+}
+
+/* Deja SO listo con las bandas redefinidas. Punto unico: si cada pastilla
+   aplicara los overrides por su cuenta, podrian quedar con universos distintos. */
+function sovAplicar(){
+  if(!SO||!SO.rows) return;
+  if(SOV_BASE) SO.rows=SOV_BASE.map(function(r){ return r.slice(); });
+  else SOV_BASE=SO.rows.map(function(r){ return r.slice(); });
+  if(!Object.keys(SOV).length){ sovReagregar(); return; }
+  var C=SOC;
+  SO.rows.forEach(function(r){
+    var o=SOV[String(r[C.sku]).trim()]; if(!o) return;
+    var d=r[C.d]||0; if(d<=0) return;
+    if(o.lt!=null) r[C.lt]=o.lt;
+    if(o.cmin==null&&o.cmax==null) return;
+    var cmin=(o.cmin!=null)?o.cmin:(r[C.bmin]/d), cmax=(o.cmax!=null)?o.cmax:(r[C.bmax]/d);
+    if(cmin>cmax){ var t=cmin; cmin=cmax; cmax=t; }
+    var p=r[C.p]||0;
+    r[C.bmin]=cmin*d; r[C.bmax]=cmax*d; r[C.opt]=(r[C.bmin]+r[C.bmax])/2;
+    r[C.v_bmin]=r[C.bmin]*p; r[C.v_bmax]=r[C.bmax]*p; r[C.v_opt]=r[C.opt]*p;
+    var st=r[C.stock]||0;
+    r[C.exceso]=Math.max(0,(st-r[C.bmax])*p);
+    r[C.deficit]=Math.max(0,(r[C.bmin]-st)*p);
+    r[C.estado]= st<r[C.bmin] ? 'BAJO MINIMO' : (st>r[C.bmax] ? 'SOBRE MAXIMO' : 'EN BANDA');
+    r[C.cob_opt]=r[C.opt]/d;
+    if(C.cob_bmin!=null) r[C.cob_bmin]=cmin;
+    if(C.banda_regla!=null) r[C.banda_regla]='redefinida a mano';
+  });
+  sovReagregar();
+}
+
+/* Re-agrega tot / cats / bandas / proyeccion con las filas ya ajustadas. */
+function sovReagregar(){
+  var C=SOC, act=SO.rows.filter(function(r){ return (r[C.d]||0)>0; });
+  var sum=function(L,k){ var t=0; L.forEach(function(r){ t+=r[C[k]]||0; }); return t; };
+  var t=SO.tot;
+  t.opt=sum(act,'v_opt'); t.bmin=sum(act,'v_bmin'); t.bmax=sum(act,'v_bmax');
+  t.exceso=sum(act,'exceso'); t.deficit=sum(act,'deficit');
+
+  (SO.cats||[]).forEach(function(c){
+    var ra=act.filter(function(r){ return r[C.cat]===c.id; });
+    c.opt=sum(ra,'v_opt'); c.bmin=sum(ra,'v_bmin'); c.bmax=sum(ra,'v_bmax');
+    c.exceso=sum(ra,'exceso'); c.deficit=sum(ra,'deficit');
+    var ds=0; ra.forEach(function(r){ ds+=(r[C.d]||0)*(r[C.p]||0); });
+    c.cob=ds>0?c.stock/ds:null; c.cob_opt=ds>0?c.opt/ds:null;
+  });
+  (SO.bandas||[]).forEach(function(b){
+    var rs=act.filter(function(r){ return r[C.cat]===b.cat && r[C.origen]===b.origen; });
+    if(!rs.length) return;
+    b.opt=sum(rs,'v_opt'); b.bmin=sum(rs,'v_bmin'); b.bmax=sum(rs,'v_bmax');
+    b.exceso=sum(rs,'exceso'); b.deficit=sum(rs,'deficit');
+    var ds=0; rs.forEach(function(r){ ds+=(r[C.d]||0)*(r[C.p]||0); });
+    ['cob:stock','cob_min:bmin','cob_opt:opt','cob_max:bmax'].forEach(function(par){
+      var kv=par.split(':'); b[kv[0]]=ds>0?b[kv[1]]/ds:null;
+    });
+  });
+
+  // proyeccion: misma curva, bandas nuevas (el indice es de demanda, no cambia)
+  var idx=SO.proy_idx, P=SO.proyeccion;
+  if(idx && P && P.__total__){
+    var wk=P.__total__.weeks, i0=P.__total__.i0||0, nw=wk.length, np={};
+    act.forEach(function(r){
+      var v=idx[String(r[C.sku]).trim()]; if(!v||v.length!==nw) return;
+      var d=r[C.d]||0, p=r[C.p]||0;
+      [r[C.cat],'__total__'].forEach(function(cid){
+        var a=np[cid]; if(!a){ a=np[cid]={bmin:[],opt:[],bmax:[],sinrep:[]};
+          for(var j=0;j<nw;j++){ a.bmin[j]=0;a.opt[j]=0;a.bmax[j]=0;a.sinrep[j]=0; } }
+        var resto=r[C.stock]||0;
+        for(var j=0;j<nw;j++){
+          a.bmin[j]+=r[C.v_bmin]*v[j]; a.opt[j]+=r[C.v_opt]*v[j]; a.bmax[j]+=r[C.v_bmax]*v[j];
+          if(j>i0) resto=Math.max(0,resto-d*v[j]);
+          a.sinrep[j]+=resto*p;
+        }
+      });
+    });
+    Object.keys(np).forEach(function(cid){
+      if(!P[cid]) P[cid]={weeks:wk,i0:i0};
+      ['bmin','opt','bmax','sinrep'].forEach(function(k){ P[cid][k]=np[cid][k]; });
+    });
+  }
+}
+
+/* ── login ──────────────────────────────────────────────────────────────── */
+function sovLock(){
+  var h=el('sov-lock'); if(!h) return;
+  if(!SOV_URL){
+    h.innerHTML='🔒 <b>Edición deshabilitada</b> <span style="color:var(--muted)">· falta conectar el backend '
+      +'(<code>SOV_URL</code> en dashboard.html). Ver <code>SETUP_BACKEND_BANDAS.md</code>. La tabla se ve completa, en sólo lectura.</span>';
+    return;
+  }
+  if(SOV_TOK){
+    h.innerHTML='🔓 <b>Sesión activa — '+soE(SOV_USER||'')+'</b> <span style="color:var(--muted)">· cada cambio se guarda '
+      +'en la nube y queda con tu nombre y la hora.</span>'
+      +'<button class="sv-btn" id="sov-out" style="margin-left:auto">Cerrar sesión</button>';
+    el('sov-out').onclick=function(){
+      if(SOV_URL&&SOV_TOK) fetch(SOV_URL,{method:'POST',body:JSON.stringify({action:'logout',token:SOV_TOK})}).catch(function(){});
+      SOV_TOK=null; SOV_USER=null; localStorage.removeItem(SOV_LS_TOK); sovLock(); sovRender();
+    };
+    return;
+  }
+  h.innerHTML='🔒 <b>Sólo lectura</b> <span style="color:var(--muted)">· redefinir bandas requiere clave. '
+    +'Se valida contra el servidor, no contra este HTML.</span>'
+    +'<input type="text" id="sov-u" placeholder="usuario" style="width:120px;margin-left:auto">'
+    +'<input type="password" id="sov-p" placeholder="clave" style="width:130px;background:#1a1f2e;border:1px solid var(--border);border-radius:6px;padding:5px 9px;color:#e2e8f0;font-size:.72rem;font-family:inherit">'
+    +'<button class="sv-btn on" id="sov-in">Entrar</button><span id="sov-msg"></span>';
+  var go=function(){
+    var u=el('sov-u').value.trim(), p=el('sov-p').value;
+    if(!u||!p) return;
+    el('sov-msg').className='sv-msg'; el('sov-msg').textContent='…';
+    fetch(SOV_URL,{method:'POST',body:JSON.stringify({action:'login',usuario:u,clave:p})})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(!d||!d.ok){ el('sov-msg').className='sv-msg err'; el('sov-msg').textContent=(d&&d.error)||'No se pudo entrar'; return; }
+        SOV_TOK=d.token; SOV_USER=d.usuario; SOV=d.ov||SOV;
+        localStorage.setItem(SOV_LS_TOK,JSON.stringify({token:d.token,exp:d.exp,usuario:d.usuario}));
+        sovLock(); sovAplicar(); soBuild();
+      })
+      .catch(function(){ el('sov-msg').className='sv-msg err'; el('sov-msg').textContent='Sin conexión con el backend'; });
+  };
+  el('sov-in').onclick=go;
+  el('sov-p').onkeydown=function(ev){ if(ev.key==='Enter') go(); };
+}
+
+/* ── guardar / borrar ───────────────────────────────────────────────────── */
+function sovGuardar(sku,payload,cb){
+  if(!SOV_URL||!SOV_TOK) return;
+  fetch(SOV_URL,{method:'POST',body:JSON.stringify(
+      Object.assign({action:'save',token:SOV_TOK,sku:sku},payload))})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d&&d.relogin){ SOV_TOK=null; localStorage.removeItem(SOV_LS_TOK); sovLock(); sovRender(); return; }
+      if(d&&d.ok){ SOV=d.ov||SOV; sovAplicar(); soBuild(); }
+      else if(d&&d.error) alert(d.error);
+      if(cb) cb();
+    })
+    .catch(function(){ alert('No se pudo guardar. Revisa la conexión.'); });
+}
+function sovBorrar(sku){
+  if(!SOV_URL||!SOV_TOK){ delete SOV[sku]; sovAplicar(); soBuild(); return; }
+  fetch(SOV_URL,{method:'POST',body:JSON.stringify({action:'delete',token:SOV_TOK,sku:sku})})
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if(d&&d.ok){ SOV=d.ov||{}; sovAplicar(); soBuild(); } })
+    .catch(function(){ alert('No se pudo revertir.'); });
+}
+
+/* ── tabla ──────────────────────────────────────────────────────────────── */
+function sovBase(sku){
+  if(!SOV_BASE) return null;
+  var C=SOC;
+  for(var i=0;i<SOV_BASE.length;i++) if(String(SOV_BASE[i][C.sku]).trim()===sku) return SOV_BASE[i];
+  return null;
+}
+
+function sovTot(){
+  var C=SOC, nb=0, nl=0, fo=0, vo=0;
+  (SOV_BASE||[]).forEach(function(b){
+    if((b[C.d]||0)<=0) return;
+    fo+=b[C.v_opt]||0;
+  });
+  SO.rows.forEach(function(r){ if((r[C.d]||0)>0) vo+=r[C.v_opt]||0; });
+  Object.keys(SOV).forEach(function(k){
+    var o=SOV[k];
+    if(o.cmin!=null||o.cmax!=null) nb++; else if(o.lt!=null) nl++;
+  });
+  var dl=vo-fo;
+  var tt=function(l,v,d,on){ return '<div class="sv-t'+(on?' on':'')+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="d">'+d+'</div></div>'; };
+  el('sov-tot').innerHTML=
+     tt('Meta con redefiniciones','$'+soMM(vo), dl===0?'sin cambios respecto de la fórmula'
+        :((dl>0?'+$':'−$')+soMM(Math.abs(dl))+' vs. la fórmula ($'+soMM(fo)+')'), dl!==0)
+    +tt('Coberturas fijadas',nb, nb?'la fórmula ya no aplica en esas referencias':'ninguna todavía', nb>0)
+    +tt('Lead times corregidos',nl, nl?'la fórmula recalcula con el plazo nuevo':'ninguno todavía', nl>0)
+    +tt('Capital liberable','$'+soMM(SO.tot.exceso),'stock sobre el máximo vigente',false)
+    +tt('Riesgo de quiebre','$'+soMM(SO.tot.deficit),'falta para el mínimo vigente',false);
+}
+
+function sovRender(){
+  if(!SO||!SO.rows||!el('sov-tb')) return;
+  var C=SOC, ED=!!(SOV_URL&&SOV_TOK);
+  var q=(el('sov-q').value||'').trim().toLowerCase();
+  var fc=el('sov-cat').value, fo=el('sov-org').value, fp=el('sov-comp').value;
+  var L=SO.rows.filter(function(r){
+    if((r[C.d]||0)<=0) return false;
+    if(fc && r[C.cat]!==fc) return false;
+    if(fo && r[C.origen]!==fo) return false;
+    if(fp && (r[C.comp]||'')!==fp) return false;
+    if(SOV_SOLO && !SOV[String(r[C.sku]).trim()]) return false;
+    if(q && ((r[C.sku]+' '+r[C.desc]).toLowerCase().indexOf(q)<0)) return false;
+    return true;
+  });
+  el('sov-cnt').textContent=(L.length>SOV_LIM?'mostrando '+SOV_LIM+' de ':'')+L.length
+    +' referencia'+(L.length===1?'':'s')+(L.length>SOV_LIM?' · afiná el filtro':'');
+
+  el('sov-tb').innerHTML=L.slice(0,SOV_LIM).map(function(r){
+    var sku=String(r[C.sku]).trim(), o=SOV[sku]||{}, d=r[C.d]||0, p=r[C.p]||0;
+    var b=sovBase(sku);
+    var bc={ cmin: b?(b[C.bmin]/ (b[C.d]||1)):null, cmax: b?(b[C.bmax]/(b[C.d]||1)):null, lt: b?b[C.lt]:null };
+    var cmin=r[C.bmin]/d, cmax=r[C.bmax]/d, copt=(cmin+cmax)/2;
+    var banda=(o.cmin!=null||o.cmax!=null), soloLt=(!banda&&o.lt!=null);
+    var cls=banda?'mod':(soloLt?'ltm':'');
+    var st=r[C.stock]||0;
+    var e = st<r[C.bmin] ? ['BAJO MÍNIMO','sv-eb'] : (st>r[C.bmax] ? ['SOBRE MÁXIMO','sv-es'] : ['EN BANDA','sv-en']);
+    var dif=b && (Math.abs(cmin-bc.cmin)>0.005||Math.abs(cmax-bc.cmax)>0.005);
+    var mark=banda?'<span class="sv-pill sv-pa">cobertura fija</span>'
+            :(soloLt?'<span class="sv-pill sv-pl">LT corregido</span>':'<span class="sv-pill sv-po">fórmula</span>');
+    var inp=function(k,val,chg,dec){
+      return '<input class="sv-n'+(chg?' chg':'')+'" data-sv="'+soE(sku)+'" data-k="'+k+'" value="'
+        +(dec===2?sovN2(val):sovN1(val))+'"'+(ED?'':' disabled')+'>';
+    };
+    return '<tr class="'+cls+'">'
+      +'<td class="sv-sk">'+soE(sku)+'</td>'
+      +'<td><span class="sv-ds" title="'+soE(r[C.desc])+'">'+soE(r[C.desc])+'</span></td>'
+      +'<td class="sv-der">'+soE(soCat(r[C.cat])).replace(/\s*\(.*\)/,'')+'</td>'
+      +'<td class="sv-der">'+soE(r[C.comp]||'—')+'</td>'
+      +'<td class="num sv-der">'+sovN0(d)+'</td><td class="num sv-der">'+sovN0(st)+'</td>'
+      +'<td class="num">'+inp('lt',r[C.lt],o.lt!=null,1)+'</td>'
+      +'<td class="num">'+inp('cmin',cmin,o.cmin!=null,2)+'</td>'
+      +'<td class="num sv-calc">'+sovN2(copt)+'</td>'
+      +'<td class="num">'+inp('cmax',cmax,o.cmax!=null,2)+'</td>'
+      +'<td class="num sv-d2">'+sovN0(r[C.bmin])+'</td>'
+      +'<td class="num sv-d2">'+sovN0(r[C.opt])+'</td>'
+      +'<td class="num sv-d2">'+sovN0(r[C.bmax])+'</td>'
+      +'<td class="num sv-calc">$'+soMM(r[C.v_opt])+'</td>'
+      +'<td><span class="sv-est '+e[1]+'">'+e[0]+'</span></td>'
+      +'<td class="num sv-der">'+(dif?sovN2(bc.cmin)+'–'+sovN2(bc.cmax)+' <span style="color:#E87B2A">▲</span>':'—')+'</td>'
+      +'<td><input class="sv-m'+((banda||soloLt)&&!(o.motivo||'').trim()?' falta':'')+'" data-sv="'+soE(sku)
+        +'" data-k="motivo" value="'+soE(o.motivo||'')+'" placeholder="'+((banda||soloLt)?'obligatorio':'—')+'"'+(ED?'':' disabled')+'></td>'
+      +'<td>'+mark+((banda||soloLt)&&ED?' <button class="sv-rv" data-svrv="'+soE(sku)+'" title="volver a la fórmula">⟲</button>':'')+'</td>'
+      +'</tr>';
+  }).join('');
+  sovTot();
+}
+
+/* ── edicion ────────────────────────────────────────────────────────────── */
+document.addEventListener('change',function(ev){
+  var t=ev.target;
+  if(!t.dataset||!t.dataset.sv||!SOV_URL||!SOV_TOK) return;
+  var sku=t.dataset.sv, k=t.dataset.k, C=SOC, b=sovBase(sku);
+  if(!b) return;
+  var d=b[C.d]||1;
+  var base={cmin:+(b[C.bmin]/d).toFixed(2), cmax:+(b[C.bmax]/d).toFixed(2), lt:b[C.lt]};
+  var o=SOV[sku]||{};
+  var cur={cmin:(o.cmin!=null)?o.cmin:base.cmin, cmax:(o.cmax!=null)?o.cmax:base.cmax,
+           lt:(o.lt!=null)?o.lt:base.lt, motivo:o.motivo||''};
+  if(k==='motivo'){ cur.motivo=t.value; }
+  else{
+    var v=parseFloat(String(t.value).replace(/\./g,'').replace(',','.'));
+    if(isNaN(v)||v<0){ sovRender(); return; }
+    if(k!=='lt') v=Math.round(v*100)/100;
+    cur[k]=v;
+    if(cur.cmin>cur.cmax){ if(k==='cmin') cur.cmax=cur.cmin; else cur.cmin=cur.cmax; }
+  }
+  var pay={base:base, motivo:cur.motivo};
+  pay.cmin=(Math.abs(cur.cmin-base.cmin)>0.005)?cur.cmin:null;
+  pay.cmax=(Math.abs(cur.cmax-base.cmax)>0.005)?cur.cmax:null;
+  pay.lt  =(base.lt!=null&&Math.abs(cur.lt-base.lt)>0.005)?cur.lt:null;
+  if(pay.cmin==null&&pay.cmax==null&&pay.lt==null){ sovBorrar(sku); return; }
+  if(!String(pay.motivo||'').trim()){
+    // se deja escribir, pero no se persiste sin justificacion
+    SOV[sku]=Object.assign({},o,{cmin:pay.cmin,cmax:pay.cmax,lt:pay.lt,base:base,motivo:''});
+    sovAplicar(); soBuild(); return;
+  }
+  sovGuardar(sku,pay);
+});
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest&&ev.target.closest('[data-svrv]');
+  if(b) sovBorrar(b.dataset.svrv);
+});
+
+function sovInit(){
+  if(!el('sov-tb')||el('sov-tb').dataset.init) return;
+  el('sov-tb').dataset.init='1';
+  (SO.cats||[]).forEach(function(c){
+    var o=document.createElement('option'); o.value=c.id; o.textContent=c.label;
+    el('sov-cat').appendChild(o);
+  });
+  var m={}, C=SOC;
+  SO.rows.forEach(function(r){ if((r[C.d]||0)>0){ var k=r[C.comp]||'—'; m[k]=(m[k]||0)+1; } });
+  Object.keys(m).sort(function(a,b){ return m[b]-m[a]; }).forEach(function(c){
+    var o=document.createElement('option'); o.value=c; o.textContent=c+' ('+m[c]+')';
+    el('sov-comp').appendChild(o);
+  });
+  ['sov-q','sov-cat','sov-comp','sov-org'].forEach(function(id){
+    el(id).addEventListener('input',sovRender); el(id).addEventListener('change',sovRender);
+  });
+  el('sov-fmod').onclick=function(){ SOV_SOLO=!SOV_SOLO; this.className='sv-btn'+(SOV_SOLO?' on':''); sovRender(); };
+  el('sov-foot').innerHTML='<b>Fórmula hoy</b> muestra la cobertura que daría el cálculo cuando difiere de la fijada: '
+    +'es el aviso de que una redefinición envejeció y conviene revisarla. Escribir de vuelta el valor original quita el '
+    +'override y la referencia vuelve a la fórmula. Todo cambio queda en la nube con usuario y hora.';
+}
+
 /* ── D · Proyeccion del stock optimo ───────────────────────────────────────
    SOPSEL vacio = total. El motor entrega la curva ya valorizada por categoria,
    asi que filtrar es sumar vectores — no hay que recorrer SKU en el navegador. */
