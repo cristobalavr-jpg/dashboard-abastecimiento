@@ -8664,7 +8664,7 @@ function sovCargar(){
   try{ var t=JSON.parse(localStorage.getItem(SOV_LS_TOK)||'null');
        if(t&&t.exp>Date.now()){ SOV_TOK=t.token; SOV_USER=t.usuario; } }catch(e){}
   if(!SOV_URL) return Promise.resolve();
-  return fetch(SOV_URL,{method:'GET'})
+  return fetch(SOV_URL+'?v='+Date.now(),{method:'GET'})
     .then(function(r){ return r.json(); })
     .then(function(d){ if(d&&d.ok) SOV=d.ov||{}; })
     .catch(function(){ /* sin backend la seccion sigue, sin ajustes */ });
@@ -8763,7 +8763,7 @@ function sovLock(){
       +'en la nube y queda con tu nombre y la hora.</span>'
       +'<button class="sv-btn" id="sov-out" style="margin-left:auto">Cerrar sesión</button>';
     el('sov-out').onclick=function(){
-      if(SOV_URL&&SOV_TOK) fetch(SOV_URL,{method:'POST',body:JSON.stringify({action:'logout',token:SOV_TOK})}).catch(function(){});
+      if(SOV_URL&&SOV_TOK) fetch(SOV_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'logout',token:SOV_TOK})}).catch(function(){});
       SOV_TOK=null; SOV_USER=null; localStorage.removeItem(SOV_LS_TOK); sovLock(); sovRender();
     };
     return;
@@ -8777,7 +8777,7 @@ function sovLock(){
     var u=el('sov-u').value.trim(), p=el('sov-p').value;
     if(!u||!p) return;
     el('sov-msg').className='sv-msg'; el('sov-msg').textContent='…';
-    fetch(SOV_URL,{method:'POST',body:JSON.stringify({action:'login',usuario:u,clave:p})})
+    fetch(SOV_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'login',usuario:u,clave:p})})
       .then(function(r){ return r.json(); })
       .then(function(d){
         if(!d||!d.ok){ el('sov-msg').className='sv-msg err'; el('sov-msg').textContent=(d&&d.error)||'No se pudo entrar'; return; }
@@ -8794,7 +8794,7 @@ function sovLock(){
 /* ── guardar / borrar ───────────────────────────────────────────────────── */
 function sovGuardar(sku,payload,cb){
   if(!SOV_URL||!SOV_TOK) return;
-  fetch(SOV_URL,{method:'POST',body:JSON.stringify(
+  fetch(SOV_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(
       Object.assign({action:'save',token:SOV_TOK,sku:sku},payload))})
     .then(function(r){ return r.json(); })
     .then(function(d){
@@ -8807,7 +8807,7 @@ function sovGuardar(sku,payload,cb){
 }
 function sovBorrar(sku){
   if(!SOV_URL||!SOV_TOK){ delete SOV[sku]; sovAplicar(); soBuild(); return; }
-  fetch(SOV_URL,{method:'POST',body:JSON.stringify({action:'delete',token:SOV_TOK,sku:sku})})
+  fetch(SOV_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'delete',token:SOV_TOK,sku:sku})})
     .then(function(r){ return r.json(); })
     .then(function(d){ if(d&&d.ok){ SOV=d.ov||{}; sovAplicar(); soBuild(); } })
     .catch(function(){ alert('No se pudo revertir.'); });
