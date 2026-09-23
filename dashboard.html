@@ -6228,6 +6228,40 @@ function covSemaforo(actual, meta, sense){
     return ['cov-meta-bad','✗'];
   }
 }
+// ── Export a Excel de la base completa de una tabla «Distribución por cobertura» ──
+// Descarga TODOS los SKU de TODOS los tramos (no sólo el bucket abierto en pantalla),
+// con el tramo como primera columna. Los buckets se toman del caché que deja el render,
+// así el archivo respeta exactamente los filtros activos (comprador, PPA, grupo, importados).
+var COVX = {};   // gid → {order, label, buckets, titulo, cols, row}
+function covXlsBtn(gid, tip){
+  return '<button onclick="expCovDist(\''+gid+'\')" title="'+(tip||'Descarga en Excel todos los SKU de todos los tramos de cobertura')
+    + '" style="background:#1D9E7530;color:#1D9E75;border:1px solid #1D9E75;border-radius:5px;padding:2px 8px;'
+    + 'font-size:.65rem;font-weight:600;cursor:pointer;white-space:nowrap">📥 Excel</button>';
+}
+function covXlsTit(txt, gid, tip){
+  return '<div class="ct" style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
+    + '<span>'+txt+'</span>'+covXlsBtn(gid, tip)+'</div>';
+}
+function expCovDist(gid){
+  var C = COVX[gid];
+  if(!C || !C.buckets){ alert('Todavía no hay datos cargados para exportar.'); return; }
+  var aoa = [C.cols];
+  var n = 0;
+  C.order.forEach(function(k){
+    var b = C.buckets[k]; if(!b) return;
+    // Mismo orden que el detalle en pantalla: mayor stock valorizado primero.
+    b.items.slice().sort(function(a,b2){return (b2.val||0)-(a.val||0);}).forEach(function(s){
+      aoa.push([C.label[k]].concat(C.row(s))); n++;
+    });
+  });
+  if(!n){ alert('No hay SKUs para exportar con los filtros actuales.'); return; }
+  try{
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Distribución cobertura');
+    XLSX.writeFile(wb, 'distribucion_cobertura_'+(C.slug||gid)+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  }catch(e){ alert('Error exportando: '+e.message); }
+}
+
 function covFmtMM(v){return '$'+(v/1e6).toLocaleString('es-CL',{maximumFractionDigits:1})+' MM';}
 function covFmtPct(v){return (v||0).toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';}
 function covFmtCob(v){return (v===null||v===undefined) ? '—' : v.toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1});}
@@ -6248,6 +6282,13 @@ function buildCoberturas(){
     var buckets = calc.buckets, tot = calc.tot;
     var macros = covMacros(buckets, tot, g.id);
 
+    // Caché para el export a Excel de la base completa (mismas columnas que el detalle por bucket).
+    COVX[g.id] = {order:COV_ORDER, label:COV_LABEL, buckets:buckets, slug:g.id,
+      cols:['Tramo cobertura','SKU','Descripción','Comprador','Stock','Valor Stock',
+            'Cons. 4w (prom. semanal)','Cons. 8w (acum.)','Cobertura (sem)'],
+      row:function(s){ return [s.sku, s.desc||'', s.comp||'', s.stock||0, s.val||0,
+                               s.c4_real||0, s.c8_real||0, (s.cob==null?'':+s.cob)]; }};
+
     var sec = document.createElement('div');
     sec.className = 'cov-sec';
     sec.innerHTML = ''
@@ -6255,7 +6296,7 @@ function buildCoberturas(){
       + '<div class="cov-sub">'+g.sub+' · '+skus.length+' SKUs · Stock valorizado total: <b style="color:#fff">'+covFmtMM(tot)+'</b></div>'
       + '<div class="cov-row">'
       +   '<div class="cb">'
-      +     '<div class="ct">Distribución por cobertura</div>'
+      +     covXlsTit('Distribución por cobertura', g.id, 'Descarga en Excel todos los SKU de todos los tramos de cobertura de este grupo (respeta el filtro de comprador y PPA)')
       +     '<div style="overflow-x:auto"><table>'
       +       '<thead><tr><th>Cobertura</th><th>Valor Stock</th><th>% Total</th><th>SKUs</th></tr></thead>'
       +       '<tbody id="cov-tb-'+g.id+'"></tbody>'
@@ -6569,6 +6610,11 @@ function covRenderPTImp(host){
     {label:'Sin Despacho (nuevos)',    val:vsin, pct:pct(vsin), meta:10, sense:'down'}
   ];
   var winTxt=(COVPTI.win&&COVPTI.win.length)?('S'+COVPTI.win[0]+'–S'+COVPTI.win[COVPTI.win.length-1]):'';
+  COVX['ptimp'] = {order:PTI_ORDER, label:PTI_LABEL, buckets:buckets, slug:'pt_importado',
+    cols:['Tramo cobertura','SKU','Descripción','Stock','Valor Stock','OC tránsito',
+          'Egreso/sem (prom. 12 sem)','Cobertura (sem)','Cob. + OC (sem)'],
+    row:function(s){ return [s.sku, s.desc||'', s.stock||0, s.val||0, s.oc||0, s.cons_sem||0,
+                             (s.cob==null?'':+s.cob), (s.cob_oc==null?'':+s.cob_oc)]; }};
   var sec=document.createElement('div'); sec.className='cov-sec';
   sec.innerHTML=''
     +'<div class="cov-tit">Productos Terminados Importados</div>'
@@ -6576,7 +6622,7 @@ function covRenderPTImp(host){
     +items.length+' SKUs · Stock valorizado total: <b style="color:#fff">'+covFmtMM(tot)+'</b> · '
     +'demanda = egreso del CD (despacho 601 + transferencias 641), promedio '+winTxt+'</div>'
     +'<div class="cov-row">'
-    +  '<div class="cb"><div class="ct">Distribución por cobertura</div>'
+    +  '<div class="cb">'+covXlsTit('Distribución por cobertura','ptimp','Descarga en Excel todos los SKU de todos los tramos de cobertura de PT Importado')
     +    '<div style="overflow-x:auto"><table><thead><tr><th>Cobertura</th><th>Valor Stock</th><th>% Total</th><th>SKUs</th></tr></thead>'
     +    '<tbody id="cov-tb-ptimp"></tbody></table></div></div>'
     +  '<div class="cb"><div class="ct">Resumen vs metas</div>'
@@ -8001,7 +8047,7 @@ function ticCalc(skus){
       return arr.slice(0,n4).reduce(function(x,y){return x+y;},0)/n4;
     })() : null;
     buckets[k].val += val; buckets[k].cnt += 1;
-    buckets[k].items.push({sku:s.sku, desc:s.desc, comp:s.comp, stock:stock, val:val, cob:c, c4_real:s.c4r||0, fcproj4:fcproj4, h12:s.h12});
+    buckets[k].items.push({sku:s.sku, desc:s.desc, comp:s.comp, cat:s.cat, stock:stock, val:val, cob:c, c4_real:s.c4r||0, fcproj4:fcproj4, h12:s.h12});
   });
   var tot = TIC_ORDER.reduce(function(a,k){return a+buckets[k].val;},0);
   return {buckets:buckets, tot:tot};
@@ -8136,6 +8182,23 @@ function buildTICob(){
   var totCnt = TIC_ORDER.reduce(function(a,k){return a+buckets[k].cnt;},0);
   var titulo = grupo ? ('Grupo '+grupo) : 'Todos los grupos';
 
+  // Caché para el export a Excel de la base completa (mismas columnas que el detalle por bucket).
+  // El comentario sólo existe para el bucket < 2 sem (B.11.2); en el resto va vacío.
+  COVX['tic'] = {order:TIC_ORDER, label:TIC_LABEL, buckets:buckets,
+    slug:'terceros_insumos'+(grupo?('_'+grupo.replace(/[^a-z0-9]+/gi,'_').toLowerCase()):''),
+    cols:['Tramo cobertura','SKU','Descripción','Comprador','Grupo de artículo','Stock','Valor Stock',
+          'Cons. 4w real (prom. semanal)','Δ% mom 4w','FC prom 4w','Cobertura (sem)','Comentario'],
+    row:function(s){
+      var rec = TICOM[String(s.sku)];
+      // momentum4 devuelve objeto: {kind:'num',pct} o {kind:'new'} (base previa nula) o null.
+      var m = momentum4(s.h12);
+      var mom = !m ? '' : (m.kind==='new' ? 'nuevo' : Math.round(m.pct*10)/10);
+      return [s.sku, s.desc||'', s.comp||'', s.cat||'', s.stock||0, s.val||0,
+              (s.c4_real==null?'':+s.c4_real), mom,
+              (s.fcproj4==null?'':+s.fcproj4), (s.cob==null?'':+s.cob),
+              (rec&&rec.texto)?rec.texto:''];
+    }};
+
   var info = document.getElementById('tic-info');
   if(info) info.textContent = totCnt+' SKUs · '+covFmtMM(tot);
 
@@ -8146,7 +8209,8 @@ function buildTICob(){
     + '<div class="cov-tit">'+titulo+'</div>'
     + '<div class="cov-sub">Cobertura = stock / '+(ticUseFCProj?'FC proyectado próx. 4 sem':'consumo real últimas 4 sem')+' · '+totCnt+' SKUs · Stock valorizado total: <b style="color:#fff">'+covFmtMM(tot)+'</b></div>'
     + '<div class="cov-row">'
-    +   '<div class="cb"><div class="ct">Distribución por cobertura</div><div style="overflow-x:auto"><table>'
+    +   '<div class="cb">'+covXlsTit('Distribución por cobertura','tic','Descarga en Excel todos los SKU de todos los tramos de cobertura (respeta el grupo seleccionado y el toggle de importados)')
+    +     '<div style="overflow-x:auto"><table>'
     +     '<thead><tr><th>Cobertura</th><th>Valor Stock</th><th>% Total</th><th>SKUs</th></tr></thead><tbody id="tic-tb"></tbody></table></div></div>'
     +   '<div class="cb"><div class="ct">Resumen vs metas</div><div style="overflow-x:auto"><table>'
     +     '<thead><tr><th>Grupo</th><th>$ Stock</th><th>% Stock</th><th>Meta</th></tr></thead><tbody id="tic-mt"></tbody></table></div></div>'
