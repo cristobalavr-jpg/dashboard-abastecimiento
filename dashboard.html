@@ -435,6 +435,28 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .mc-dd[data-nc="Sí"]{border-color:var(--s);background:rgba(55,138,221,.10)}
 /* Comentario comprador · tabla Detalle < 2 Sem (Terceros e Insumos · B.11) */
 .tic-com-cell{min-width:200px;max-width:280px}
+/* Tabla ⛔ Stock descontinuado — 8 columnas de ancho fijo (B.6.2).
+   `table-layout:fixed` con <colgroup> en %: sin esto las columnas crecen con su contenido
+   y la tabla se va fuera de pantalla, dejando la columna Acción —la que se usa— sin ver. */
+.desc-tw{overflow-x:visible}
+.desc-tbl{table-layout:fixed;width:100%}
+.desc-tbl th,.desc-tbl td{overflow:hidden}
+.desc-tbl td{vertical-align:top;padding:7px 8px}
+.desc-tbl .ba{white-space:normal;line-height:1.3}
+.thsub{font-size:.55rem;color:#5f6b85;font-weight:400;margin-top:1px}
+.dcell-desc{font-size:.68rem;color:#e2e8f0;line-height:1.3;margin:2px 0;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dead-ta{resize:vertical;min-height:46px;line-height:1.35;font-family:inherit}
+.dead-bad{border-color:rgba(226,75,74,.55) !important}
+.dead-act{border:none;border-radius:5px;padding:5px 7px;font-size:.62rem;font-weight:700;
+  cursor:pointer;white-space:normal;width:100%;line-height:1.25}
+.dead-act.go{background:#6366f1;color:#fff}
+.dead-act.go:hover{background:#7c7ff5}
+.dead-act.off{background:#232840;color:#5a6480;cursor:not-allowed;border:1px solid var(--border)}
+.dead-act.frz{background:rgba(8,145,178,.2);color:#7dd3e8;border:1px solid rgba(8,145,178,.5)}
+@media(max-width:1250px){.desc-tw{overflow-x:auto}.desc-tbl{min-width:1180px}}
+.inv-dual2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:1100px){.inv-dual2{grid-template-columns:1fr}}
 /* Selector de tipo de producto de Inmovilizados (B.6.2) */
 .inv-fbar{display:flex;gap:13px;align-items:center;flex-wrap:wrap;background:var(--card);
   border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:10px}
@@ -1372,27 +1394,32 @@ table.tg-t{width:100%;border-collapse:collapse;font-size:.71rem;min-width:900px}
       <div class="cw" style="height:240px"><canvas id="cVER"></canvas></div>
       <div class="hint" id="verHint"></div>
     </div>
-    <div class="cb" style="padding:9px 11px">
-      <div class="ct" style="margin-bottom:6px">💣 Mayor valorización descontinuada</div>
-      <div class="inv-dual">
-        <div>
-          <div class="inv-th">🔥 Merma <span id="topMSub"></span></div>
-          <div style="max-height:200px;overflow-y:auto"><table style="font-size:.64rem"><thead><tr>
-            <th style="padding:3px 5px">SKU</th><th style="padding:3px 5px">Descripción</th>
-            <th style="padding:3px 5px;text-align:right">$Valor</th></tr></thead>
-            <tbody id="topMTb"></tbody></table></div>
-        </div>
-        <div>
-          <div class="inv-th">🛟 Plan de Acción <span id="topPSub"></span></div>
-          <div style="max-height:200px;overflow-y:auto"><table style="font-size:.64rem"><thead><tr>
-            <th style="padding:3px 5px">SKU</th><th style="padding:3px 5px">Descripción</th>
-            <th style="padding:3px 5px;text-align:right">$Valor</th></tr></thead>
-            <tbody id="topPTb"></tbody></table></div>
-        </div>
-      </div>
-      <div class="hint">Merma = capital que se castiga contra resultado · Plan de Acción = capital que se intenta recuperar. Son dos decisiones distintas y por eso van separadas.</div>
+    <div class="cb">
+      <div class="ct">🚦 Estado del seguimiento — $ descontinuado por etapa del flujo</div>
+      <div class="cw" style="height:240px"><canvas id="cWF"></canvas></div>
+      <div class="hint" id="wfHint"></div>
     </div>
   </div>
+
+  <div class="inv-dual2" style="margin-bottom:6px">
+    <div>
+      <div class="stt" style="margin-top:2px">🔥 Top 10 Merma por valorización
+        <span id="topMSub" style="float:right;font-weight:400;font-size:.63rem;color:var(--muted)"></span></div>
+      <div class="tw"><table>
+        <thead><tr><th>SKU</th><th>Descripción</th><th style="text-align:right">$Valor</th>
+          <th>Responsable</th><th>Compromiso</th><th>Estado</th></tr></thead>
+        <tbody id="topMTb"></tbody></table></div>
+    </div>
+    <div>
+      <div class="stt" style="margin-top:2px">🛟 Top 10 Plan de Acción por valorización
+        <span id="topPSub" style="float:right;font-weight:400;font-size:.63rem;color:var(--muted)"></span></div>
+      <div class="tw"><table>
+        <thead><tr><th>SKU</th><th>Descripción</th><th style="text-align:right">$Valor</th>
+          <th>Responsable</th><th>Compromiso</th><th>Estado</th></tr></thead>
+        <tbody id="topPTb"></tbody></table></div>
+    </div>
+  </div>
+  <div class="hint" style="margin-bottom:14px">Merma = capital que se castiga contra resultado · Plan de Acción = capital que se intenta recuperar. Son dos decisiones distintas y por eso van separadas: la primera se aprueba, la segunda se persigue.</div>
   <div class="stt">🪦 Stock muerto — sin movimiento en las últimas 8 semanas <button class="xls-btn" onclick="expDead('muerto')" style="float:right;background:#1D9E7530;color:#1D9E75;border:1px solid #1D9E75;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="dead-bar">
     <button id="dead-lock" class="mc-lock" onclick="mcToggleEdit()">🔒 Modo consulta</button>
@@ -1416,7 +1443,19 @@ table.tg-t{width:100%;border-collapse:collapse;font-size:.71rem;min-width:900px}
   <div class="stt">⛔ Stock descontinuado — clasificado como «no se volverá a utilizar» <button class="xls-btn" onclick="expDead('desc')" style="float:right;background:#E24B4A30;color:#E24B4A;border:1px solid #E24B4A;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="dead-bar"><span id="desc-cnt" class="dead-cnt">—</span></div>
   <div class="hint" style="margin:-3px 0 7px">Subconjunto del stock muerto marcado como <b>Mermar</b> o <b>Plan de Acción</b> — no vuelve al consumo normal. Para devolverlo a stock muerto, cambia el destino a «Próximo a utilizar» o déjalo sin clasificar.</div>
-  <div class="tw dead-tw" style="margin-bottom:14px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>$Valor</th><th title="Volumen consumido en las últimas 8 semanas">Cons.8w</th><th style="min-width:165px">Muerto</th><th style="min-width:200px">Comentario</th></tr></thead><tbody id="rot-desc"></tbody></table></div>
+  <div class="tw desc-tw" style="margin-bottom:14px"><table class="desc-tbl">
+    <colgroup><col style="width:21%"><col style="width:9%"><col style="width:11%"><col style="width:16%">
+      <col style="width:15%"><col style="width:12%"><col style="width:16%"></colgroup>
+    <thead><tr>
+      <th>Material</th>
+      <th style="text-align:right">Stock<div class="thsub">valorizado</div></th>
+      <th style="text-align:right">A mermar<div class="thsub">$ y % del stock</div></th>
+      <th>Destino<div class="thsub">y causa raíz</div></th>
+      <th>Detalle</th>
+      <th>Responsable<div class="thsub">y compromiso</div></th>
+      <th>Estado</th>
+      <th>Acción</th></tr></thead>
+    <tbody id="rot-desc"></tbody></table></div>
   <div class="stt">🐌 Slow movers — rotación &lt; 6×/año <button class="xls-btn" onclick="expXls('rot-slow','slow_movers')" style="float:right;background:#E87B2A30;color:#E87B2A;border:1px solid #E87B2A;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="tw" style="margin-bottom:14px"><table><thead><tr><th>SKU</th><th>Descripción</th><th>Tipo</th><th>Grupo</th><th>Comprador</th><th>Stock</th><th>$Valor</th><th>Rot.</th><th>Días</th></tr></thead><tbody id="rot-slow"></tbody></table></div>
   <div class="stt">Detalle por grupo · velocidad rotación</div>
@@ -2120,6 +2159,9 @@ function expXls(tbodyId, fname){
 
 
 var COMPS=['HECTOR','JAVIERA','JOSE','MATIAS','VICENTE'];
+// Color por tipo de material, usado por el selector de Inmovilizados y por los badges de
+// las tablas. Mismo criterio que INV_META.
+var TCOL={ZMPR:'#378ADD', ZEMP:'#7c3aed', ZIME:'#1D9E75'};
 var CC={HECTOR:'#534AB7',JAVIERA:'#D85A30',JOSE:'#1D9E75',MATIAS:'#E87B2A',VICENTE:'#378ADD'};
 var GC={'MP SECO':'#534AB7','MP FRIO':'#378ADD','EM OTROS EMPAQUES':'#E87B2A','EM BOLSAS':'#1D9E75','EM FILM':'#D85A30','MP ACEITES  Y GRASAS':'#BA7517','EM ETIQUETAS':'#8892b0','MP HARINAS':'#0F6E56','MP VERDURAS Y FRUTAS':'#D4537E'};
 var UMBRALES={HECTOR:{riesgo:5,monitorear_hi:10,sobrestock:20,sob_oc:30},DEFAULT:{riesgo:1,monitorear_hi:2,sobrestock:10,sob_oc:20}};
@@ -5373,6 +5415,53 @@ var DEAD_COL  = {'Mermar':'#E24B4A','Plan de Acción':'#E87B2A','Próximo a util
 var DEADC = (function(){ try{ return JSON.parse(localStorage.getItem(DEAD_LS)||'{}'); }catch(e){ return {}; } })();
 function deadSaveLS(){ try{ localStorage.setItem(DEAD_LS, JSON.stringify(DEADC)); }catch(e){} }
 function deadRec(sku){ return DEADC[String(sku)] || null; }
+// ── Campos de seguimiento (B.6.2) ──────────────────────────────────────────
+// El veredicto por sí solo no permite hacer seguimiento: hace falta por qué, cuánto, quién
+// y para cuándo. Se guardan en el mismo registro que `destino`/`coment`.
+var DEAD_CAUSAS = ['Cambio de receta / formulación','Cambio de diseño / marca',
+  'Descontinuación del PT','Fin de campaña / estacional no repetido',
+  'Sobrecompra / error de planificación','Cambio de proveedor / homologación',
+  'Vencimiento / deterioro de calidad','Otro'];
+var DEAD_DET_MIN = 10;   // caracteres mínimos del detalle libre
+function dCausa(sku){ var r=deadRec(sku); return (r&&r.causa)||''; }
+function dResp(sku){  var r=deadRec(sku); return (r&&r.resp)||''; }
+function dFecha(sku){ var r=deadRec(sku); return (r&&r.fecha)||''; }
+function dQty(u){
+  var r=deadRec(u.sku);
+  var q=(r&&r.qty!=null&&r.qty!=='')?+r.qty:null;
+  return (q==null||isNaN(q)) ? (+u.stock||0) : q;           // por defecto, todo el stock
+}
+function dPu(u){ return (u.stock>0)?(u.val/u.stock):0; }
+function dVal(u){ return dQty(u)*dPu(u); }
+function dQtyOk(u){ var q=dQty(u); return q>0 && q<=(+u.stock||0)+0.5; }
+// Un SKU clasificado «no se volverá a utilizar» que hoy ya no está muerto volvió a
+// consumirse: el veredicto quedó obsoleto y hay que revalidarlo antes de seguir.
+function dMov(u){ return u.rot_bucket!=='muerto'; }
+function dDiasRest(sku){
+  var f=dFecha(sku); if(!f) return null;
+  return Math.round((new Date(f+'T00:00:00') - new Date(new Date().toDateString()))/864e5);
+}
+function dListo(u){
+  return !!(dCausa(u.sku) && ((deadRec(u.sku)||{}).coment||'').trim().length>=DEAD_DET_MIN
+            && dResp(u.sku) && dFecha(u.sku) && dQtyOk(u) && !dMov(u));
+}
+function dEstado(u){
+  if(dMov(u)) return 'congelado';
+  return dListo(u) ? 'borrador' : 'sin_motivo';
+}
+function dVencido(u){
+  var d=dDiasRest(u.sku);
+  return d!=null && d<0 && dEstado(u)!=='congelado';
+}
+var DEAD_EST = {
+  sin_motivo:{lbl:'Sin motivo', col:'#8892b0',
+    desc:'Le falta causa raíz, detalle, cantidad, responsable o fecha de compromiso.'},
+  borrador:{lbl:'Listo para solicitar', col:'#378ADD',
+    desc:'Tiene los cinco campos. Puede pedirse la firma.'},
+  congelado:{lbl:'⚡ Congelado — hubo consumo', col:'#0891b2',
+    desc:'Volvió a consumirse después de clasificarlo. Hay que revalidar el veredicto.'}
+};
+var DEAD_EST_ORD = ['sin_motivo','borrador','congelado'];
 function deadDestino(sku){ var r=deadRec(sku); return (r && r.destino) || ''; }
 function deadIsDesc(sku){ return !!DEAD_DESC[deadDestino(sku)]; }
 
@@ -5387,7 +5476,9 @@ function deadBackendLoad(){
         DEADC = {};
         Object.keys(j.dead).forEach(function(sku){
           var c = j.dead[sku];
-          DEADC[sku] = {destino:c.destino||'', coment:c.coment||'', usuario:c.usuario||'', ts:mcNormalizeTs(c.ts)};
+          DEADC[sku] = {destino:c.destino||'', coment:c.coment||'', usuario:c.usuario||'',
+                        ts:mcNormalizeTs(c.ts), causa:c.causa||'', qty:(c.qty==null?null:c.qty),
+                        resp:c.resp||'', fecha:c.fecha||''};
         });
         deadSaveLS(); DEAD_OK = true; DEAD_STATE='ok'; return true;
       }
@@ -5395,10 +5486,13 @@ function deadBackendLoad(){
     })
     .catch(function(e){ console.warn('[dead] GET fail', e); DEAD_STATE='fail'; return false; });
 }
-function deadBackendSave(sku, destino, coment, usuario){
+function deadBackendSave(sku, destino, coment, usuario, extra){
   if(!DEAD_BACKEND_URL) return Promise.resolve({ok:false, offline:true});
+  extra = extra || {};
   var body = JSON.stringify({pin:DEAD_PIN, action:'save', sku:String(sku),
-                             destino:destino||'', coment:coment||'', usuario:usuario||''});
+                             destino:destino||'', coment:coment||'', usuario:usuario||'',
+                             causa:extra.causa||'', qty:(extra.qty==null?'':extra.qty),
+                             resp:extra.resp||'', fecha:extra.fecha||''});
   // text/plain evita el preflight CORS (Apps Script no responde OPTIONS)
   return fetch(DEAD_BACKEND_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:body})
     .then(function(r){ return r.json(); })
@@ -5411,11 +5505,14 @@ function deadBackendSave(sku, destino, coment, usuario){
 function deadSplit(){
   var out = {n:0, val:0, byG:{}, byD:{}, nD:{}, n_tot:0, val_tot:0, n_clasif:0, val_clasif:0};
   (invSkus()||[]).forEach(function(s){
-    if(s.rot_bucket!=='muerto') return;
-    var v = s.val||0;
-    out.n_tot++; out.val_tot += v;
-    var d = deadDestino(s.sku);
-    if(d){ out.n_clasif++; out.val_clasif += v; out.byD[d]=(out.byD[d]||0)+v; out.nD[d]=(out.nD[d]||0)+1; }
+    var v = s.val||0, d = deadDestino(s.sku);
+    // El avance de clasificación se mide sobre el bucket muerto (es lo que hay que triar),
+    // pero el TOTAL descontinuado cuenta todo lo marcado, siga muerto o no: si no, los que
+    // volvieron a moverse desaparecen del KPI además de la tabla.
+    if(s.rot_bucket==='muerto'){
+      out.n_tot++; out.val_tot += v;
+      if(d){ out.n_clasif++; out.val_clasif += v; out.byD[d]=(out.byD[d]||0)+v; out.nD[d]=(out.nD[d]||0)+1; }
+    }
     if(DEAD_DESC[d]){ out.n++; out.val += v; out.byG[s.grupo]=(out.byG[s.grupo]||0)+v; }
   });
   return out;
@@ -5447,8 +5544,12 @@ function deadClearQ(){
   q.value=''; deadRender(); q.focus();
 }
 function deadList(kind){
-  var arr = (invSkus()||[]).filter(function(s){ return s.rot_bucket==='muerto'; });
-  arr = arr.filter(function(s){ return kind==='desc' ? deadIsDesc(s.sku) : !deadIsDesc(s.sku); });
+  // ⛔ Descontinuado NO se filtra por bucket: un SKU marcado «no se volverá a utilizar» que
+  // hoy volvió a consumirse desaparecía de la tabla en silencio, y es justo el que hay que
+  // mirar antes de firmar la baja. 🪦 Stock muerto sí sigue acotado al bucket muerto.
+  var arr = (invSkus()||[]).filter(function(s){
+    return kind==='desc' ? deadIsDesc(s.sku) : (s.rot_bucket==='muerto' && !deadIsDesc(s.sku));
+  });
   var soloSc = el('dead-solo-sc');
   if(kind==='muerto' && soloSc && soloSc.checked) arr = arr.filter(function(s){ return !deadDestino(s.sku); });
   // Buscador (sólo tabla de stock muerto): SKU o descripción, por palabras sueltas en
@@ -5486,6 +5587,66 @@ function _deadRow(s){
         '<div class="dead-meta">'+_htmlEsc(meta)+'</div></td>'+
   '</tr>';
 }
+// Fila de ⛔ Stock descontinuado. Nueve columnas, agrupando lo que se lee junto: antes eran
+// las mismas 10 de la tabla de stock muerto, que sirven para clasificar pero no para
+// hacer seguimiento.
+function _descRow(s){
+  var sku = String(s.sku), rec = deadRec(sku) || {};
+  var dis = MC_EDIT ? '' : ' disabled';
+  var est = dEstado(s), e = DEAD_EST[est], venc = dVencido(s);
+  var q = dQty(s), parcial = q < (+s.stock||0) - 0.5, dr = dDiasRest(sku);
+  var det = (rec.coment||'').trim();
+  var plazo = dr==null ? '<span style="color:var(--muted)">—</span>'
+    : dr<0 ? '<span style="color:var(--q);font-weight:700">'+Math.abs(dr)+' d vencido</span>'
+    : dr===0 ? '<span style="color:var(--q);font-weight:700">vence hoy</span>'
+    : dr<=7 ? '<span style="color:var(--rT);font-weight:700">en '+dr+' d</span>'
+    : '<span style="color:var(--muted)">en '+dr+' d</span>';
+  return '<tr data-dsku="'+sku+'">'+
+    '<td><div class="mini">'+sku+(dMov(s)?' <span title="Volvió a consumirse" style="color:#22d3ee">⚡</span>':'')+'</div>'+
+      '<div class="dcell-desc" title="'+_htmlEsc(String(s.desc||''))+'">'+_htmlEsc(String(s.desc||''))+'</div>'+
+      '<div class="dead-meta"><span class="ba" style="background:'+(TCOL[s.tipo]||'#8892b0')+'22;color:'+
+        (TCOL[s.tipo]||'#8892b0')+';font-size:.55rem;padding:1px 5px">'+(s.tipo||'')+'</span> '+
+        _htmlEsc(String(s.grupo||''))+'</div></td>'+
+    '<td style="text-align:right"><div style="font-weight:700">'+f0(s.stock||0)+'</div>'+
+      '<div class="dead-meta">'+_htmlEsc(s.um||'')+'</div>'+
+      '<div class="dead-meta" style="color:#c0caf5">$'+f0(s.val||0)+'</div></td>'+
+    '<td style="text-align:right">'+
+      (MC_EDIT
+        ? '<input type="number" class="dead-com" style="text-align:right" min="0" step="1" max="'+(s.stock||0)+
+          '" value="'+Math.round(q)+'" onchange="dSetQty(\''+sku+'\',this.value,'+(s.stock||0)+')">'
+        : '<div style="font-weight:700">'+f0(q)+'</div>')+
+      '<div class="dead-meta">$'+f0(dVal(s))+' · <span style="color:'+(parcial?'#8ab4f8':'var(--muted)')+'">'+
+        Math.round(q/(s.stock||1)*100)+'%</span></div></td>'+
+    '<td><select class="dead-dd" onchange="deadOnDest(this)" data-sku="'+sku+'"'+dis+'>'+
+      DEAD_OPTS.map(function(x){return '<option'+(rec.destino===x?' selected':'')+'>'+x+'</option>';}).join('')+
+      '</select>'+
+      '<select class="dead-dd" style="margin-top:3px'+(dCausa(sku)?'':';border-color:rgba(226,75,74,.55)')+
+        '" onchange="dSetCausa(\''+sku+'\',this.value)"'+dis+'>'+
+      '<option value="">— elegir causa —</option>'+
+      DEAD_CAUSAS.map(function(c){return '<option'+(dCausa(sku)===c?' selected':'')+'>'+c+'</option>';}).join('')+
+      '</select></td>'+
+    '<td><textarea class="dead-com dead-ta'+(det.length>=DEAD_DET_MIN?'':' dead-bad')+'" rows="3" '+
+      'placeholder="Detalle (mín. '+DEAD_DET_MIN+' car.)" onchange="deadOnCom(this)" data-sku="'+sku+'"'+dis+'>'+
+      _htmlEsc(rec.coment||'')+'</textarea></td>'+
+    '<td><select class="dead-dd" onchange="dSetResp(\''+sku+'\',this.value)"'+dis+'>'+
+      '<option value="">— asignar —</option>'+
+      COMPS.map(function(c){return '<option'+(dResp(sku)===c?' selected':'')+'>'+c+'</option>';}).join('')+
+      '</select>'+
+      '<input type="date" class="dead-com" style="margin-top:3px" value="'+(dFecha(sku)||'')+
+        '" onchange="dSetFecha(\''+sku+'\',this.value)"'+dis+'>'+
+      '<div class="dead-meta">'+plazo+'</div></td>'+
+    '<td><span class="ba" style="background:'+e.col+'22;color:'+e.col+'" title="'+_htmlEsc(e.desc)+'">'+e.lbl+'</span>'+
+      (venc?'<div class="dead-meta" style="color:var(--q);font-weight:700">⚠ vencido</div>':'')+
+      '<div class="dead-meta">'+(rec.usuario||'—')+(rec.ts?(' · '+rec.ts):'')+'</div></td>'+
+    '<td>'+
+      (est==='congelado'
+        ? '<button class="dead-act frz" onclick="dVerCongelado(\''+sku+'\')">⚡ Revalidar</button>'
+        : dListo(s)
+          ? '<button class="dead-act go" onclick="dPedirFirma(\''+sku+'\')">📧 Solicitar firma</button>'
+          : '<button class="dead-act off" title="Falta causa raíz, detalle, cantidad, responsable o fecha">Solicitar firma</button>')+
+    '</td></tr>';
+}
+
 function deadRender(){
   var tbM = el('rot-dead'), tbD = el('rot-desc');
   if(!tbM || !tbD) return;
@@ -5495,7 +5656,7 @@ function deadRender(){
                     ' <span style="color:#6366f1;cursor:pointer;text-decoration:underline" onclick="deadClearQ()">limpiar búsqueda</span>')
                  : 'Sin stock muerto';
   tbM.innerHTML = lM.map(_deadRow).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:14px">'+vacioM+'</td></tr>';
-  tbD.innerHTML = lD.map(_deadRow).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:14px">Ningún SKU clasificado como descontinuado todavía</td></tr>';
+  tbD.innerHTML = lD.map(_descRow).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:14px">Ningún SKU clasificado como descontinuado todavía</td></tr>';
   var DS = deadSplit();
   var pct = DS.val_tot>0 ? (DS.val_clasif/DS.val_tot*100) : 0;
   var ORIGEN = {
@@ -5526,6 +5687,19 @@ function deadRender(){
           else { lk.classList.remove('on'); lk.innerHTML='🔒 Identifícate para clasificar'; } }
 }
 // ── Edición ──
+function dSetCausa(sku,v){ if(!dGuard()) { deadRender(); return; } deadSet(sku,{causa:v}); }
+function dSetResp(sku,v){  if(!dGuard()) { deadRender(); return; } deadSet(sku,{resp:v}); }
+function dSetFecha(sku,v){ if(!dGuard()) { deadRender(); return; } deadSet(sku,{fecha:v}); }
+function dSetQty(sku,v,max){
+  if(!dGuard()) { deadRender(); return; }
+  var q=parseFloat(String(v).replace(',','.')); if(isNaN(q)) q=0;
+  deadSet(sku,{qty:Math.min(Math.max(q,0), +max||0)});   // nunca más que el stock
+}
+function dGuard(){
+  if(MC_EDIT) return true;
+  mcNotif('Identifícate para clasificar (botón 🔒)', false);
+  return false;
+}
 function deadOnDest(sel){
   var sku = sel.getAttribute('data-sku');
   if(!MC_EDIT){ mcNotif('Identifícate para clasificar (botón 🔒)', false); sel.value = deadDestino(sku); return; }
@@ -5541,13 +5715,17 @@ function deadOnCom(inp){
 }
 function deadSet(sku, patch){
   sku = String(sku);
-  var cur = DEADC[sku] ? {destino:DEADC[sku].destino||'', coment:DEADC[sku].coment||'',
-                          usuario:DEADC[sku].usuario||'', ts:DEADC[sku].ts||''} : {destino:'', coment:''};
-  if(patch.destino !== undefined) cur.destino = patch.destino;
-  if(patch.coment  !== undefined) cur.coment  = patch.coment;
+  var p = DEADC[sku] || {};
+  var cur = {destino:p.destino||'', coment:p.coment||'', usuario:p.usuario||'', ts:p.ts||'',
+             causa:p.causa||'', qty:(p.qty==null?null:p.qty), resp:p.resp||'', fecha:p.fecha||''};
+  ['destino','coment','causa','qty','resp','fecha'].forEach(function(k){
+    if(patch[k] !== undefined) cur[k] = patch[k];
+  });
   cur.usuario = MC_USUARIO || cur.usuario || '';
   cur.ts = new Date().toISOString().slice(0,16).replace('T',' ');
-  if(!cur.destino && !cur.coment) delete DEADC[sku]; else DEADC[sku] = cur;
+  var vacio = !cur.destino && !cur.coment && !cur.causa && !cur.resp && !cur.fecha &&
+              (cur.qty==null || cur.qty==='');
+  if(vacio) delete DEADC[sku]; else DEADC[sku] = cur;
   deadSaveLS();
   buildKpiAv();                       // KPIs + gráficos + ambas tablas (UI optimista)
   var mk = function(txt){
@@ -5555,7 +5733,8 @@ function deadSet(sku, patch){
     var m = row && row.querySelector('.dead-meta'); if(m) m.textContent = txt;
   };
   mk('⏳ guardando…');
-  deadBackendSave(sku, cur.destino||'', cur.coment||'', cur.usuario).then(function(res){
+  deadBackendSave(sku, cur.destino||'', cur.coment||'', cur.usuario,
+                  {causa:cur.causa, qty:cur.qty, resp:cur.resp, fecha:cur.fecha}).then(function(res){
     if(res && res.offline){ mk('guardado local · '+(cur.usuario||'—')); mcNotif('Guardado ✓ (local)'); return; }
     if(res && res.ok){
       if(res.ts && DEADC[sku]){ DEADC[sku].ts = res.ts; deadSaveLS(); }
@@ -5615,6 +5794,64 @@ var invDonPct = {
 // El canvas no tiene hinting de fuentes: a 1× el texto de 9-10px sale más blando que el HTML
 // de al lado. Forzar el búfer a 2× lo deja nítido en cualquier pantalla.
 try{ Chart.defaults.devicePixelRatio = Math.max(2, window.devicePixelRatio||1); }catch(e){}
+
+// Total de la pila encima de cada barra del gráfico de estado.
+var invBarTot = {
+  id:'invBarTot',
+  afterDatasetsDraw:function(ch){
+    var ds=ch.data.datasets, n=ch.data.labels.length, x=ch.ctx;
+    x.save(); x.textAlign='center'; x.textBaseline='bottom';
+    for(var i=0;i<n;i++){
+      var tot=0, top=null;
+      ds.forEach(function(d,j){
+        var v=d.data[i]||0; tot+=v;
+        if(v>0){ var e2=ch.getDatasetMeta(j).data[i]; if(top===null||e2.y<top) top=e2.y; }
+      });
+      if(!tot||top===null) continue;
+      x.fillStyle='#e2e8f0'; x.font='700 10.5px "Segoe UI",system-ui,sans-serif';
+      x.fillText('$'+tot.toFixed(1)+' MM', ch.getDatasetMeta(0).data[i].x, top-5);
+    }
+    x.restore();
+  }
+};
+
+// Acciones de la fila de ⛔. El envío automático del correo llega con el backend de firmas
+// (Fase 2); por ahora la ventana muestra exactamente qué saldría y a quién.
+function dPedirFirma(sku){
+  var u = (invSkus()||[]).filter(function(x){return String(x.sku)===String(sku);})[0];
+  if(!u) return;
+  var merma = deadDestino(sku)==='Mermar';
+  var q=dQty(u), det=((deadRec(sku)||{}).coment||'');
+  mcNotif('Vista previa de la solicitud — el envío automático llega con el backend de firmas');
+  alert('SOLICITUD DE '+(merma?'APROBACIÓN DE MERMA':'VISTO BUENO DE PLAN DE ACCIÓN')+'\n'+
+    '─────────────────────────────────────────\n'+
+    'Para: Cristóbal Villanueva (Subgerencia)\n'+
+    (merma?'Luego: Meni (Gerencia de Adquisiciones)\n':'')+
+    '\nMaterial      '+sku+' · '+String(u.desc||'').slice(0,40)+
+    '\nA dar de baja '+f0(q)+' '+(u.um||'')+' de '+f0(u.stock||0)+
+    '\nCastigo       $'+f0(dVal(u))+
+    '\nCausa raíz    '+dCausa(sku)+
+    '\nDetalle       '+det.slice(0,70)+
+    '\nResponsable   '+dResp(sku)+
+    '\nCompromiso    '+dFecha(sku)+
+    '\n─────────────────────────────────────────\n'+
+    'El envío automático y la página de firma se habilitan con el\n'+
+    'backend de aprobaciones (ver WORKFLOW_INMOVILIZADOS.md).');
+}
+function dVerCongelado(sku){
+  var u = (invSkus()||[]).filter(function(x){return String(x.sku)===String(sku);})[0];
+  if(!u) return;
+  alert('⚡ VEREDICTO OBSOLETO — '+sku+'\n'+
+    '─────────────────────────────────────────\n'+
+    String(u.desc||'')+'\n\n'+
+    'Se clasificó como «'+deadDestino(sku)+'» cuando llevaba 8 semanas sin consumo,\n'+
+    'pero hoy su rotación es «'+u.rot_bucket+'»: la planta volvió a usarlo.\n\n'+
+    'Consumo últimas 8 sem: '+f0(u.c8_real||0)+' '+(u.um||'')+'\n'+
+    'Valorización en juego: $'+f0(u.val||0)+'\n\n'+
+    'Confirma el veredicto o cámbialo a «Próximo a utilizar».\n'+
+    'Mientras esté así no puede pedirse la firma: aprobar la baja de\n'+
+    'material que la planta consume es el error que este control evita.');
+}
 
 // ── KPIs AVANZADOS ──
 function buildKpiAv(){
@@ -5798,19 +6035,74 @@ function buildKpiAv(){
     ' — hasta que no se tipifica, nadie se hace cargo.'+
     (INV_TIPOS.ZIME?' <span style="color:#1D9E75">Incluye Terceros e Insumos.</span>':'');
 
+  // ── Estado del seguimiento (B.6.2) ──
+  // Una barra por etapa sobre el TOTAL, en el orden del flujo: se lee como el embudo del
+  // proceso. Cada barra se parte en «en plazo» y «vencido», porque el vencimiento es una
+  // marca sobre la etapa, no una etapa aparte.
+  var _desc = (invSkus()||[]).filter(function(x){ return DEAD_DESC[deadDestino(x.sku)]; });
+  var byE={}; DEAD_EST_ORD.forEach(function(k){ byE[k]={val:0,venc:0,n:0,nv:0}; });
+  _desc.forEach(function(x){
+    var k=dEstado(x); if(!byE[k]) byE[k]={val:0,venc:0,n:0,nv:0};
+    byE[k].n++;
+    if(dVencido(x)){ byE[k].venc+=(x.val||0); byE[k].nv++; } else byE[k].val+=(x.val||0);
+  });
+  var ests = DEAD_EST_ORD.filter(function(k){ return byE[k].n>0; });
+  var CORTO = {sin_motivo:['Sin motivo'], borrador:['Listo p/','solicitar'], congelado:['⚡ Congelado']};
+  var cWf=el('cWF').getContext('2d'); if(window._cWF)window._cWF.destroy();
+  window._cWF=new Chart(cWf,{type:'bar',
+    data:{labels:ests.map(function(k){ return CORTO[k]||[DEAD_EST[k].lbl]; }),
+      datasets:[
+        {label:'En plazo', backgroundColor:'#8ec86b', borderColor:'#9ed47d', borderWidth:1,
+         borderRadius:3, data:ests.map(function(k){ return +(byE[k].val/1e6).toFixed(2); })},
+        {label:'⚠ Vencido', backgroundColor:'#ef8a87', borderColor:'#f5a6a4', borderWidth:1,
+         borderRadius:3, data:ests.map(function(k){ return +(byE[k].venc/1e6).toFixed(2); })}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18}},
+      plugins:{legend:{position:'top',align:'end',
+                 labels:{color:'#c0caf5',boxWidth:11,boxHeight:11,font:{size:10},padding:9}},
+        tooltip:{filter:function(x){return x.raw>0;},callbacks:{
+          title:function(x){ return DEAD_EST[ests[x[0].dataIndex]].lbl; },
+          label:function(x){ return x.dataset.label+': $'+x.raw.toFixed(1)+' MM'; },
+          afterBody:function(x){ var b=byE[ests[x[0].dataIndex]];
+            return [b.n+' SKU'+(b.nv?' · '+b.nv+' vencidos':''), DEAD_EST[ests[x[0].dataIndex]].desc]; }}}},
+      scales:{x:{stacked:true,grid:{display:false},
+                 ticks:{color:'#c0caf5',font:{size:9},maxRotation:0,autoSkip:false,
+                   callback:function(v,i){ var l=this.getLabelForValue(v);
+                     return (Array.isArray(l)?l:[l]).concat([byE[ests[i]].n+' SKU']); }}},
+              y:{stacked:true,beginAtZero:true,grid:{color:'#2d3452'},
+                 ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+v+'MM';}}}}},
+    plugins:[invBarTot]});
+  var _nV = ests.reduce(function(a,k){ return a+byE[k].nv; },0);
+  if(el('wfHint')) el('wfHint').innerHTML =
+    'Total en seguimiento <b>$'+fMM(_desc.reduce(function(a,x){return a+(x.val||0);},0))+'</b> en <b>'+
+    _desc.length+' SKU</b>. <b style="color:#8ec86b">Verde</b> = dentro del plazo · '+
+    '<b style="color:#ef8a87">rojo</b> = vencido'+
+    (_nV?' — <b style="color:var(--q)">'+_nV+' SKU</b> pasaron su fecha.':'.')+
+    ' Las etapas de firma se agregan cuando exista el backend de aprobaciones.';
+
   // Dos tablas top-10: Merma y Plan de Acción por separado.
   ['Mermar','Plan de Acción'].forEach(function(dst,i){
-    var sub2 = _mueAll.filter(function(x){ return deadDestino(x.sku)===dst; })
+    var sub2 = (invSkus()||[]).filter(function(x){ return deadDestino(x.sku)===dst; })
                       .sort(function(a,b){ return (b.val||0)-(a.val||0); });
     var top = sub2.slice(0,10);
     var elS = el(i?'topPSub':'topMSub');
-    if(elS) elS.textContent = sub2.length+' SKU · $'+fMM(sub2.reduce(function(a,x){return a+(x.val||0);},0));
+    if(elS) elS.textContent = top.length+' de '+sub2.length+' · $'+
+      fMM(top.reduce(function(a,x){return a+(x.val||0);},0))+' de $'+
+      fMM(sub2.reduce(function(a,x){return a+(x.val||0);},0));
     var elT = el(i?'topPTb':'topMTb'); if(!elT) return;
     elT.innerHTML = top.map(function(x){
-      return '<tr><td style="padding:3px 5px;font-family:monospace;font-size:.6rem">'+x.sku+'</td>'+
-        '<td style="padding:3px 5px">'+_htmlEsc(String(x.desc||'').slice(0,24))+'</td>'+
-        '<td style="padding:3px 5px;text-align:right;font-weight:700">$'+f0(x.val||0)+'</td></tr>';
-    }).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:10px">Ninguno</td></tr>';
+      var e=DEAD_EST[dEstado(x)], dr=dDiasRest(x.sku), f=dFecha(x.sku);
+      var plazo = dr==null ? '<span style="color:var(--muted)">—</span>'
+        : dr<0 ? '<span style="color:var(--q);font-weight:700">'+Math.abs(dr)+' d venc.</span>'
+        : dr<=7 ? '<span style="color:var(--rT);font-weight:700">en '+dr+' d</span>'
+        : '<span style="color:var(--muted)">en '+dr+' d</span>';
+      return '<tr><td style="font-family:monospace;font-size:.6rem">'+x.sku+'</td>'+
+        '<td>'+_htmlEsc(String(x.desc||'').slice(0,26))+'</td>'+
+        '<td style="text-align:right;font-weight:700">$'+f0(x.val||0)+'</td>'+
+        '<td style="font-size:.64rem">'+(dResp(x.sku)||'<span style="color:var(--rT)">sin asignar</span>')+'</td>'+
+        '<td style="font-size:.63rem">'+(f?f.split('-').reverse().join('-'):'—')+
+          '<div class="dead-meta">'+plazo+'</div></td>'+
+        '<td><span class="ba" style="background:'+e.col+'22;color:'+e.col+'">'+e.lbl+'</span></td></tr>';
+    }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:12px">Ninguno</td></tr>';
   });
 
   // Gráfico 2: stock apilado por grupo (activo vs slow vs muerto) — $ MM
