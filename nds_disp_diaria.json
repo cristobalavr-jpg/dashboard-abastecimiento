@@ -1,5 +1,5 @@
 {
- "generado": "2026-09-23T09:50:10",
+ "generado": "2026-09-24T10:06:06",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -4287,6 +4287,64 @@
     {
      "sku": "400495",
      "desc": "ETIQ CAS ENS POLLO CÉSAR 03.25"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-09-24",
+   "disp": 97.4,
+   "n_solic": 469,
+   "n_cero": 12,
+   "n_excl_granel": 8,
+   "n_anom_neg": 5,
+   "skus_cero": [
+    {
+     "sku": "300314",
+     "desc": "COMINO MOLIDO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300378",
+     "desc": "SABOR CHOCOLATE POLVO"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "300569",
+     "desc": "SABORIZANTE POLLO ASADO ID-701455"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400327",
+     "desc": "BLONDA REDONDA N° 6"
+    },
+    {
+     "sku": "400364",
+     "desc": "BOLSA CAS PAN LOMITO 12.24 PEBD40"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400603",
+     "desc": "CAPSULA MARRON 50X29 (MAGDALENA)"
+    },
+    {
+     "sku": "400616",
+     "desc": "BANDEJA CARTULINA MUFFIN P2 10.25"
+    },
+    {
+     "sku": "400662",
+     "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
     }
    ]
   }
