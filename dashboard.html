@@ -435,6 +435,22 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .mc-dd[data-nc="Sí"]{border-color:var(--s);background:rgba(55,138,221,.10)}
 /* Comentario comprador · tabla Detalle < 2 Sem (Terceros e Insumos · B.11) */
 .tic-com-cell{min-width:200px;max-width:280px}
+/* Selector de tipo de producto de Inmovilizados (B.6.2) */
+.inv-fbar{display:flex;gap:13px;align-items:center;flex-wrap:wrap;background:var(--card);
+  border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:10px}
+.inv-fgl{font-size:.63rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.inv-chips{display:flex;gap:6px;flex-wrap:wrap}
+.inv-chip{background:#232840;border:1px solid var(--border);border-radius:14px;padding:4px 11px;
+  font-size:.67rem;color:var(--muted);cursor:pointer;user-select:none;display:flex;align-items:center;gap:5px}
+.inv-chip:hover{border-color:#475670;color:#c0caf5}
+.inv-chip i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.inv-chip small{font-size:.59rem;opacity:.75}
+.inv-cnt{margin-left:auto;font-size:.65rem;color:var(--muted)}
+.inv-cnt b{color:#c0caf5}
+.inv-dual{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:900px){.inv-dual{grid-template-columns:1fr}}
+.inv-th{font-size:.66rem;font-weight:700;color:#c0caf5;margin-bottom:4px}
+.inv-th span{font-weight:400;font-size:.58rem;color:var(--muted)}
 /* Clasificación de stock muerto / descontinuado (Inmovilizados · B.6.1) */
 .dead-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 7px}
 .dead-cnt{font-size:.66rem;color:var(--muted)}
@@ -1327,6 +1343,11 @@ table.tg-t{width:100%;border-collapse:collapse;font-size:.71rem;min-width:900px}
   <div style="background:rgba(55,138,221,.06);border:1px solid rgba(55,138,221,.25);border-radius:7px;padding:8px 12px;margin-bottom:10px;font-size:.7rem;color:#a4cef0">
     💡 <b>Capital atrapado</b> = stock que no rota lo suficiente. Se mide por <b>3 lentes complementarios</b>: (1) <b>exceso sobre 10 semanas de cobertura</b> (sobrestock financiero), (2) <b>slow movers</b> con rotación &lt; 6×/año, (3) <b>stock muerto</b> sin consumo en las últimas 8 semanas. Rot 4,7× significa que el stock rota 4,7 veces al año (≈78 días de inventario). Objetivo SKUs secos: 12-15×; frescos: 26×+.
   </div>
+  <div class="inv-fbar">
+    <span class="inv-fgl">Tipo de producto</span>
+    <div class="inv-chips" id="inv-chips"></div>
+    <span class="inv-cnt" id="inv-cnt"></span>
+  </div>
   <div class="kpia" id="cap-kpis"></div>
   <div class="cr" style="margin-bottom:12px">
     <div class="cb">
@@ -1347,13 +1368,29 @@ table.tg-t{width:100%;border-collapse:collapse;font-size:.71rem;min-width:900px}
   </div>
   <div class="cr" style="margin-bottom:12px">
     <div class="cb">
-      <div class="ct">Distribución del stock por velocidad de rotación (%$ valor)</div>
-      <div class="cw" style="height:230px"><canvas id="cROTbk"></canvas></div>
-      <div class="hint">Rápido ≥26× · Normal 12-26× · Lento 6-12× · Slow &lt;6× · Muerto = 8 sem sin mov. · Descontinuado = muerto clasificado como «no se vuelve a usar»</div>
+      <div class="ct">🧭 Veredicto del stock muerto — $ por destino</div>
+      <div class="cw" style="height:240px"><canvas id="cVER"></canvas></div>
+      <div class="hint" id="verHint"></div>
     </div>
-    <div class="cb" style="padding:8px 10px">
-      <div class="ct" style="margin-bottom:6px">Detalle por grupo · cobertura financiera <button class="xls-btn" onclick="expXls('cap-tbl','capital_por_grupo')" style="float:right;background:#37475a30;color:#a4b4ce;border:1px solid #475670;border-radius:5px;padding:1px 6px;font-size:.62rem;cursor:pointer">📥 Excel</button></div>
-      <div style="max-height:240px;overflow-y:auto"><table style="font-size:.66rem"><thead><tr><th style="padding:4px 5px">Grupo</th><th style="padding:4px 5px;text-align:right">SKUs</th><th style="padding:4px 5px;text-align:right">$Sob.</th><th style="padding:4px 5px;text-align:right">$Exc.</th><th style="padding:4px 5px;text-align:right">%</th></tr></thead><tbody id="cap-tbl"></tbody></table></div>
+    <div class="cb" style="padding:9px 11px">
+      <div class="ct" style="margin-bottom:6px">💣 Mayor valorización descontinuada</div>
+      <div class="inv-dual">
+        <div>
+          <div class="inv-th">🔥 Merma <span id="topMSub"></span></div>
+          <div style="max-height:200px;overflow-y:auto"><table style="font-size:.64rem"><thead><tr>
+            <th style="padding:3px 5px">SKU</th><th style="padding:3px 5px">Descripción</th>
+            <th style="padding:3px 5px;text-align:right">$Valor</th></tr></thead>
+            <tbody id="topMTb"></tbody></table></div>
+        </div>
+        <div>
+          <div class="inv-th">🛟 Plan de Acción <span id="topPSub"></span></div>
+          <div style="max-height:200px;overflow-y:auto"><table style="font-size:.64rem"><thead><tr>
+            <th style="padding:3px 5px">SKU</th><th style="padding:3px 5px">Descripción</th>
+            <th style="padding:3px 5px;text-align:right">$Valor</th></tr></thead>
+            <tbody id="topPTb"></tbody></table></div>
+        </div>
+      </div>
+      <div class="hint">Merma = capital que se castiga contra resultado · Plan de Acción = capital que se intenta recuperar. Son dos decisiones distintas y por eso van separadas.</div>
     </div>
   </div>
   <div class="stt">🪦 Stock muerto — sin movimiento en las últimas 8 semanas <button class="xls-btn" onclick="expDead('muerto')" style="float:right;background:#1D9E7530;color:#1D9E75;border:1px solid #1D9E75;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
@@ -1731,7 +1768,10 @@ function dArrow(v, invert){
   var good = invert ? !up : up;
   var col = good ? 'var(--n)' : 'var(--q)';
   var arrow = up?'▲':'▼';
-  var fmt = (typeof v==='number'&&Math.abs(v)>=1000)?fMM(v):(typeof v==='number'?(Math.abs(v)<1?v.toFixed(1):f0(v)):v);
+  // El signo se antepone aparte, así que el número va en valor absoluto: si no, un delta
+  // negativo salía como «▼ --44.6 MM» con doble guión.
+  var av = (typeof v==='number') ? Math.abs(v) : v;
+  var fmt = (typeof av==='number'&&av>=1000)?fMM(av):(typeof av==='number'?(av<1?av.toFixed(1):f0(av)):av);
   return '<span style="font-size:.62rem;font-weight:700;color:'+col+';margin-left:4px;white-space:nowrap">'+arrow+' '+(up?'+':'-')+fmt+'</span>';
 }
 function dArrowPct(v, invert){
@@ -1749,6 +1789,75 @@ function curSkus(){
   return arr;
 }
 function anyFilter(){ return !!gCompFilter || ppaActive(); }
+
+// ── Universo de Capital Inmovilizado (B.6.2) ──────────────────────────────
+// Hasta W39 la sección miraba sólo ZMPR+ZEMP. Terceros e Insumos (ZIME) quedaba fuera, y
+// ahí había 24 SKU muertos por $51 MM que nadie veía. Se incorpora derivando en el front
+// los campos que el pipeline sí calcula para MP/EM, porque ZIME no tiene FC explosionado:
+//   c8  = suma de las últimas 8 sem de TI.h12 (MB51 mov 601, fallback plantas)
+//   rot = c4_real × 52 / stock      pu = valor MOBIDIC / stock
+//   cap_exc = (stock/c4_real − 10) × c4_real × pu
+// Los cortes de bucket son los mismos que MP/EM, así el apilado es comparable.
+var INV_TIPOS = {ZMPR:1, ZEMP:1, ZIME:1};
+var _tiInvCache = null;
+function tiInv(){
+  if(_tiInvCache) return _tiInvCache;
+  _tiInvCache = ((typeof TI!=='undefined' && TI && TI.skus) ? TI.skus : []).map(function(t){
+    var h = t.h12 || [];
+    var c8 = h.slice(-8).reduce(function(a,b){ return a + (+b||0); }, 0);
+    var stock = +t.stock||0, val = +t.valor||0, c4r = +t.c4r||0;
+    var pu = stock>0 ? val/stock : 0;
+    var rot = (t.rot===null||t.rot===undefined) ? null : +t.rot;
+    var cob = c4r>0 ? stock/c4r : 999;
+    var cap = (c4r>0 && cob!==999) ? Math.max(cob-10,0)*c4r*pu : 0;
+    var bk = stock<=0 ? 'sin_stock'
+           : c8<=0    ? 'muerto'
+           : (rot===null || rot<=0 || rot<6) ? 'slow'
+           : rot<12 ? 'lento' : rot<26 ? 'normal' : 'rapido';
+    return {sku:String(t.sku), desc:t.desc||'', tipo:'ZIME', grupo:t.cat||'', comp:t.comp||'SIN ASIGNAR',
+            stock:stock, val:val, pu:pu, c4:0, c4_real:c4r, c8_real:c8,
+            rot:rot, dias:t.dias===undefined?null:t.dias, rot_bucket:bk,
+            cap_exc:Math.round(cap), um:t.um||'', _zime:1};
+  });
+  return _tiInvCache;
+}
+// Universo efectivo de la pestaña: respeta el selector de tipo + el filtro global + PPA.
+function invSkus(){
+  var out = [];
+  var ppa = ppaActive();
+  (SKUS||[]).forEach(function(x){
+    if(!INV_TIPOS[x.tipo]) return;
+    if(gCompFilter && x.comp!==gCompFilter) return;
+    if(ppa && isPPA(x.sku)) return;
+    out.push(x);
+  });
+  if(INV_TIPOS.ZIME) tiInv().forEach(function(x){
+    if(gCompFilter && x.comp!==gCompFilter) return;
+    if(ppa && isPPA(x.sku)) return;
+    out.push(x);
+  });
+  return out;
+}
+function invTog(k){
+  var on = Object.keys(INV_TIPOS).filter(function(x){ return INV_TIPOS[x]; });
+  if(INV_TIPOS[k] && on.length===1) return;   // nunca dejar el universo vacío
+  INV_TIPOS[k] = INV_TIPOS[k] ? 0 : 1;
+  invChips(); buildKpiAv();
+}
+var INV_META = [{k:'ZMPR',lbl:'Materia prima',col:'#378ADD'},
+                {k:'ZEMP',lbl:'Envases y empaques',col:'#7c3aed'},
+                {k:'ZIME',lbl:'Terceros e Insumos',col:'#1D9E75'}];
+function invChips(){
+  var c = el('inv-chips'); if(!c) return;
+  c.innerHTML = INV_META.map(function(t){
+    var n = t.k==='ZIME' ? tiInv().length : (SKUS||[]).filter(function(x){return x.tipo===t.k;}).length;
+    var on = !!INV_TIPOS[t.k];
+    return '<span class="inv-chip'+(on?' on':'')+'" style="'+(on?'border-color:'+t.col+
+      ';background:'+t.col+'22;color:'+t.col:'')+'" onclick="invTog(\''+t.k+'\')">'+
+      '<i style="background:currentColor;opacity:'+(on?1:.35)+'"></i>'+t.lbl+
+      ' <small>'+t.k+' · '+n+'</small></span>';
+  }).join('');
+}
 
 // Recalcula R (per-comprador rollup) desde SKUS subset. Misma lógica que script Python.
 function aggR(skus){
@@ -1937,8 +2046,10 @@ function aggBIAS(skus){
 function effG(){    return anyFilter() ? aggG(curSkus())    : G; }
 function effGR(){   return anyFilter() ? aggGroupedByTipo(curSkus())  : GR; }
 function effGD(){   return anyFilter() ? aggGroupedByGrupo(curSkus()) : GD; }
-function effCAP(){  return anyFilter() ? aggCAP(curSkus())  : CAP; }
-function effROT(){  return anyFilter() ? aggROT(curSkus())  : ROT; }
+// Siempre se recalcula: el precomputado del pipeline sólo cubre ZMPR+ZEMP, así que con el
+// selector de tipo activo no serviría. Son ~1.400 SKU, el costo es irrelevante.
+function effCAP(){  return aggCAP(invSkus()); }
+function effROT(){  return aggROT(invSkus()); }
 function effBIAS(){ return anyFilter() ? aggBIAS(curSkus()) : BIAS; }
 function effBLOQ(){
   if(!anyFilter()) return BLOQ;
@@ -5299,7 +5410,7 @@ function deadBackendSave(sku, destino, coment, usuario){
 // el ajuste es coherente con el ROT que devuelve effROT().
 function deadSplit(){
   var out = {n:0, val:0, byG:{}, byD:{}, nD:{}, n_tot:0, val_tot:0, n_clasif:0, val_clasif:0};
-  (curSkus()||[]).forEach(function(s){
+  (invSkus()||[]).forEach(function(s){
     if(s.rot_bucket!=='muerto') return;
     var v = s.val||0;
     out.n_tot++; out.val_tot += v;
@@ -5336,7 +5447,7 @@ function deadClearQ(){
   q.value=''; deadRender(); q.focus();
 }
 function deadList(kind){
-  var arr = (curSkus()||[]).filter(function(s){ return s.rot_bucket==='muerto'; });
+  var arr = (invSkus()||[]).filter(function(s){ return s.rot_bucket==='muerto'; });
   arr = arr.filter(function(s){ return kind==='desc' ? deadIsDesc(s.sku) : !deadIsDesc(s.sku); });
   var soloSc = el('dead-solo-sc');
   if(kind==='muerto' && soloSc && soloSc.checked) arr = arr.filter(function(s){ return !deadDestino(s.sku); });
@@ -5472,6 +5583,39 @@ function expDead(kind){
   }catch(e){ alert('Error exportando: '+e.message); }
 }
 
+// Cifras dibujadas sobre la dona: el tooltip obliga a pasar el mouse por cada porción para
+// leer un dato que se necesita de un vistazo. Plugin inline porque dashboard.html no carga
+// chartjs-plugin-datalabels (sólo lo usa quiebres.html, en su propio iframe).
+var invDonPct = {
+  id:'invDonPct',
+  afterDatasetsDraw:function(ch){
+    var mt=ch.getDatasetMeta(0), d=ch.data.datasets[0].data;
+    var tot=d.reduce(function(a,b){return a+(b||0);},0); if(!tot) return;
+    var x=ch.ctx; x.save(); x.textAlign='center'; x.textBaseline='middle'; x.lineJoin='round';
+    mt.data.forEach(function(arc,i){
+      var v=d[i]||0; if(!v) return;
+      var pct=v/tot*100; if(pct<7) return;
+      var p=arc.tooltipPosition();
+      x.strokeStyle='rgba(15,17,23,.55)';
+      x.font='700 11.5px "Segoe UI",system-ui,sans-serif';
+      x.lineWidth=3; x.strokeText('$'+v.toFixed(1)+' MM', p.x, p.y-6);
+      x.fillStyle='#fff'; x.fillText('$'+v.toFixed(1)+' MM', p.x, p.y-6);
+      x.font='600 10px "Segoe UI",system-ui,sans-serif';
+      x.lineWidth=2.5; x.strokeText(pct.toFixed(0)+'%', p.x, p.y+7);
+      x.fillStyle='rgba(255,255,255,.9)'; x.fillText(pct.toFixed(0)+'%', p.x, p.y+7);
+    });
+    var c=mt.data[0];
+    if(c){ x.fillStyle='#e2e8f0'; x.font='800 17px "Segoe UI",system-ui,sans-serif';
+      x.fillText('$'+tot.toFixed(1)+' MM', c.x, c.y-7);
+      x.fillStyle='#8892b0'; x.font='600 10px "Segoe UI",system-ui,sans-serif';
+      x.fillText('stock muerto', c.x, c.y+10); }
+    x.restore();
+  }
+};
+// El canvas no tiene hinting de fuentes: a 1× el texto de 9-10px sale más blando que el HTML
+// de al lado. Forzar el búfer a 2× lo deja nítido en cualquier pantalla.
+try{ Chart.defaults.devicePixelRatio = Math.max(2, window.devicePixelRatio||1); }catch(e){}
+
 // ── KPIs AVANZADOS ──
 function buildKpiAv(){
   // Vistas efectivas (filtradas si gCompFilter está set, sino globales).
@@ -5479,7 +5623,11 @@ function buildKpiAv(){
   var CAP=effCAP(), ROT=effROT(), BIAS=effBIAS();
   // ── Capital Inmovilizado consolidado (cobertura + rotación) ──
   // KPIs unificados: exceso financiero · slow movers · stock muerto · stock total atrapado
-  var dCap=gCompFilter?{}:(DELTAS.CAP||{}); var dRot=gCompFilter?{}:(DELTAS.ROT||{});
+  // Los snapshots semanales sólo contienen ZMPR+ZEMP. Con Terceros e Insumos activo, la
+  // flecha vs. semana anterior compararía un universo contra otro y mostraría un alza que
+  // no ocurrió: se oculta hasta que haya snapshots con el universo nuevo (B.6.2).
+  var _sinDelta = gCompFilter || !!INV_TIPOS.ZIME;
+  var dCap=_sinDelta?{}:(DELTAS.CAP||{}); var dRot=_sinDelta?{}:(DELTAS.ROT||{});
   var totalAtrap = (ROT.val_slow||0) + (ROT.val_muerto||0);
   // Split manual del stock muerto (B.6.1): lo clasificado como "no se vuelve a usar" sale del
   // bucket muerto y forma la categoría Stock descontinuado. El total muerto+descontinuado no cambia.
@@ -5495,10 +5643,14 @@ function buildKpiAv(){
     '<div class="kpia-card danger" title="Sin consumo real en '+ROT.sem_dead+' semanas y aún sin veredicto de baja (incluye los marcados «Próximo a utilizar»). Total muerto antes del split: $'+fMM(ROT.val_muerto)+' · '+ROT.n_muerto+' SKUs."><div class="kpia-n">$'+fMM(vMueRes)+aMue+'</div><div class="kpia-l">🪦 Stock muerto ('+nMueRes+' SKUs · '+ROT.sem_dead+' sem sin mov.)</div></div>'+
     '<div class="kpia-card danger" title="SKUs muertos clasificados manualmente como Mermar o Plan de Acción — no vuelven al consumo normal. '+DSP.n_clasif+' de '+DSP.n_tot+' SKUs muertos ya clasificados."><div class="kpia-n">$'+fMM(DSP.val)+'</div><div class="kpia-l">⛔ Stock descontinuado ('+DSP.n+' SKUs · no se vuelve a usar)</div></div>'+
     '<div class="kpia-card"><div class="kpia-n">'+ROT.doh_pond+' días'+dArrow(dRot.doh_pond,true)+'</div><div class="kpia-l">Días inv. ponderados por $ (DOH)</div></div>';
+  invChips();
+  var _inv = invSkus();
+  if(el('inv-cnt')) el('inv-cnt').innerHTML = '<b>'+f0(_inv.length)+'</b> SKU · <b>$'+
+    fMM(_inv.reduce(function(a,x){return a+(x.val||0);},0))+'</b> en stock';
   var capG=CAP.grupos.slice().sort(function(a,b){return b.capital-a.capital;});
   var cC=el('cCAP').getContext('2d');if(window._cCAP)window._cCAP.destroy();
   window._cCAP=new Chart(cC,{type:'bar',data:{labels:capG.map(function(g){return g.grupo_articulo;}),datasets:[{data:capG.map(function(g){return +(g.capital/1e6).toFixed(1);}),backgroundColor:capG.map(function(g){return (GC[g.grupo_articulo]||'#888')+'99';}),borderColor:capG.map(function(g){return GC[g.grupo_articulo]||'#888';}),borderWidth:1.5,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(x){return '$'+x.raw.toFixed(1)+' MM';}}}},scales:{x:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+v+'MM';}},grid:{color:'#2d3452'}},y:{ticks:{color:'#e2e8f0',font:{size:10.5}}}},onClick:function(e,el2){if(el2.length)opKpiDw(capG[el2[0].index].grupo_articulo,'sob');}}});
-  el('cap-tbl').innerHTML=capG.map(function(g){var pct=g.valor>0?Math.round(g.capital/g.valor*100):0;return '<tr><td style="padding:3px 5px">'+g.grupo_articulo+'</td><td style="padding:3px 5px;text-align:right">'+f0(g.n)+'</td><td style="padding:3px 5px;text-align:right">$'+fMM(g.valor)+'</td><td style="padding:3px 5px;text-align:right;font-weight:700;color:var(--rT)">$'+fMM(g.capital)+'</td><td style="padding:3px 5px;text-align:right">'+pct+'%</td></tr>';}).join('');
+  if(el('cap-tbl')) el('cap-tbl').innerHTML=capG.map(function(g){var pct=g.valor>0?Math.round(g.capital/g.valor*100):0;return '<tr><td style="padding:3px 5px">'+g.grupo_articulo+'</td><td style="padding:3px 5px;text-align:right">'+f0(g.n)+'</td><td style="padding:3px 5px;text-align:right">$'+fMM(g.valor)+'</td><td style="padding:3px 5px;text-align:right;font-weight:700;color:var(--rT)">$'+fMM(g.capital)+'</td><td style="padding:3px 5px;text-align:right">'+pct+'%</td></tr>';}).join('');
 
   // ── Desviación FC (proxy ponderado por $) ──
   var dBias=gCompFilter?{}:(DELTAS.BIAS||{});
@@ -5617,30 +5769,55 @@ function buildKpiAv(){
     el('rot-kpis').innerHTML='';
   }
 
-  // Gráfico 1: distribución del stock por bucket de velocidad ($)
-  // El bucket 'muerto' se parte en muerto residual + descontinuado según la clasificación manual.
-  var distData=(ROT.bucket_dist||[]).map(function(d){
-    if(d.b!=='muerto') return d;
-    return {b:'muerto', n:Math.max((d.n||0)-DSP.n,0), val:Math.max((d.val||0)-DSP.val,0)};
+  // ── Veredicto del stock muerto (B.6.2) ──
+  // Reemplaza a «Distribución por velocidad», que repetía en % lo que el apilado de al lado
+  // ya muestra en $. Acá la pregunta es otra: de todo el stock muerto, ¿cuánto tiene veredicto?
+  var _mueAll = (invSkus()||[]).filter(function(x){ return x.rot_bucket==='muerto'; });
+  var VD = [['Mermar',0,0],['Plan de Acción',0,0],['Próximo a utilizar',0,0],['',0,0]];
+  _mueAll.forEach(function(x){
+    var i = DEAD_OPTS.indexOf(deadDestino(x.sku)); if(i<0) i=3;
+    VD[i][1]+=x.val||0; VD[i][2]++;
   });
-  if(DSP.n>0) distData=distData.concat([{b:'descont', n:DSP.n, val:DSP.val}]);
-  var cBk=el('cROTbk').getContext('2d');if(window._cROTbk)window._cROTbk.destroy();
-  window._cROTbk=new Chart(cBk,{type:'bar',
-    data:{labels:distData.map(function(d){return BK_LBL[d.b];}),
-          datasets:[{data:distData.map(function(d){return +(d.val/1e6).toFixed(1);}),
-                     backgroundColor:distData.map(function(d){return BK_COL[d.b]+'99';}),
-                     borderColor:distData.map(function(d){return BK_COL[d.b];}),
-                     borderWidth:1.5,borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:function(x){return '$'+x.raw.toFixed(1)+' MM';},
-                            afterLabel:function(x){return distData[x.dataIndex].n+' SKUs';}}}},
-      scales:{x:{ticks:{color:'#8892b0',font:{size:10}}},
-              y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+v+'MM';}},grid:{color:'#2d3452'}}}}});
+  var _totMue = _mueAll.reduce(function(a,x){return a+(x.val||0);},0);
+  var cVe=el('cVER').getContext('2d');if(window._cVER)window._cVER.destroy();
+  window._cVER=new Chart(cVe,{type:'doughnut',
+    data:{labels:VD.map(function(v){return (v[0]||'Sin clasificar')+' · '+v[2]+' SKU';}),
+      datasets:[{data:VD.map(function(v){return +((v[1]||0)/1e6).toFixed(2);}),
+        backgroundColor:VD.map(function(v){return DEAD_COL[v[0]]||'#8892b0';}),
+        borderColor:'#1a1f2e',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'56%',layout:{padding:{top:6,bottom:6}},
+      plugins:{legend:{position:'right',labels:{color:'#c0caf5',boxWidth:11,font:{size:10},padding:8}},
+        tooltip:{callbacks:{label:function(x){
+          var p=_totMue>0?(x.raw*1e6/_totMue*100).toFixed(0):0;
+          return x.label+' — $'+x.raw.toFixed(1)+' MM ('+p+'%)';}}}}},
+    plugins:[invDonPct]});
+  var _pctSin = _totMue>0 ? Math.round(VD[3][1]/_totMue*100) : 0;
+  if(el('verHint')) el('verHint').innerHTML =
+    'Total stock muerto <b>$'+fMM(_totMue)+'</b> en <b>'+_mueAll.length+' SKU</b>. '+
+    '<b style="color:'+(_pctSin>25?'var(--q)':'var(--muted)')+'">'+_pctSin+'% del capital sigue sin veredicto</b>'+
+    ' — hasta que no se tipifica, nadie se hace cargo.'+
+    (INV_TIPOS.ZIME?' <span style="color:#1D9E75">Incluye Terceros e Insumos.</span>':'');
+
+  // Dos tablas top-10: Merma y Plan de Acción por separado.
+  ['Mermar','Plan de Acción'].forEach(function(dst,i){
+    var sub2 = _mueAll.filter(function(x){ return deadDestino(x.sku)===dst; })
+                      .sort(function(a,b){ return (b.val||0)-(a.val||0); });
+    var top = sub2.slice(0,10);
+    var elS = el(i?'topPSub':'topMSub');
+    if(elS) elS.textContent = sub2.length+' SKU · $'+fMM(sub2.reduce(function(a,x){return a+(x.val||0);},0));
+    var elT = el(i?'topPTb':'topMTb'); if(!elT) return;
+    elT.innerHTML = top.map(function(x){
+      return '<tr><td style="padding:3px 5px;font-family:monospace;font-size:.6rem">'+x.sku+'</td>'+
+        '<td style="padding:3px 5px">'+_htmlEsc(String(x.desc||'').slice(0,24))+'</td>'+
+        '<td style="padding:3px 5px;text-align:right;font-weight:700">$'+f0(x.val||0)+'</td></tr>';
+    }).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:10px">Ninguno</td></tr>';
+  });
 
   // Gráfico 2: stock apilado por grupo (activo vs slow vs muerto) — $ MM
   var rotG=ROT.grupos.slice().sort(function(a,b){return b.val-a.val;});
   function _MM(v){return +(v/1e6).toFixed(2);}
+  // Activo en verde (antes gris pizarra): es el único tramo sano de la barra y se leía como
+  // relleno neutro en vez de como la parte del capital que sí rota.
   var ds_act =rotG.map(function(g){return _MM(Math.max(g.val-g.val_slow-g.val_muerto,0));});
   var ds_slow=rotG.map(function(g){return _MM(g.val_slow);});
   var ds_mue =rotG.map(function(g){return _MM(Math.max(g.val_muerto-(DSP.byG[g.g]||0),0));});
@@ -5708,7 +5885,7 @@ function buildKpiAv(){
   // Tabla por grupo
   el('rot-tbl').innerHTML=rotG.map(function(g){
     var vDes=Math.min(DSP.byG[g.g]||0, g.val_muerto);
-    var nDes=0; (curSkus()||[]).forEach(function(s){ if(s.grupo===g.g && s.rot_bucket==='muerto' && deadIsDesc(s.sku)) nDes++; });
+    var nDes=0; (invSkus()||[]).forEach(function(s){ if(s.grupo===g.g && s.rot_bucket==='muerto' && deadIsDesc(s.sku)) nDes++; });
     var vMue=Math.max(g.val_muerto-vDes,0), nMue=Math.max(g.n_muerto-nDes,0);
     var atrap=g.val_slow+g.val_muerto;
     var pctAtrap=g.val>0?Math.round(atrap/g.val*100):0;
