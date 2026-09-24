@@ -1,5 +1,5 @@
 {
- "generado": "2026-09-24T10:06:06",
+ "generado": "2026-09-24T11:38:09",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -4292,16 +4292,12 @@
   },
   {
    "fecha": "2026-09-24",
-   "disp": 97.4,
-   "n_solic": 469,
-   "n_cero": 12,
-   "n_excl_granel": 8,
+   "disp": 97.7,
+   "n_solic": 474,
+   "n_cero": 11,
+   "n_excl_granel": 7,
    "n_anom_neg": 5,
    "skus_cero": [
-    {
-     "sku": "300314",
-     "desc": "COMINO MOLIDO"
-    },
     {
      "sku": "300326",
      "desc": "OREGANO HOJA KG"
@@ -4323,6 +4319,10 @@
      "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
     },
     {
+     "sku": "400291",
+     "desc": "BOLSA CAS MIGA G BCO 05.24 PEBD40"
+    },
+    {
      "sku": "400327",
      "desc": "BLONDA REDONDA N° 6"
     },
@@ -4337,10 +4337,6 @@
     {
      "sku": "400603",
      "desc": "CAPSULA MARRON 50X29 (MAGDALENA)"
-    },
-    {
-     "sku": "400616",
-     "desc": "BANDEJA CARTULINA MUFFIN P2 10.25"
     },
     {
      "sku": "400662",
