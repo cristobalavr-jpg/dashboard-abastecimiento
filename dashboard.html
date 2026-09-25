@@ -5457,7 +5457,7 @@ function deadRec(sku){ return DEADC[String(sku)] || null; }
 // y para cuándo. Se guardan en el mismo registro que `destino`/`coment`.
 // ⬇️ URL /exec del Web App de apps_script_firmas.gs. Vacío = el botón sólo muestra la
 //    vista previa, sin crear el lote ni encolar el correo. Ver SETUP_BACKEND_FIRMAS.md.
-var FIRMAS_URL = '';
+var FIRMAS_URL = 'https://script.google.com/macros/s/AKfycbwZ44Lxjl5X7VfHQY8LiYMKX31HCPGB5jCWXfrmgyPCIvV9GvCfKR6iOStneURfi8G8/exec';
 var FIRMA_PIN  = '1234';           // sincronizar con PIN_FIRMAS en el .gs
 function firmasActivo(){ return !!FIRMAS_URL; }
 // Sólo viajan los datos que el lote debe congelar: se firma lo que se presentó, no lo que
