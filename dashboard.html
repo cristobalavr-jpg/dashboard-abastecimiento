@@ -503,6 +503,17 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .dead-dd[data-d="Próximo a utilizar"]{border-color:var(--n);background:rgba(99,153,34,.10);color:#c3e59a}
 .dead-dd:disabled{background:#1a1f2e;color:var(--muted);cursor:not-allowed;border-style:dashed}
 .dead-com{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid var(--border);border-radius:5px;color:#e2e8f0;font-size:.65rem;padding:3px 6px;font-family:inherit}
+/* Los input[type=date] los pinta el navegador, no el CSS de la página: sobre fondo oscuro
+   el icono del calendario sale negro sobre negro y el desplegable en tema claro.
+   `color-scheme:dark` le dice al navegador que use su propio tema oscuro para todo el
+   control; el filtro invertido es el respaldo para los que aún no lo soportan. */
+input[type=date].dead-com{color-scheme:dark;padding:4px 6px;cursor:pointer}
+input[type=date].dead-com::-webkit-calendar-picker-indicator{
+  filter:invert(.75) brightness(1.4);cursor:pointer;opacity:.85;padding:0;margin-left:2px}
+input[type=date].dead-com::-webkit-calendar-picker-indicator:hover{opacity:1}
+input[type=date].dead-com:focus{outline:none;border-color:#6366f1}
+/* Sin fecha el campo queda casi vacío y no se nota que es editable: se marca en ámbar. */
+input[type=date].dead-com:invalid,input[type=date].dead-com:not(:valid){border-color:rgba(201,168,0,.45)}
 .dead-com::placeholder{color:#5b647e}
 .dead-com:focus{outline:none;border-color:#6366f1;background:#12151f}
 .dead-com:disabled{background:#1a1f2e;color:var(--muted);cursor:not-allowed;border-style:dashed}
@@ -1424,6 +1435,15 @@ table.tg-t{width:100%;border-collapse:collapse;font-size:.71rem;min-width:900px}
         <tbody id="topPTb"></tbody></table></div>
     </div>
   </div>
+  <div class="hint" style="background:rgba(201,168,0,.08);border:1px solid rgba(201,168,0,.3);
+       border-radius:7px;padding:9px 12px;margin:0 0 10px;color:#d9c77a">
+    ⚠️ <b>El envío automático de correos todavía no está.</b> Hoy el botón muestra la vista previa
+    de la solicitud — a quién iría, qué materiales y por cuánto. Las firmas de Subgerencia y Gerencia,
+    los recordatorios de martes y jueves, y el cierre automático contra el movimiento 551 de SAP
+    requieren el backend de aprobaciones (ver <code>WORKFLOW_INMOVILIZADOS.md</code>).
+    Lo que <b>sí</b> queda guardado y compartido es la clasificación: destino, causa raíz, cantidad,
+    responsable y fecha de compromiso.
+  </div>
   <div class="hint" style="margin-bottom:14px">Merma = capital que se castiga contra resultado · Plan de Acción = capital que se intenta recuperar. Son dos decisiones distintas y por eso van separadas: la primera se aprueba, la segunda se persigue.</div>
   <div class="stt">🪦 Stock muerto — sin movimiento en las últimas 8 semanas <button class="xls-btn" onclick="expDead('muerto')" style="float:right;background:#1D9E7530;color:#1D9E75;border:1px solid #1D9E75;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="dead-bar">
@@ -1452,7 +1472,8 @@ table.tg-t{width:100%;border-collapse:collapse;font-size:.71rem;min-width:900px}
     <b id="desc-selN">0 seleccionados</b>
     <span id="desc-selV"></span>
     <button class="dead-act go" style="width:auto;padding:7px 15px;font-size:.68rem"
-            onclick="dPedirLote()">📧 Solicitar firma</button>
+            onclick="dPedirLote()" title="Muestra el correo que saldría. El envío automático llega con el backend de firmas">
+      👁 Ver la solicitud</button>
     <button class="dead-act" style="width:auto;padding:7px 13px;font-size:.68rem;background:#232840;
             color:#a4b4ce;border:1px solid var(--border)" onclick="dSelNone()">Limpiar</button>
   </div>
@@ -5691,7 +5712,9 @@ function _descRow(s){
       (est==='congelado'
         ? '<button class="dead-act frz" onclick="dVerCongelado(\''+sku+'\')">⚡ Revalidar</button>'
         : dListo(s)
-          ? '<button class="dead-act go" onclick="dPedirFirma(\''+sku+'\')">📧 Solicitar firma</button>'
+          ? '<button class="dead-act go" onclick="dPedirFirma(\''+sku+'\')" '+
+            'title="Muestra el correo que saldría. El envío automático llega con el backend de firmas">'+
+            '👁 Vista previa</button>'
           : '<button class="dead-act off" title="Falta causa raíz, detalle, cantidad, responsable o fecha">Solicitar firma</button>')+
     '</td></tr>';
 }
