@@ -1471,9 +1471,10 @@ table.tg-t{width:100%;border-collapse:collapse;font-size:.71rem;min-width:900px}
   <div class="desc-selbar hide" id="desc-selbar">
     <b id="desc-selN">0 seleccionados</b>
     <span id="desc-selV"></span>
+    <!-- La etiqueta la fija dSelBar() según haya backend de firmas o no: un botón que dice
+         "ver" y en realidad crea el lote y encola el correo es una trampa. -->
     <button class="dead-act go" style="width:auto;padding:7px 15px;font-size:.68rem"
-            onclick="dPedirLote()" title="Muestra el correo que saldría. El envío automático llega con el backend de firmas">
-      👁 Ver la solicitud</button>
+            id="desc-selBtn" onclick="dPedirLote()">👁 Ver la solicitud</button>
     <button class="dead-act" style="width:auto;padding:7px 13px;font-size:.68rem;background:#232840;
             color:#a4b4ce;border:1px solid var(--border)" onclick="dSelNone()">Limpiar</button>
   </div>
@@ -5542,6 +5543,15 @@ function dSelBar(){
   var dst={}; m.forEach(function(u){ dst[deadDestino(u.sku)]=1; });
   var k=Object.keys(dst);
   el('desc-selN').textContent = m.length+' seleccionado'+(m.length>1?'s':'');
+  var bt = el('desc-selBtn');
+  if(bt){
+    bt.textContent = firmasActivo()
+      ? ('📧 Solicitar firma'+(k.length>1 ? ' ('+k.length+' correos)' : ''))
+      : '👁 Ver la solicitud';
+    bt.title = firmasActivo()
+      ? 'Crea el lote y encola el correo de aprobación de los materiales marcados'
+      : 'Muestra el correo que saldría. Falta conectar el backend de firmas';
+  }
   el('desc-selV').innerHTML = '$'+fMM(m.reduce(function(a,u){return a+dVal(u);},0))+
     (k.length>1 ? ' · <span style="color:var(--rT)">⚠ mezclas Merma y Plan: saldrían 2 correos</span>'
                 : ' · '+k[0]);
@@ -5733,9 +5743,11 @@ function _descRow(s){
       (est==='congelado'
         ? '<button class="dead-act frz" onclick="dVerCongelado(\''+sku+'\')">⚡ Revalidar</button>'
         : dListo(s)
-          ? '<button class="dead-act go" onclick="dPedirFirma(\''+sku+'\')" '+
-            'title="Muestra el correo que saldría. El envío automático llega con el backend de firmas">'+
-            '👁 Vista previa</button>'
+          ? '<button class="dead-act go" onclick="dPedirFirma(\''+sku+'\')" title="'+
+            (firmasActivo()
+              ? 'Crea el lote y encola el correo de aprobación para este material'
+              : 'Muestra el correo que saldría. Falta conectar el backend de firmas')+'">'+
+            (firmasActivo() ? '📧 Solicitar firma' : '👁 Vista previa')+'</button>'
           : '<button class="dead-act off" title="Falta causa raíz, detalle, cantidad, responsable o fecha">Solicitar firma</button>')+
     '</td></tr>';
 }
@@ -5909,14 +5921,16 @@ var invBarTot = {
   }
 };
 
-// Acciones de la fila de ⛔. El envío automático del correo llega con el backend de firmas
-// (Fase 2); por ahora la ventana muestra exactamente qué saldría y a quién.
+// Acciones de la fila de ⛔. Con el backend de firmas conectado la fila pide la firma de
+// verdad (un lote de un material); sin backend cae a la vista previa, que muestra
+// exactamente qué saldría y a quién.
 function dPedirFirma(sku){
   var u = (invSkus()||[]).filter(function(x){return String(x.sku)===String(sku);})[0];
   if(!u) return;
+  if(firmasActivo()) return dEnviarLotes([u]);
   var merma = deadDestino(sku)==='Mermar';
   var q=dQty(u), det=((deadRec(sku)||{}).coment||'');
-  mcNotif('Vista previa de la solicitud — el envío automático llega con el backend de firmas');
+  mcNotif('Vista previa de la solicitud — falta conectar el backend de firmas');
   alert('SOLICITUD DE '+(merma?'APROBACIÓN DE MERMA':'VISTO BUENO DE PLAN DE ACCIÓN')+'\n'+
     '─────────────────────────────────────────\n'+
     'Para: Cristóbal Villanueva (Subgerencia)\n'+
