@@ -1,5 +1,5 @@
 {
- "generado": "2026-09-24T11:38:09",
+ "generado": "2026-09-25T09:49:00",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -4341,6 +4341,36 @@
     {
      "sku": "400662",
      "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-09-25",
+   "disp": 96.6,
+   "n_solic": 146,
+   "n_cero": 5,
+   "n_excl_granel": 0,
+   "n_anom_neg": 3,
+   "skus_cero": [
+    {
+     "sku": "300212",
+     "desc": "L-CISTEINA 100D"
+    },
+    {
+     "sku": "300378",
+     "desc": "SABOR CHOCOLATE POLVO"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400364",
+     "desc": "BOLSA CAS PAN LOMITO 12.24 PEBD40"
+    },
+    {
+     "sku": "400634",
+     "desc": "FILM CAS CROCATA 4 UN 01.26"
     }
    ]
   }
