@@ -455,6 +455,11 @@ tr.ic-tot td{font-weight:800;border-top:2px solid var(--border)}
 .dead-act.off{background:#232840;color:#5a6480;cursor:not-allowed;border:1px solid var(--border)}
 .dead-act.frz{background:rgba(8,145,178,.2);color:#7dd3e8;border:1px solid rgba(8,145,178,.5)}
 @media(max-width:1250px){.desc-tw{overflow-x:auto}.desc-tbl{min-width:1180px}}
+.desc-selbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  background:rgba(99,102,241,.12);border:1px solid #6366f1;border-radius:8px;
+  padding:8px 13px;margin-bottom:8px;font-size:.7rem;color:#c7d2fe}
+.desc-selbar.hide{display:none}
+.desc-selbar b{font-size:.72rem}
 .inv-dual2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:1100px){.inv-dual2{grid-template-columns:1fr}}
 /* Selector de tipo de producto de Inmovilizados (B.6.2) */
@@ -1443,10 +1448,21 @@ table.tg-t{width:100%;border-collapse:collapse;font-size:.71rem;min-width:900px}
   <div class="stt">⛔ Stock descontinuado — clasificado como «no se volverá a utilizar» <button class="xls-btn" onclick="expDead('desc')" style="float:right;background:#E24B4A30;color:#E24B4A;border:1px solid #E24B4A;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button></div>
   <div class="dead-bar"><span id="desc-cnt" class="dead-cnt">—</span></div>
   <div class="hint" style="margin:-3px 0 7px">Subconjunto del stock muerto marcado como <b>Mermar</b> o <b>Plan de Acción</b> — no vuelve al consumo normal. Para devolverlo a stock muerto, cambia el destino a «Próximo a utilizar» o déjalo sin clasificar.</div>
+  <div class="desc-selbar hide" id="desc-selbar">
+    <b id="desc-selN">0 seleccionados</b>
+    <span id="desc-selV"></span>
+    <button class="dead-act go" style="width:auto;padding:7px 15px;font-size:.68rem"
+            onclick="dPedirLote()">📧 Solicitar firma</button>
+    <button class="dead-act" style="width:auto;padding:7px 13px;font-size:.68rem;background:#232840;
+            color:#a4b4ce;border:1px solid var(--border)" onclick="dSelNone()">Limpiar</button>
+  </div>
   <div class="tw desc-tw" style="margin-bottom:14px"><table class="desc-tbl">
-    <colgroup><col style="width:21%"><col style="width:9%"><col style="width:11%"><col style="width:16%">
-      <col style="width:15%"><col style="width:12%"><col style="width:16%"></colgroup>
+    <colgroup><col style="width:30px"><col style="width:19%"><col style="width:8%"><col style="width:10%">
+      <col style="width:15%"><col style="width:14%"><col style="width:11%"><col style="width:12%">
+      <col style="width:11%"></colgroup>
     <thead><tr>
+      <th><input type="checkbox" id="desc-selAll" onchange="dSelAll(this)"
+                 title="Seleccionar todo lo visible que esté listo para firmar"></th>
       <th>Material</th>
       <th style="text-align:right">Stock<div class="thsub">valorizado</div></th>
       <th style="text-align:right">A mermar<div class="thsub">$ y % del stock</div></th>
@@ -5462,6 +5478,32 @@ var DEAD_EST = {
     desc:'Volvió a consumirse después de clasificarlo. Hay que revalidar el veredicto.'}
 };
 var DEAD_EST_ORD = ['sin_motivo','borrador','congelado'];
+// Selección múltiple de la tabla ⛔. Un lote = un correo: pedir la firma de a un SKU sería
+// un correo por SKU, que es exactamente lo que el diseño evita.
+var DESC_SEL = {};
+function dSelOne(sku, on){ if(on) DESC_SEL[sku]=1; else delete DESC_SEL[sku]; deadRender(); }
+function dSelNone(){ DESC_SEL={}; var a=el('desc-selAll'); if(a) a.checked=false; deadRender(); }
+function dSelAll(cb){
+  deadList('desc').forEach(function(u){
+    if(dListo(u)){ if(cb.checked) DESC_SEL[String(u.sku)]=1; else delete DESC_SEL[String(u.sku)]; }
+  });
+  deadRender();
+}
+function dMarcados(){
+  return deadList('desc').filter(function(u){ return DESC_SEL[String(u.sku)]; });
+}
+function dSelBar(){
+  var m = dMarcados(), bar = el('desc-selbar');
+  if(!bar) return;
+  bar.classList.toggle('hide', m.length===0);
+  if(!m.length) return;
+  var dst={}; m.forEach(function(u){ dst[deadDestino(u.sku)]=1; });
+  var k=Object.keys(dst);
+  el('desc-selN').textContent = m.length+' seleccionado'+(m.length>1?'s':'');
+  el('desc-selV').innerHTML = '$'+fMM(m.reduce(function(a,u){return a+dVal(u);},0))+
+    (k.length>1 ? ' · <span style="color:var(--rT)">⚠ mezclas Merma y Plan: saldrían 2 correos</span>'
+                : ' · '+k[0]);
+}
 function deadDestino(sku){ var r=deadRec(sku); return (r && r.destino) || ''; }
 function deadIsDesc(sku){ return !!DEAD_DESC[deadDestino(sku)]; }
 
@@ -5601,7 +5643,14 @@ function _descRow(s){
     : dr===0 ? '<span style="color:var(--q);font-weight:700">vence hoy</span>'
     : dr<=7 ? '<span style="color:var(--rT);font-weight:700">en '+dr+' d</span>'
     : '<span style="color:var(--muted)">en '+dr+' d</span>';
-  return '<tr data-dsku="'+sku+'">'+
+  var marcado = !!DESC_SEL[sku];
+  var chk = dListo(s)
+    ? '<input type="checkbox" onchange="dSelOne(\''+sku+'\',this.checked)"'+(marcado?' checked':'')+'>'
+    : '<span title="'+(est==='congelado' ? 'Congelado: volvió a consumirse'
+        : 'Falta causa raíz, detalle, cantidad, responsable o fecha')+
+      '" style="color:#3a4258">—</span>';
+  return '<tr data-dsku="'+sku+'"'+(marcado?' style="background:rgba(99,102,241,.12)"':'')+'>'+
+    '<td>'+chk+'</td>'+
     '<td><div class="mini">'+sku+(dMov(s)?' <span title="Volvió a consumirse" style="color:#22d3ee">⚡</span>':'')+'</div>'+
       '<div class="dcell-desc" title="'+_htmlEsc(String(s.desc||''))+'">'+_htmlEsc(String(s.desc||''))+'</div>'+
       '<div class="dead-meta"><span class="ba" style="background:'+(TCOL[s.tipo]||'#8892b0')+'22;color:'+
@@ -5656,7 +5705,7 @@ function deadRender(){
                     ' <span style="color:#6366f1;cursor:pointer;text-decoration:underline" onclick="deadClearQ()">limpiar búsqueda</span>')
                  : 'Sin stock muerto';
   tbM.innerHTML = lM.map(_deadRow).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:14px">'+vacioM+'</td></tr>';
-  tbD.innerHTML = lD.map(_descRow).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:14px">Ningún SKU clasificado como descontinuado todavía</td></tr>';
+  tbD.innerHTML = lD.map(_descRow).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:14px">Ningún SKU clasificado como descontinuado todavía</td></tr>';
   var DS = deadSplit();
   var pct = DS.val_tot>0 ? (DS.val_clasif/DS.val_tot*100) : 0;
   var ORIGEN = {
@@ -5685,6 +5734,7 @@ function deadRender(){
   var lk = el('dead-lock');
   if(lk){ if(MC_EDIT){ lk.classList.add('on'); lk.innerHTML='✏️ Modo edición — '+(MC_USUARIO||''); }
           else { lk.classList.remove('on'); lk.innerHTML='🔒 Identifícate para clasificar'; } }
+  dSelBar();
 }
 // ── Edición ──
 function dSetCausa(sku,v){ if(!dGuard()) { deadRender(); return; } deadSet(sku,{causa:v}); }
@@ -5835,6 +5885,32 @@ function dPedirFirma(sku){
     '\nResponsable   '+dResp(sku)+
     '\nCompromiso    '+dFecha(sku)+
     '\n─────────────────────────────────────────\n'+
+    'El envío automático y la página de firma se habilitan con el\n'+
+    'backend de aprobaciones (ver WORKFLOW_INMOVILIZADOS.md).');
+}
+// Solicitud por lote: un correo por destino, con todos los SKU marcados.
+function dPedirLote(){
+  var m = dMarcados();
+  if(!m.length){ mcNotif('Marca al menos una fila lista para firmar', false); return; }
+  var g = {};
+  m.forEach(function(u){ (g[deadDestino(u.sku)] = g[deadDestino(u.sku)] || []).push(u); });
+  var txt = '';
+  Object.keys(g).forEach(function(dst){
+    var l = g[dst], merma = dst==='Mermar';
+    var tot = l.reduce(function(a,u){ return a+dVal(u); },0);
+    txt += (txt?'\n\n':'')+
+      'CORREO '+(merma?'DE APROBACIÓN DE MERMA':'DE VISTO BUENO · PLAN DE ACCIÓN')+'\n'+
+      '─────────────────────────────────────────\n'+
+      'Para: Cristóbal Villanueva (Subgerencia)\n'+
+      (merma?'Luego: Meni (Gerencia de Adquisiciones)\n':'')+
+      l.length+' material'+(l.length>1?'es':'')+' · castigo total $'+f0(tot)+'\n\n'+
+      l.map(function(u){
+        return '  '+u.sku+'  '+String(u.desc||'').slice(0,32)+'\n'+
+               '     '+f0(dQty(u))+' '+(u.um||'')+' de '+f0(u.stock||0)+
+               '  ·  $'+f0(dVal(u))+'  ·  '+dResp(u.sku)+'  ·  '+dFecha(u.sku);
+      }).join('\n');
+  });
+  alert(txt+'\n\n─────────────────────────────────────────\n'+
     'El envío automático y la página de firma se habilitan con el\n'+
     'backend de aprobaciones (ver WORKFLOW_INMOVILIZADOS.md).');
 }
