@@ -5455,6 +5455,27 @@ function deadRec(sku){ return DEADC[String(sku)] || null; }
 // ── Campos de seguimiento (B.6.2) ──────────────────────────────────────────
 // El veredicto por sí solo no permite hacer seguimiento: hace falta por qué, cuánto, quién
 // y para cuándo. Se guardan en el mismo registro que `destino`/`coment`.
+// ⬇️ URL /exec del Web App de apps_script_firmas.gs. Vacío = el botón sólo muestra la
+//    vista previa, sin crear el lote ni encolar el correo. Ver SETUP_BACKEND_FIRMAS.md.
+var FIRMAS_URL = '';
+var FIRMA_PIN  = '1234';           // sincronizar con PIN_FIRMAS en el .gs
+function firmasActivo(){ return !!FIRMAS_URL; }
+// Sólo viajan los datos que el lote debe congelar: se firma lo que se presentó, no lo que
+// el stock diga tres días después.
+function itemFirma(u){
+  return {sku:String(u.sku), desc:String(u.desc||'').slice(0,60), um:u.um||'',
+          stock:Math.round(u.stock||0), valor:Math.round(u.val||0),
+          qty:Math.round(dQty(u)), causa:dCausa(u.sku),
+          detalle:((deadRec(u.sku)||{}).coment||''), fecha:dFecha(u.sku)};
+}
+function firmasSolicitar(lista, destino, resp){
+  return fetch(FIRMAS_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({pin:FIRMA_PIN, action:'solicitar', sem:(typeof SEM!=='undefined'?SEM:''),
+      destino:destino, resp:resp, usuario:MC_USUARIO||'',
+      items:lista.map(itemFirma)})})
+    .then(function(r){ return r.json(); })
+    .catch(function(e){ return {ok:false, error:String(e)}; });
+}
 var DEAD_CAUSAS = ['Cambio de receta / formulación','Cambio de diseño / marca',
   'Descontinuación del PT','Fin de campaña / estacional no repetido',
   'Sobrecompra / error de planificación','Cambio de proveedor / homologación',
@@ -5915,6 +5936,7 @@ function dPedirFirma(sku){
 function dPedirLote(){
   var m = dMarcados();
   if(!m.length){ mcNotif('Marca al menos una fila lista para firmar', false); return; }
+  if(firmasActivo()) return dEnviarLotes(m);
   var g = {};
   m.forEach(function(u){ (g[deadDestino(u.sku)] = g[deadDestino(u.sku)] || []).push(u); });
   var txt = '';
@@ -5936,6 +5958,34 @@ function dPedirLote(){
   alert(txt+'\n\n─────────────────────────────────────────\n'+
     'El envío automático y la página de firma se habilitan con el\n'+
     'backend de aprobaciones (ver WORKFLOW_INMOVILIZADOS.md).');
+}
+// Un lote por destino: mezclar Merma y Plan en un mismo correo rompe el «quién firma qué».
+function dEnviarLotes(m){
+  var g = {};
+  m.forEach(function(u){ (g[deadDestino(u.sku)] = g[deadDestino(u.sku)] || []).push(u); });
+  var keys = Object.keys(g);
+  // El salto de línea va como String.fromCharCode(10): un "\n" literal dentro de este
+  // template acaba convertido en un salto real por el generador y rompe el string.
+  var NL = String.fromCharCode(10);
+  if(!confirm('Se enviará'+(keys.length>1?'n '+keys.length+' solicitudes':' la solicitud')+
+              ' de firma por '+m.length+' material'+(m.length>1?'es':'')+
+              ' ($'+f0(m.reduce(function(a,u){return a+dVal(u);},0))+').'+NL+NL+
+              'El correo sale desde la casilla de Abastecimiento en la próxima corrida del '+
+              'despachador. ¿Continuar?')) return;
+  mcNotif('Creando '+keys.length+' lote'+(keys.length>1?'s':'')+'…');
+  Promise.all(keys.map(function(k){
+    return firmasSolicitar(g[k], k, dResp(g[k][0].sku));
+  })).then(function(rs){
+    var bien = rs.filter(function(r){ return r.ok; });
+    var err  = rs.filter(function(r){ return !r.ok; }).map(function(r){ return r.error; }).join(' · ');
+    if(bien.length){
+      dSelNone();
+      mcNotif('✅ '+bien.length+' lote'+(bien.length>1?'s':'')+' creado'+(bien.length>1?'s':'')+
+              ' · '+bien.map(function(r){return r.lote;}).join(', ')+
+              ' — el correo sale con el despachador');
+    }
+    if(err) mcNotif('Error al crear el lote: '+err, false);
+  });
 }
 function dVerCongelado(sku){
   var u = (invSkus()||[]).filter(function(x){return String(x.sku)===String(sku);})[0];
