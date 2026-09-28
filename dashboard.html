@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Abastecimiento — Semana 39 · 2026</title>
-<meta property="og:title" content="Dashboard Abastecimiento — Semana 39 · 2026">
+<title>Dashboard Abastecimiento — Semana 40 · 2026</title>
+<meta property="og:title" content="Dashboard Abastecimiento — Semana 40 · 2026">
 <meta property="og:description" content="Supply Chain · KPIs de inventario, mermas, capital inmovilizado, desviación de forecast y bloqueado">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
@@ -5986,20 +5986,42 @@ function dEnviarLotes(m){
               ' ($'+f0(m.reduce(function(a,u){return a+dVal(u);},0))+').'+NL+NL+
               'El correo sale desde la casilla de Abastecimiento en la próxima corrida del '+
               'despachador. ¿Continuar?')) return;
+  // Bloqueo mientras el pedido viaja: sin esto, dos clics seguidos crean dos lotes del
+  // mismo material y salen dos correos de aprobación por lo mismo. Ya pasó (5 lotes de
+  // 300239 el 2026-09-25). El servidor tiene su propia guarda por SKU; ésta evita llegar.
+  if(window._dEnviando){ mcNotif('Ya hay una solicitud en curso…', false); return; }
+  window._dEnviando = true;
+  var bts = [el('desc-selBtn')].concat(
+    Array.prototype.slice.call(document.querySelectorAll('#rot-desc button.dead-act.go')));
+  bts.forEach(function(b){ if(b){ b.disabled = true; b.style.opacity = .55; } });
+  var liberar = function(){
+    window._dEnviando = false;
+    bts.forEach(function(b){ if(b){ b.disabled = false; b.style.opacity = ''; } });
+  };
+
   mcNotif('Creando '+keys.length+' lote'+(keys.length>1?'s':'')+'…');
   Promise.all(keys.map(function(k){
     return firmasSolicitar(g[k], k, dResp(g[k][0].sku));
   })).then(function(rs){
     var bien = rs.filter(function(r){ return r.ok; });
-    var err  = rs.filter(function(r){ return !r.ok; }).map(function(r){ return r.error; }).join(' · ');
+    var dups = rs.filter(function(r){ return !r.ok && r.duplicado; });
+    var err  = rs.filter(function(r){ return !r.ok && !r.duplicado; })
+                 .map(function(r){ return r.error; }).join(' · ');
     if(bien.length){
       dSelNone();
       mcNotif('✅ '+bien.length+' lote'+(bien.length>1?'s':'')+' creado'+(bien.length>1?'s':'')+
               ' · '+bien.map(function(r){return r.lote;}).join(', ')+
               ' — el correo sale con el despachador');
     }
+    // El duplicado no es un error del sistema: es el aviso de que ya se pidió. Se separa
+    // para que no se lea como una falla y el usuario reintente.
+    dups.forEach(function(r){
+      mcNotif('⚠ '+r.error+'. No se creó un lote nuevo.', false);
+    });
     if(err) mcNotif('Error al crear el lote: '+err, false);
-  });
+  }).catch(function(e){
+    mcNotif('Error al crear el lote: '+e, false);
+  }).then(liberar, liberar);
 }
 function dVerCongelado(sku){
   var u = (invSkus()||[]).filter(function(x){return String(x.sku)===String(sku);})[0];
