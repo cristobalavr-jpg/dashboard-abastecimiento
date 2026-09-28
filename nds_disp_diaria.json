@@ -1,5 +1,5 @@
 {
- "generado": "2026-09-25T09:49:00",
+ "generado": "2026-09-28T11:23:24",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -4371,6 +4371,68 @@
     {
      "sku": "400634",
      "desc": "FILM CAS CROCATA 4 UN 01.26"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-09-28",
+   "disp": 97.3,
+   "n_solic": 481,
+   "n_cero": 13,
+   "n_excl_granel": 7,
+   "n_anom_neg": 2,
+   "skus_cero": [
+    {
+     "sku": "300012",
+     "desc": "PP ANIS POLVO"
+    },
+    {
+     "sku": "300013",
+     "desc": "PP CARDAMOMO"
+    },
+    {
+     "sku": "300072",
+     "desc": "VAINILLINA POLVO"
+    },
+    {
+     "sku": "300185",
+     "desc": "CLARA DE HUEVO"
+    },
+    {
+     "sku": "300212",
+     "desc": "L-CISTEINA 100D"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300378",
+     "desc": "SABOR CHOCOLATE POLVO"
+    },
+    {
+     "sku": "300496",
+     "desc": "ESENCIA MENTA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400662",
+     "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
+    },
+    {
+     "sku": "400675",
+     "desc": "PP CAJA ENSENADA FSECOS 500G 09.26"
+    },
+    {
+     "sku": "400703",
+     "desc": "ETIQ CAST SW HAMBURGUESA CHEDDAR 06.26"
     }
    ]
   }
