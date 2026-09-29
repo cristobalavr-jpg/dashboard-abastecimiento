@@ -1,5 +1,5 @@
 {
- "generado": "2026-09-28T11:23:24",
+ "generado": "2026-09-29T10:36:53",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -4433,6 +4433,44 @@
     {
      "sku": "400703",
      "desc": "ETIQ CAST SW HAMBURGUESA CHEDDAR 06.26"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-09-29",
+   "disp": 98.4,
+   "n_solic": 444,
+   "n_cero": 7,
+   "n_excl_granel": 7,
+   "n_anom_neg": 2,
+   "skus_cero": [
+    {
+     "sku": "300194",
+     "desc": "DESMOLDANTE MUFFIN / TOAST"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400032",
+     "desc": "PAPEL CERESINADO 9,5X11,5X16"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400662",
+     "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
     }
    ]
   }
