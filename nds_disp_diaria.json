@@ -1,5 +1,5 @@
 {
- "generado": "2026-09-29T10:36:53",
+ "generado": "2026-09-30T09:54:34",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -4467,6 +4467,68 @@
     {
      "sku": "400492",
      "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400662",
+     "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-09-30",
+   "disp": 97.1,
+   "n_solic": 451,
+   "n_cero": 13,
+   "n_excl_granel": 7,
+   "n_anom_neg": 2,
+   "skus_cero": [
+    {
+     "sku": "300162",
+     "desc": "DJ MOSTAZA (PRODUC)"
+    },
+    {
+     "sku": "300185",
+     "desc": "CLARA DE HUEVO"
+    },
+    {
+     "sku": "300194",
+     "desc": "DESMOLDANTE MUFFIN / TOAST"
+    },
+    {
+     "sku": "300232",
+     "desc": "GLICEROL"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300496",
+     "desc": "ESENCIA MENTA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400032",
+     "desc": "PAPEL CERESINADO 9,5X11,5X16"
+    },
+    {
+     "sku": "400261",
+     "desc": "ET CAS PLATO LASAÑA POLLO ESPINACA 03.24"
+    },
+    {
+     "sku": "400483",
+     "desc": "BOLSA CAS PAN COPIHUE 03.25 PEBD40"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400634",
+     "desc": "FILM CAS CROCATA 4 UN 01.26"
     },
     {
      "sku": "400662",
