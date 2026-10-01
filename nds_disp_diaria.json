@@ -1,5 +1,5 @@
 {
- "generado": "2026-09-30T09:54:34",
+ "generado": "2026-10-01T09:49:38",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -4533,6 +4533,88 @@
     {
      "sku": "400662",
      "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-10-01",
+   "disp": 96.4,
+   "n_solic": 499,
+   "n_cero": 18,
+   "n_excl_granel": 7,
+   "n_anom_neg": 2,
+   "skus_cero": [
+    {
+     "sku": "300012",
+     "desc": "PP ANIS POLVO"
+    },
+    {
+     "sku": "300013",
+     "desc": "PP CARDAMOMO"
+    },
+    {
+     "sku": "300063",
+     "desc": "HARINA FUERZA SACO"
+    },
+    {
+     "sku": "300072",
+     "desc": "VAINILLINA POLVO"
+    },
+    {
+     "sku": "300150",
+     "desc": "PEREJIL DESHIDRATADO"
+    },
+    {
+     "sku": "300194",
+     "desc": "DESMOLDANTE MUFFIN / TOAST"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300496",
+     "desc": "ESENCIA MENTA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "300522",
+     "desc": "CEBOLLA PLUMA"
+    },
+    {
+     "sku": "400032",
+     "desc": "PAPEL CERESINADO 9,5X11,5X16"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400364",
+     "desc": "BOLSA CAS PAN LOMITO 12.24 PEBD40"
+    },
+    {
+     "sku": "400439",
+     "desc": "BOLSA JUMBO MAXIMA ESP 500 09.24"
+    },
+    {
+     "sku": "400492",
+     "desc": "ETIQ CAST GOHAN CAMARÓN 03.25"
+    },
+    {
+     "sku": "400554",
+     "desc": "BOLSA MOLDE CAS MULTIG COLAG 400G 08.25"
+    },
+    {
+     "sku": "400662",
+     "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
+    },
+    {
+     "sku": "400675",
+     "desc": "PP CAJA ENSENADA FSECOS 500G 09.26"
     }
    ]
   }
