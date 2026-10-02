@@ -1,5 +1,5 @@
 {
- "generado": "2026-10-01T09:49:38",
+ "generado": "2026-10-02T12:06:00",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -4615,6 +4615,28 @@
     {
      "sku": "400675",
      "desc": "PP CAJA ENSENADA FSECOS 500G 09.26"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-10-02",
+   "disp": 97.8,
+   "n_solic": 136,
+   "n_cero": 3,
+   "n_excl_granel": 0,
+   "n_anom_neg": 2,
+   "skus_cero": [
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400439",
+     "desc": "BOLSA JUMBO MAXIMA ESP 500 09.24"
+    },
+    {
+     "sku": "400621",
+     "desc": "BOLSA CAS PITA MULTIGRANO 10.25 CPP35"
     }
    ]
   }
