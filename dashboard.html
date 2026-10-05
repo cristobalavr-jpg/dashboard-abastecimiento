@@ -7412,46 +7412,67 @@ function ppaCurWeek(){
   if(typeof SEM!=='undefined' && SEM){ var m=String(SEM).match(/(\d+)\s*$/); if(m) return +m[1]; }
   return (PLAN_PPA && PLAN_PPA.weeks && PLAN_PPA.weeks[0]) || 26;
 }
-// Última semana con FC oficial (hoja SumExpl, ver PARAMETRO.md A.4.5). El horizonte
-// dejó de ser fijo en S52: se hereda del archivo, así que las etiquetas lo leen de la data.
-function ppaLastWeek(){
-  var w = PLAN_PPA && PLAN_PPA.weeks;
-  return (w && w.length) ? w[w.length-1] : 52;
+// ── Ventana de campaña (B.16.5) ───────────────────────────────────────────────
+// El horizonte de TODA la pestaña es la campaña del plan cargado, no el rango de semanas
+// del archivo. El Consolidado trae el FC del año completo, así que la hoja Ex.PPA incluye
+// semanas fuera de campaña con la demanda base de los SKU compartidos con ALI/PAN (S49→S04
+// pesan ~14% del pico contra 51% de S48, la última semana real de campaña). Graficarlas
+// hacía leer "la campaña llega a S53" y mostraba quiebres en semanas sin producción de PPA.
+// La ventana la detecta generar_plan_ppa.py y viaja en `plan_ppa.json.campania`: si el plan
+// se extiende a S49/S50 con volumen de campaña, la vista avanza sola, sin tocar código.
+function ppaCamp(){
+  var c = PLAN_PPA && PLAN_PPA.campania, w = (PLAN_PPA && PLAN_PPA.weeks) || [];
+  if(c && c.ini!=null && c.fin!=null) return c;
+  // Fallback: plan_ppa.json de una versión anterior (sin ventana) → horizonte = archivo completo.
+  return {ini:(w.length?w[0]:30), fin:(w.length?w[w.length-1]:52), fuera:[], detectada:false};
 }
-// Primera semana del plan (arranque de la temporada según el archivo; hoy S30)
-function ppaFirstWeek(){
-  var w = PLAN_PPA && PLAN_PPA.weeks;
-  return (w && w.length) ? w[0] : 30;
+// Semanas vigentes de la pestaña = las del plan dentro de la campaña. TODO cálculo de
+// demanda/cobertura/quiebre de la pestaña itera sobre esta lista, no sobre PLAN_PPA.weeks.
+function ppaWeeks(){
+  var c=ppaCamp();
+  return ((PLAN_PPA && PLAN_PPA.weeks) || []).filter(function(w){ return w>=c.ini && w<=c.fin; });
 }
+// Última semana de la campaña del plan cargado (hoy S48; se hereda de la data).
+function ppaLastWeek(){ return ppaCamp().fin; }
+// Primera semana de la campaña (arranque de la temporada según el plan; hoy S39).
+function ppaFirstWeek(){ return ppaCamp().ini; }
+// Semana de referencia de la pestaña: la en curso, pero nunca más allá del cierre de la
+// campaña. Pasado S48 con este mismo plan, la "demanda restante" sería 0 y la pestaña
+// quedaría en blanco sin explicar por qué; el clamp deja la última semana de campaña
+// visible y el banner lo declara. Al cargarse el plan de la temporada siguiente se corrige solo.
+function ppaSem(){ var c=ppaCamp(), s=ppaCurWeek(); return s>c.fin ? c.fin : s; }
+function ppaCampClosed(){ return ppaCurWeek() > ppaCamp().fin; }
 function ppaSkuIdx(){
   if(_ppaSkuIdx) return _ppaSkuIdx;
   _ppaSkuIdx={}; (SKUS||[]).forEach(function(s){ _ppaSkuIdx[String(s.sku)]=s; });
   return _ppaSkuIdx;
 }
-// Demanda promedio semanal de las próximas N sem del plan (denominador de cobertura)
+// Demanda promedio semanal de las próximas N sem de la campaña (denominador de cobertura).
+// Acotado a la ventana de campaña: incluir las semanas base posteriores al cierre bajaba el
+// promedio y sobreestimaba la cobertura justo en los SKU compartidos.
 function ppaDemProm(code, sem, N){
   var e=PLAN_PPA && PLAN_PPA.dem[code]; if(!e) return null;
-  var d=e.d||{}, weeks=(PLAN_PPA.weeks||[]).filter(function(w){return w>=sem && w<sem+N;});
+  var d=e.d||{}, weeks=ppaWeeks().filter(function(w){return w>=sem && w<sem+N;});
   if(!weeks.length) return null;
   var sum=weeks.reduce(function(a,w){return a+(d[String(w)]||0);},0);
   return sum>0 ? sum/weeks.length : null;
 }
-// Demanda TOTAL de la temporada (S30→S52), FIJA: no depende de la semana en curso. Denominador
-// del "% s/ temporada" del panel de sobre-abastecimiento — se quiso fijo a propósito, para que la
-// cifra no se mueva sola semana a semana y sea leíble como "qué % del volumen anual me sobrará".
-// Suma TODAS las semanas que traiga el plan; hoy `SumExpl` llega a S49, así que S50-52 aportan 0,
-// y si a futuro el archivo se extiende hasta S52 lo toma sin tocar código.
+// Demanda TOTAL de la CAMPAÑA (hoy S39→S48), FIJA: no depende de la semana en curso.
+// Denominador del "% s/ temporada" del panel de sobre-abastecimiento — se quiso fijo a
+// propósito, para que la cifra no se mueva sola semana a semana y sea leíble como "qué % del
+// volumen de la campaña me sobrará". Suma sólo las semanas de la ventana de campaña: antes
+// sumaba todas las del archivo, y en SKU compartidos la demanda base de las ~9 semanas fuera
+// de campaña inflaba el denominador y hacía ver el sobre-stock más chico de lo que es.
 function ppaDemTotal(code){
   var e=PLAN_PPA && PLAN_PPA.dem[code]; if(!e) return 0;
-  var d=e.d||{}, t=0;
-  for(var k in d){ if(Object.prototype.hasOwnProperty.call(d,k)) t+=(d[k]||0); }
-  return t;
+  var d=e.d||{};
+  return ppaWeeks().reduce(function(a,w){return a+(d[String(w)]||0);},0);
 }
-// Demanda total restante de la temporada (para el KPI de avance vs plan)
+// Demanda restante de la campaña (para el KPI de avance vs plan)
 function ppaDemRest(code, sem){
   var e=PLAN_PPA && PLAN_PPA.dem[code]; if(!e) return 0;
   var d=e.d||{};
-  return (PLAN_PPA.weeks||[]).filter(function(w){return w>=sem;}).reduce(function(a,w){return a+(d[String(w)]||0);},0);
+  return ppaWeeks().filter(function(w){return w>=sem;}).reduce(function(a,w){return a+(d[String(w)]||0);},0);
 }
 // Semana del primer quiebre proyectado consumiendo SÓLO el stock en bodega contra la rampa del
 // plan (sin OC, porque ME2M no trae fecha de entrega — ver B.16). Devuelve la semana o null si el
@@ -7459,7 +7480,7 @@ function ppaDemRest(code, sem){
 // alcanza lo que ya tengo físicamente".
 function ppaStockoutWeek(code, stock, sem){
   var e=PLAN_PPA && PLAN_PPA.dem[code]; if(!e) return null;
-  var d=e.d||{}, weeks=(PLAN_PPA.weeks||[]).filter(function(w){return w>=sem;}), run=stock||0;
+  var d=e.d||{}, weeks=ppaWeeks().filter(function(w){return w>=sem;}), run=stock||0;
   for(var i=0;i<weeks.length;i++){ run-=(d[String(weeks[i])]||0); if(run<0) return weeks[i]; }
   return null;
 }
@@ -7492,12 +7513,12 @@ function ppaMissing(codes){
   (codes||[]).forEach(function(code){
     var c=String(code); if(idx[c]) return;
     var pe=PLAN_PPA && PLAN_PPA.dem[c];
-    out.push({sku:c, desc:(pe&&pe.nom)||'—', und:(pe&&pe.und)||'', rest:ppaDemRest(c, ppaCurWeek())});
+    out.push({sku:c, desc:(pe&&pe.nom)||'—', und:(pe&&pe.und)||'', rest:ppaDemRest(c, ppaSem())});
   });
   return out;
 }
 function ppaItems(codes){
-  var idx=ppaSkuIdx(), sem=ppaCurWeek(), P=ppaPuIdx(), out=[];
+  var idx=ppaSkuIdx(), sem=ppaSem(), P=ppaPuIdx(), out=[];
   (codes||[]).forEach(function(code){
     var c=String(code), s=idx[c]; if(!s) return; // sin data de stock → ver ppaMissing()
     var demProm=ppaDemProm(c, sem, 12);
@@ -7573,7 +7594,7 @@ function ppaRenderSection(host, gid, title, sub, items){
         y:{ticks:{color:'#8892b0',font:{size:10},callback:function(v){return '$'+(v/1e6).toFixed(0)+'M';}},grid:{color:'#2d3452'}}}}});
 }
 // Cobertura del programa por categoría (grupo de artículo). % value-weighted contra la
-// demanda restante del programa (semana en curso → S52). Dos lentes: con Stock+OC y con solo Stock.
+// demanda restante del programa (semana en curso → cierre de campaña). Dos lentes: con Stock+OC y con solo Stock.
 function ppaProgramByCat(items, sem){
   var g={};
   items.forEach(function(it){
@@ -7675,7 +7696,7 @@ function ppaProgToggleDetail(cat){
     det.innerHTML='<h4><span>'+cat+' · sin SKUs con demanda restante</span><button class="cov-cl" onclick="document.getElementById(\'ppa-prog-dt\').classList.remove(\'open\')">✕ Cerrar</button></h4>';
     return;
   }
-  window._ppaDetItems=items; window._ppaDetCat=cat; window._ppaDetSem=ppaCurWeek();
+  window._ppaDetItems=items; window._ppaDetCat=cat; window._ppaDetSem=ppaSem();
   window._ppaDetSort={col:'restVal', dir:-1};  // default: demanda $ descendente
   ppaDetRender();
 }
@@ -7779,7 +7800,7 @@ function ppaExclRender(){
     +   '<button onclick="expXls(\'ppa-excl-tb\',\'sobreabast_exclusivos_ppa\')" style="background:#247AC930;color:#2478c9;border:1px solid #2478c9;border-radius:5px;padding:2px 8px;font-size:.65rem;cursor:pointer">📥 Excel</button>'
     +   '<button class="cov-cl" onclick="ppaToggleExcl()">✕ Cerrar</button>'
     + '</span></h4>'
-    + '<div style="font-size:.62rem;color:var(--muted);margin:2px 0 8px">Sobre-stock = (Stock + OC) − Demanda restante del plan (S'+ppaCurWeek()+'→S'+ppaLastWeek()+'), valorizado a precio unitario. <b>% s/ volumen temporada</b> = ese sobre-stock <b>en volumen</b> sobre el <b>volumen TOTAL de la temporada (S'+ppaFirstWeek()+'→S52, fijo)</b>, no sobre lo que queda: así el % no se mueve solo semana a semana y se lee como <i>"qué fracción del volumen anual de este insumo me va a sobrar"</i>. <b>100% = sobrará una temporada entera</b> (<span style="color:#f0c98a">&lt;50%</span> / <span style="color:#E87B2A">50–100%</span> / <span style="color:var(--q)">≥100%</span>). Sólo insumos de uso <b>exclusivo PPA</b> → el excedente no se reutiliza en otros productos (merma real). <b style="color:#639922">Reversible</b> = aún en OC en tránsito: se puede recortar o reprogramar antes de que llegue.</div>'
+    + '<div style="font-size:.62rem;color:var(--muted);margin:2px 0 8px">Sobre-stock = (Stock + OC) − Demanda restante del plan (S'+ppaSem()+'→S'+ppaLastWeek()+'), valorizado a precio unitario. <b>% s/ volumen temporada</b> = ese sobre-stock <b>en volumen</b> sobre el <b>volumen TOTAL de la campaña (S'+ppaFirstWeek()+'→S'+ppaLastWeek()+', fijo)</b>, no sobre lo que queda: así el % no se mueve solo semana a semana y se lee como <i>"qué fracción del volumen anual de este insumo me va a sobrar"</i>. <b>100% = sobrará una temporada entera</b> (<span style="color:#f0c98a">&lt;50%</span> / <span style="color:#E87B2A">50–100%</span> / <span style="color:var(--q)">≥100%</span>). Sólo insumos de uso <b>exclusivo PPA</b> → el excedente no se reutiliza en otros productos (merma real). <b style="color:#639922">Reversible</b> = aún en OC en tránsito: se puede recortar o reprogramar antes de que llegue.</div>'
     + '<div class="tw"><table><thead><tr>'
     + '<th>SKU</th><th>Descripción</th><th>Comprador</th><th style="text-align:right">Und</th>'
     + th('Stock','stock') + th('OC tránsito','oc') + th('Demanda rest.','rest')
@@ -7810,7 +7831,7 @@ function ppaBolsaQRender(){
     if(typeof va==='string'){ return va.localeCompare(vb)*s.dir; }
     if(va==null) va=-Infinity; if(vb==null) vb=-Infinity;
     return (va<vb?-1:(va>vb?1:0))*s.dir; });
-  var sem=ppaCurWeek();
+  var sem=ppaSem();
   var qcol=function(w){ return (w<=sem+4)?'var(--q)':(w<=sem+10?'#E8C52A':'#8892b0'); };
   var rows=items.map(function(x){
     var cubre=(x.demR<=0) ? '<span style="color:var(--muted)">sin demanda</span>'
@@ -7886,7 +7907,7 @@ function ppaToggleMiss(){
 // sigue acumulando la demanda valorizada (`dem`) y el % valorizado (`valOC`/`valS`) porque el
 // tooltip los muestra como contexto y el drill-down prioriza la compra en $.
 function ppaWeeklyCoverage(items, sem){
-  var weeks=(PLAN_PPA.weeks||[]).filter(function(w){return w>=sem;});
+  var weeks=ppaWeeks().filter(function(w){return w>=sem;});
   var acc=weeks.map(function(w){return {w:w, covOC:0, covS:0, dem:0, n:0, nOC:0, nS:0, det:[]};});
   items.forEach(function(it){
     var e=PLAN_PPA.dem[it.sku]; if(!e) return;
@@ -7970,7 +7991,7 @@ function ppaWkRender(){
     var arr=(s.col===col)?(s.dir<0?' <span style="color:#6ea8ff">▼</span>':' <span style="color:#6ea8ff">▲</span>'):' <span style="color:#4a536e;font-size:.55rem">↕</span>';
     return '<th style="text-align:'+(align||'right')+';cursor:pointer;user-select:none" onclick="ppaWkSort(\''+col+'\')" title="Ordenar por '+label+'">'+label+arr+'</th>';
   };
-  var sem=ppaCurWeek();
+  var sem=ppaSem();
   det.innerHTML=''
     + '<h4><span>Semana '+row.w+(row.w===sem?' (en curso)':'')+' · '+items.length+' de '+row.n+' SKU sin cubrir'
     +   (nComprar?' · <span style="color:var(--q)">'+nComprar+' a comprar</span>':'')+'</span>'
@@ -7999,12 +8020,12 @@ function ppaRenderWeekly(host, items, sem){
   var data=ppaWeeklyCoverage(items, sem);
   var sec=document.createElement('div'); sec.className='cov-sec';
   sec.innerHTML=''
-    + '<div class="cov-tit">Cobertura del plan semana a semana</div>'
-    + '<div class="cov-sub">% de <b>SKU del programa cuya demanda de esa semana queda 100% cubierta</b>, sobre el total de SKU con demanda esa semana (conteo: todos los SKU pesan igual, sin ponderar por valor). El inventario se asigna <b>cronológicamente</b> — cada semana consume primero y el sobrante pasa a la siguiente. <b style="color:#639922">Con Stock+OC</b> asume que las OC llegan a tiempo · <b style="color:#378ADD">Solo Stock</b> = piso con lo físico en bodega hoy. El tooltip muestra además el % valorizado como contexto. <b style="color:#c0caf5">Clic en una semana</b> para ver los SKU que impiden llegar al 100%.</div>'
+    + '<div class="cov-tit">Cobertura del plan semana a semana <span style="font-weight:400;color:var(--muted);font-size:.68rem">· S'+sem+'→S'+ppaLastWeek()+' (cierre de campaña del plan cargado)</span></div>'
+    + '<div class="cov-sub">% de <b>SKU del programa cuya demanda de esa semana queda 100% cubierta</b>, sobre el total de SKU con demanda esa semana (conteo: todos los SKU pesan igual, sin ponderar por valor). El eje llega hasta <b>S'+ppaLastWeek()+'</b>, última semana de campaña del plan productivo cargado — las semanas posteriores del archivo de FC son demanda base de SKU compartidos, no Pan de Pascua. El inventario se asigna <b>cronológicamente</b> — cada semana consume primero y el sobrante pasa a la siguiente. <b style="color:#639922">Con Stock+OC</b> asume que las OC llegan a tiempo · <b style="color:#378ADD">Solo Stock</b> = piso con lo físico en bodega hoy. El tooltip muestra además el % valorizado como contexto. <b style="color:#c0caf5">Clic en una semana</b> para ver los SKU que impiden llegar al 100%.</div>'
     + '<div class="cw" style="height:300px"><canvas id="ppa-wk-ch" style="cursor:pointer"></canvas></div>'
     + '<div class="cov-detail" id="ppa-wk-dt"></div>';
   host.appendChild(sec);
-  if(!data.length){ host.querySelector('.cw').innerHTML='<div style="color:var(--muted);padding:14px">Sin demanda futura en el plan.</div>'; return; }
+  if(!data.length){ host.querySelector('.cw').innerHTML='<div style="color:var(--muted);padding:14px">Sin demanda pendiente entre S'+sem+' y el cierre de campaña (S'+ppaLastWeek()+') del plan cargado.</div>'; return; }
   window._ppaWkData=data; window._ppaWkSel=null;   // estado del drill-down por semana
   var ctx=document.getElementById('ppa-wk-ch').getContext('2d');
   if(window._ppaWkCh) window._ppaWkCh.destroy();
@@ -8046,7 +8067,7 @@ function ppaCalSetBuf(b){ PPA_CAL_BUF=b; try{localStorage.setItem('ppaCalBuf',b)
   window._ppaCalSel=null; ppaCalPaint(); }
 // Construye el universo del calendario: SKU con déficit que quiebran dentro del horizonte.
 function ppaCalData(items, sem){
-  var weeks=(PLAN_PPA.weeks||[]).filter(function(w){return w>=sem;}), out=[];
+  var weeks=ppaWeeks().filter(function(w){return w>=sem;}), out=[];
   items.forEach(function(it){
     var e=PLAN_PPA.dem[it.sku]; if(!e) return;
     var d=e.d||{}, rest=0;
@@ -8065,7 +8086,7 @@ function ppaCalData(items, sem){
 }
 function ppaCalRender(sec, items, sem){
   var data=ppaCalData(items, sem);
-  window._ppaCalData=data; window._ppaCalWeeks=(PLAN_PPA.weeks||[]).filter(function(w){return w>=sem;});
+  window._ppaCalData=data; window._ppaCalWeeks=ppaWeeks().filter(function(w){return w>=sem;});
   window._ppaCalSem=sem; window._ppaCalSel=null;
   window._ppaCalSort=window._ppaCalSort||{col:'df',dir:-1};
   var box=document.createElement('div');
@@ -8251,23 +8272,47 @@ function ppaFcStamp(){
   var nx=function(s){return String(s||'').replace(/\.xlsx?$/i,'').trim();};
   var mio=nx(PLAN_PPA.fuente), plani=nx(PPAP && PPAP.plan_label);
   var gen=PLAN_PPA.generado||'—';
-  var wk=(PLAN_PPA.weeks&&PLAN_PPA.weeks.length)?('S'+PLAN_PPA.weeks[0]+'–S'+PLAN_PPA.weeks[PLAN_PPA.weeks.length-1]):'—';
+  var c=ppaCamp(), wk='S'+c.ini+'–S'+c.fin, nf=(c.fuera||[]).length;
+  // El horizonte declarado es el de CAMPAÑA, y se declara también cuántas semanas del archivo
+  // quedaron fuera: si mañana el plan se extiende, el sello es donde se ve primero.
+  var wkTxt='<b>'+wk+'</b> ('+(c.fin-c.ini+1)+' sem de campaña'
+    + (nf ? ', '+nf+' sem del archivo fuera de campaña' : '')+')';
   var mal = plani && mio && plani!==mio;
   return '<div style="font-size:.6rem;margin-bottom:10px;padding:'+(mal?'7px 10px':'0')+';'
     + (mal?'background:#3a2a12;border:1px solid #E8C52A;border-radius:8px;color:#E8C52A':'color:var(--muted)')+'">'
     + (mal?'⚠️ <b>FC desalineado</b> — la pestaña PPA lee <b>'+mio+'</b> y Planificadores <b>'+plani
           +'</b>. La regeneración diaria de <code>plan_ppa.json</code> falló; revisa el log de '
           +'<code>actualizar_dashboard.py</code> antes de decidir compras con estos números.'
-        :'Demanda desde <b style="color:#c0caf5">'+(mio||'—')+'</b> · hoja <b>SumExpl</b> · horizonte <b>'+wk
-          +'</b> · explosión regenerada el <b>'+gen+'</b> (mismo FC que Planificadores).')
+        :'Demanda desde <b style="color:#c0caf5">'+(mio||'—')+'</b> · hoja <b>SumExpl</b> · horizonte '+wkTxt
+          +' · explosión regenerada el <b>'+gen+'</b> (mismo FC que Planificadores).')
     + '</div>';
+}
+// Nota de alcance: declara la ventana de campaña y, si corresponde, qué semanas del archivo
+// quedaron fuera. Es la respuesta visible a "¿por qué el gráfico ya no llega a S52?" — sin
+// esto, el recorte parece un dato faltante en vez de una decisión.
+function ppaCampNote(){
+  var c=ppaCamp(), fuera=(c.fuera||[]).slice().sort(function(a,b){return a-b;});
+  var cerrada=ppaCampClosed();
+  var txt='🗓️ <b style="color:#e2e8f0">Campaña S'+c.ini+'→S'+c.fin+'</b> ('+(c.fin-c.ini+1)
+    + ' semanas) según el <b>plan productivo cargado</b>. Toda la pestaña — gráficos, coberturas, '
+    + 'quiebres y calendario de OC — se calcula sólo dentro de esa ventana.';
+  if(fuera.length) txt+=' Las '+fuera.length+' semanas restantes del archivo (S'+fuera[0]
+    + (fuera.length>1?'…S'+fuera[fuera.length-1]:'')+') traen la <b>demanda base de los SKU '
+    + 'compartidos</b> con otras líneas, no producción de Pan de Pascua, por eso quedan fuera.';
+  txt+=' Si el plan se extiende a S'+(c.fin+1)+' o más, la vista lo toma sola en el próximo refresco.';
+  if(cerrada) txt='⛔ <b style="color:#E8C52A">Campaña cerrada en S'+c.fin+'</b> — la semana en curso (S'
+    + ppaCurWeek()+') ya está fuera del plan cargado. Se muestra la foto al cierre de S'+c.fin
+    + '; carga el plan de la temporada siguiente para que la pestaña vuelva a proyectar.';
+  return '<div style="font-size:.63rem;color:var(--muted);background:'+(cerrada?'#3a2a12':'#161b2b')
+    + ';border:1px solid '+(cerrada?'#E8C52A':'var(--border)')+';border-radius:8px;padding:8px 11px;margin-bottom:12px">'
+    + txt+'</div>';
 }
 function buildPPA(){
   var host=el('ppa-host'); if(!host) return;
   if(!PLAN_PPA){ host.innerHTML='<div style="color:var(--muted);padding:14px">No se pudo cargar el Plan PPA (<code>plan_ppa.json</code>). Corre <code>python Dashboard/generar_plan_ppa.py</code> y recarga.</div>'; return; }
   if(!Array.isArray(SKUS)){ host.innerHTML='<div style="color:var(--muted);padding:14px">Sin SKUs cargados.</div>'; return; }
   _ppaSkuIdx=null; _ppaPuIdx=null; // reconstruye índices por si SKUS cambió
-  var sem=ppaCurWeek();
+  var sem=ppaSem();                // semana en curso, acotada al cierre de la campaña
   var itemsA=ppaItems(PLAN_PPA.universeA||[]);
   var itemsB=ppaItems(PLAN_PPA.universeB||[]);
   var missA=ppaMissing(PLAN_PPA.universeA||[]);   // SKU del plan sin data de stock (drop visible)
@@ -8298,7 +8343,7 @@ function buildPPA(){
     var ev=overU*(it.pu||0);  // sobre-abast
     if(ev>0 && setB[it.sku]){  // sólo exclusivos = merma real (no reutilizable)
       excExclTot+=ev; excExclCnt++;
-      // Denominador FIJO = volumen total de la temporada (S30→S52), no el restante: así el % no
+      // Denominador FIJO = volumen total de la CAMPAÑA (hoy S39→S48), no el restante: así el % no
       // se mueve solo a medida que avanzan las semanas y se lee como "qué fracción del volumen
       // anual de este insumo me va a sobrar al cierre". demTot ≥ rest > 0, así que nunca divide 0.
       var demTot=ppaDemTotal(it.sku);
@@ -8313,7 +8358,7 @@ function buildPPA(){
   // proyección del calendario de Matías (que es el plan del proveedor y vive en la tabla de Stock
   // Proyectado, abajo): el suministro reconocido en los cálculos de la pestaña es la OC en tránsito
   // de ME2M. Ver PARAMETRO.MD B.16.
-  // El universo son las bolsas CON demanda restante en el horizonte (S<sem>→S52): una bolsa sin
+  // El universo son las bolsas CON demanda restante en el horizonte (S<sem>→cierre campaña): una bolsa sin
   // demanda no es quiebre ni faltante por comprar — stock 0 es el estado correcto (ej. 400567
   // BOLSA PP TOTTUS 700G 09.25, de la campaña anterior). Mismo criterio que el resto de la
   // pestaña (rest<=0 → se ignora) y que el flag `sin_lleg` del backend (dem_tot>0).
@@ -8405,6 +8450,7 @@ function buildPPA(){
   }
   host.innerHTML=''
     + ppaFcStamp()
+    + ppaCampNote()
     + '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin-bottom:16px">'
     +   kc('#378ADD','$'+fMM(valA),'Stock PPA en bodega (total)','Todo el programa · '+itemsA.length+' de '+(PLAN_PPA.universeA||[]).length+' SKU'
           + (missA.length ? ' · <span style="color:#E8C52A">'+missA.length+' sin data</span>' : ''), missA.length?'ppaToggleMiss()':'')
