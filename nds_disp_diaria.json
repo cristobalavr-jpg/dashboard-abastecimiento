@@ -1,5 +1,5 @@
 {
- "generado": "2026-10-02T12:06:00",
+ "generado": "2026-10-05T09:51:37",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -4637,6 +4637,48 @@
     {
      "sku": "400621",
      "desc": "BOLSA CAS PITA MULTIGRANO 10.25 CPP35"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-10-05",
+   "disp": 98.2,
+   "n_solic": 442,
+   "n_cero": 8,
+   "n_excl_granel": 7,
+   "n_anom_neg": 2,
+   "skus_cero": [
+    {
+     "sku": "300150",
+     "desc": "PEREJIL DESHIDRATADO"
+    },
+    {
+     "sku": "300194",
+     "desc": "DESMOLDANTE MUFFIN / TOAST"
+    },
+    {
+     "sku": "300314",
+     "desc": "COMINO MOLIDO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300409",
+     "desc": "ENZIMA PROTEASA"
+    },
+    {
+     "sku": "300496",
+     "desc": "ESENCIA MENTA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400091",
+     "desc": "FILM (BROWNIE) BOPP 230 X 0,040 C/TACA"
     }
    ]
   }
