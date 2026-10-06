@@ -1,5 +1,5 @@
 {
- "generado": "2026-10-05T09:51:37",
+ "generado": "2026-10-06T10:00:47",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -4679,6 +4679,68 @@
     {
      "sku": "400091",
      "desc": "FILM (BROWNIE) BOPP 230 X 0,040 C/TACA"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-10-06",
+   "disp": 97.1,
+   "n_solic": 450,
+   "n_cero": 13,
+   "n_excl_granel": 7,
+   "n_anom_neg": 3,
+   "skus_cero": [
+    {
+     "sku": "300150",
+     "desc": "PEREJIL DESHIDRATADO"
+    },
+    {
+     "sku": "300314",
+     "desc": "COMINO MOLIDO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300496",
+     "desc": "ESENCIA MENTA"
+    },
+    {
+     "sku": "300497",
+     "desc": "HARINA INTEGRAL WG MAXISACO"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400091",
+     "desc": "FILM (BROWNIE) BOPP 230 X 0,040 C/TACA"
+    },
+    {
+     "sku": "400291",
+     "desc": "BOLSA CAS MIGA G BCO 05.24 PEBD40"
+    },
+    {
+     "sku": "400440",
+     "desc": "BOLSA CEN COUS CONF 700G 09.24"
+    },
+    {
+     "sku": "400606",
+     "desc": "BOLSA CAS PITA LINAZA CHIA 09.25 CPP35"
+    },
+    {
+     "sku": "400634",
+     "desc": "FILM CAS CROCATA 4 UN 01.26"
+    },
+    {
+     "sku": "400662",
+     "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
     }
    ]
   }
