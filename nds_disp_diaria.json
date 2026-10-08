@@ -1,5 +1,5 @@
 {
- "generado": "2026-10-07T12:33:36",
+ "generado": "2026-10-08T09:50:28",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -4791,6 +4791,48 @@
     {
      "sku": "400662",
      "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-10-08",
+   "disp": 98.2,
+   "n_solic": 450,
+   "n_cero": 8,
+   "n_excl_granel": 7,
+   "n_anom_neg": 3,
+   "skus_cero": [
+    {
+     "sku": "300150",
+     "desc": "PEREJIL DESHIDRATADO"
+    },
+    {
+     "sku": "300314",
+     "desc": "COMINO MOLIDO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300496",
+     "desc": "ESENCIA MENTA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400091",
+     "desc": "FILM (BROWNIE) BOPP 230 X 0,040 C/TACA"
+    },
+    {
+     "sku": "400634",
+     "desc": "FILM CAS CROCATA 4 UN 01.26"
     }
    ]
   }
