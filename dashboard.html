@@ -3924,9 +3924,11 @@ function _buildPltCobMap(){
   var m={};
   // PLT: SKUs PT/MMPP — Cob FC 12w si disponible, sino consumo real 4w
   if(PLT&&PLT.rows){
+    // Offset del bloque resumen derivado del ancho real de las series (ver rndPLT).
+    var PB=10+((PLT.cons_weeks||[]).length)+((PLT.fc_weeks||[]).length);
     PLT.rows.forEach(function(r){
       var sku=String(r[0]);
-      var cob12=r[40],stock=r[4]||0,real4=r[36]||0;
+      var cob12=r[PB+5],stock=r[4]||0,real4=r[PB+1]||0;
       var cob=(cob12!==null&&cob12!==undefined&&cob12<200)?cob12:(real4>0?+(stock*4/real4).toFixed(2):null);
       m[sku]=cob;
     });
@@ -3953,16 +3955,20 @@ function rndPLT(){
   var PLT_SX=10+cw.length+fw.length+9;   // bodega externa: último campo de la fila (A.1.4)
   var froz=[['SKU',''],['Descripción',''],['UNM',''],['Comprador',''],['Stock total','CD + Quilicura + Huechuraba + Bodega Externa']];
   var mid=[['StockCD','Centro 4120'],['Quilicura','Centro 4010'],['Bloqueado','Stock bloqueado BL01 (igual que sección Stock bloqueado)'],['Huechuraba','Centro 4020'],['Bod. Externa','Centro 4140 — bodega externa (3PL), almacén EX01'],['OC tránsito','Órdenes de compra en tránsito']];
+  // Offset del bloque resumen: SIEMPRE derivado del ancho real de las series
+  // semanales (B=10+nC+nF). Hardcodearlo (era 35) desalinea toda la fila en cuanto
+  // el FC cambia de ancho — p.ej. al cruzar el fin de año.
+  var PB=10+cw.length+fw.length;
   // [label, title, colIndex en la fila, sortable]
-  var summ=[['ΣFC 4w','Suma FC próximas 4 sem',35,false],
-            ['ΣReal 4w','Suma consumo real últimas 4 sem (excl. sem en curso)',36,false],
-            ['Desv. %','(ΣFC4−ΣReal4)/ΣReal4',37,false],
-            ['Cob. FC 4w','stock / prom FC 4w (sem)',38,true],
-            ['ΣFC 12w','Suma FC próximas 12 sem',39,false],
-            ['Cob. FC 12w','stock / prom FC 12w (sem)',40,true],
+  var summ=[['ΣFC 4w','Suma FC próximas 4 sem',PB+0,false],
+            ['ΣReal 4w','Suma consumo real últimas 4 sem (excl. sem en curso)',PB+1,false],
+            ['Desv. %','(ΣFC4−ΣReal4)/ΣReal4',PB+2,false],
+            ['Cob. FC 4w','stock / prom FC 4w (sem)',PB+3,true],
+            ['ΣFC 12w','Suma FC próximas 12 sem',PB+4,false],
+            ['Cob. FC 12w','stock / prom FC 12w (sem)',PB+5,true],
             ['OC tránsito','Órdenes de compra en tránsito',9,false],
-            ['Cob. 12w c/tránsito','(stock+OC) / prom FC 12w (sem)',41,true],
-            ['$Stock','Valor stock actual',42,false],['$Tránsito','Valor OC en tránsito',43,false],
+            ['Cob. 12w c/tránsito','(stock+OC) / prom FC 12w (sem)',PB+6,true],
+            ['$Stock','Valor stock actual',PB+7,false],['$Tránsito','Valor OC en tránsito',PB+8,false],
             ['Últ. Proveedor','Proveedor de la última OC generada para el SKU',44,false],
             ['Precio últ. OC','Precio neto (CLP) de la última OC generada para el SKU',-1,false]];
   var r1='<tr>';
@@ -4015,16 +4021,16 @@ function rndPLT(){
     h+=ocCell(r[0],r[9]);
     for(var i=0;i<nC;i++){var v=r[PLT_C0+i]||0;h+='<td style="text-align:right;background:rgba(99,131,200,.06)'+(i===0?';border-left:2px solid #2d3452':'')+(i===nC-1?';border-right:2px solid #2d3452':'')+'">'+(v?f0(v):'<span style="color:#3a4566">—</span>')+'</td>';}
     for(var j=0;j<nF;j++){var curr=(fw[j]===sem);var fv=r[PLT_F0+j]||0;h+='<td style="text-align:right;background:'+(curr?'rgba(120,220,160,.13)':'rgba(127,200,168,.06)')+(j===nF-1?';border-right:2px solid #2d3452':'')+'">'+(fv?f0(fv):'<span style="color:#3a4566">—</span>')+'</td>';}
-    h+='<td style="text-align:right;font-weight:700;border-left:2px solid #2d3452">'+f0(r[35]||0)+'</td>';
-    h+='<td style="text-align:right">'+f0(r[36]||0)+'</td>';
-    h+='<td style="text-align:right">'+pltDesv(r[37])+'</td>';
-    h+=pltCovCell(r[38]);
-    h+='<td style="text-align:right;font-weight:700">'+f0(r[39]||0)+'</td>';
-    h+=pltCovCell(r[40]);
+    h+='<td style="text-align:right;font-weight:700;border-left:2px solid #2d3452">'+f0(r[PB+0]||0)+'</td>';
+    h+='<td style="text-align:right">'+f0(r[PB+1]||0)+'</td>';
+    h+='<td style="text-align:right">'+pltDesv(r[PB+2])+'</td>';
+    h+=pltCovCell(r[PB+3]);
+    h+='<td style="text-align:right;font-weight:700">'+f0(r[PB+4]||0)+'</td>';
+    h+=pltCovCell(r[PB+5]);
     h+=ocCell(r[0],r[9]);
-    h+=pltCovCell(r[41]);
-    h+='<td style="text-align:right">$'+f0(r[42]||0)+'</td>';
-    h+='<td style="text-align:right;color:var(--muted)">$'+f0(r[43]||0)+'</td>';
+    h+=pltCovCell(r[PB+6]);
+    h+='<td style="text-align:right">$'+f0(r[PB+7]||0)+'</td>';
+    h+='<td style="text-align:right;color:var(--muted)">$'+f0(r[PB+8]||0)+'</td>';
     var vinfo=vendorMap[r[0]]||null;
     var vend=vinfo?vinfo.vendor:'';
     h+='<td style="color:var(--muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px" title="'+vend.replace(/"/g,'&quot;')+'">'+(vend||'<span style="color:#3a4566">—</span>')+'</td>';
@@ -4033,7 +4039,7 @@ function rndPLT(){
     return h;
   }).join('')||'<tr><td colspan="'+(10+nC+nF+13)+'" style="text-align:center;color:var(--muted);padding:14px">Sin resultados</td></tr>';
   var ordTxt='';
-  if(PLTF.sortCol!==null){var nm={38:'Cob. FC 4w',40:'Cob. FC 12w',41:'Cob. 12w c/tránsito'}[PLTF.sortCol]||'';ordTxt=' · orden: '+nm+(PLTF.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
+  if(PLTF.sortCol!==null){var nm={};nm[PB+3]='Cob. FC 4w';nm[PB+5]='Cob. FC 12w';nm[PB+6]='Cob. 12w c/tránsito';nm=nm[PLTF.sortCol]||'';ordTxt=' · orden: '+nm+(PLTF.sortDir>0?' ↑ menor→mayor':' ↓ mayor→menor');}
   var lnTxt=pltLnSel().length?(' · FC: <strong>'+pltLnSel().map(pltLnLabel).join(' + ')+'</strong>'):'';
   var info='<strong>'+tot+'</strong> SKU'+(tot===1?'':'s')+(gCompFilter?' (filtro: <strong>'+gCompFilter+'</strong>)':'')+lnTxt+(PLTF.s?' · búsqueda: "'+PLTF.s+'"':'')+(PLTF.oc?' · OC: "'+PLTF.oc+'"':'')+ordTxt;
   if(el('plt-info')) el('plt-info').innerHTML=info;
