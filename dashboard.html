@@ -2225,16 +2225,28 @@ var TAB_ALIAS = {resumen:0, planificadores:1, inventarios:2, mermas:3, capital:4
   forecast:5, bloqueado:7, terceros:9, coberturas:10, quiebres:12,
   plan:13, nds:14, ppa:15, tareas:16};
 var TAB_NOMBRE = Object.keys(TAB_ALIAS).reduce(function(m,k){m[TAB_ALIAS[k]]=k;return m;},{});
-function tabDesdeHash(){
+// Subsecciones de Quiebres (tab 12) direccionables por hash: #quiebres/hist.
+// Varios alias apuntan al mismo panel para que un link escrito a mano funcione.
+var QSUB_ALIAS = {dia:'dia', 'día':'dia', hoy:'dia',
+  sem:'sem', semana:'sem', semanal:'sem',
+  hist:'hist', historico:'hist', 'histórico':'hist', 'historico-quiebres':'hist'};
+// Parte el hash en sección y subsección: "quiebres/hist" -> {tab:12, sub:'hist'}
+function hashPartes(){
   var h=(location.hash||'').replace(/^#/,'').toLowerCase();
-  if(!h) return null;
-  if(TAB_ALIAS[h]!==undefined) return TAB_ALIAS[h];
-  var m=h.match(/^t?(\d+)$/);            // acepta también #t15 / #15
-  return m ? parseInt(m[1],10) : null;
+  if(!h) return {tab:null, sub:null};
+  var p=h.split('/'), t=p[0], s=p[1]||'';
+  var i=null;
+  if(TAB_ALIAS[t]!==undefined) i=TAB_ALIAS[t];
+  else { var m=t.match(/^t?(\d+)$/); if(m) i=parseInt(m[1],10); }   // acepta #t15 / #15
+  return {tab:i, sub:(QSUB_ALIAS[s]||null)};
 }
+function tabDesdeHash(){ return hashPartes().tab; }
 function aplicarHash(){
-  var i=tabDesdeHash();
-  if(i!==null && document.getElementById('t'+i)) showTab(i);
+  var p=hashPartes();
+  if(p.tab===null || !document.getElementById('t'+p.tab)) return;
+  // La subsección se deja en _qcur ANTES de showTab: showTab(12) la lee de ahí.
+  if(p.sub && p.tab===12) window._qcur=p.sub;
+  showTab(p.tab);
 }
 window.addEventListener('hashchange', aplicarHash);
 
@@ -2270,6 +2282,14 @@ function showTab(i){
 // Subsecciones de "Quiebres" (Día / SEM / Histórico) — iframes aislados, lazy load
 function showQSub(name){
   window._qcur = name;
+  // Reflejar la subsección en el hash para que el link sea compartible
+  // (#quiebres/hist). replaceState no dispara hashchange -> no hay loop.
+  try{
+    var pg12=document.getElementById('t12');
+    if(pg12 && pg12.classList.contains('active')){
+      history.replaceState(null,'','#quiebres'+(name==='dia'?'':'/'+name));
+    }
+  }catch(e){}
   var map={dia:['qd-frame','quiebres_dia.html'], sem:['qb-frame','quiebres.html'], hist:['qh-frame','historico_quiebres.html']};
   ['dia','sem','hist'].forEach(function(n){
     var pane=document.getElementById('qsub-'+n); if(pane) pane.classList.toggle('active', n===name);
