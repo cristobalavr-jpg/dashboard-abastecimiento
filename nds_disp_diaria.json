@@ -1,5 +1,5 @@
 {
- "generado": "2026-10-14T09:15:50",
+ "generado": "2026-10-15T11:22:23",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -4969,6 +4969,64 @@
     {
      "sku": "400662",
      "desc": "BOLSA KING MOLDE FAM PER INT 0326 PEBD40"
+    },
+    {
+     "sku": "400713",
+     "desc": "CAJA PAN 600 X 400 X 210"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-10-15",
+   "disp": 97.4,
+   "n_solic": 463,
+   "n_cero": 12,
+   "n_excl_granel": 7,
+   "n_anom_neg": 3,
+   "skus_cero": [
+    {
+     "sku": "300052",
+     "desc": "HARINA MEDIA FUERZA SACO"
+    },
+    {
+     "sku": "300190",
+     "desc": "ESTABILIZANTE A4M"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300336",
+     "desc": "ESENCIA LIMON CRAMER L92328-00"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400083",
+     "desc": "FILM BOPP35 210MM"
+    },
+    {
+     "sku": "400091",
+     "desc": "FILM (BROWNIE) BOPP 230 X 0,040 C/TACA"
+    },
+    {
+     "sku": "400400",
+     "desc": "CINTA TRANSF. TÉRM. NEGRA ULTRA GRADO"
+    },
+    {
+     "sku": "400482",
+     "desc": "BOLSA CAS PAN TAPADITO  03.25 PEBD40"
+    },
+    {
+     "sku": "400530",
+     "desc": "BOLSA PIERRE INTEG. XL 700 04.25 PEBD55"
     },
     {
      "sku": "400713",
