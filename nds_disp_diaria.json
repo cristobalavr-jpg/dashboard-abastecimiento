@@ -1,5 +1,5 @@
 {
- "generado": "2026-10-21T12:00:50",
+ "generado": "2026-10-22T09:53:14",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -5227,6 +5227,56 @@
     {
      "sku": "400616",
      "desc": "BANDEJA CARTULINA MUFFIN P2 10.25"
+    },
+    {
+     "sku": "400713",
+     "desc": "CAJA PAN 600 X 400 X 210"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-10-22",
+   "disp": 97.9,
+   "n_solic": 473,
+   "n_cero": 10,
+   "n_excl_granel": 7,
+   "n_anom_neg": 3,
+   "skus_cero": [
+    {
+     "sku": "300190",
+     "desc": "ESTABILIZANTE A4M"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300336",
+     "desc": "ESENCIA LIMON CRAMER L92328-00"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400091",
+     "desc": "FILM (BROWNIE) BOPP 230 X 0,040 C/TACA"
+    },
+    {
+     "sku": "400467",
+     "desc": "ETIQ CAST MEDIALUNA AVELLANA 03.25"
+    },
+    {
+     "sku": "400634",
+     "desc": "FILM CAS CROCATA 4 UN 01.26"
+    },
+    {
+     "sku": "400702",
+     "desc": "ETIQ CAS GALL LENGUA GATO 160G 06.26 FRO"
     },
     {
      "sku": "400713",
