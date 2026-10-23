@@ -1,5 +1,5 @@
 {
- "generado": "2026-10-22T09:53:14",
+ "generado": "2026-10-23T12:43:24",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -5283,6 +5283,15 @@
      "desc": "CAJA PAN 600 X 400 X 210"
     }
    ]
+  },
+  {
+   "fecha": "2026-10-23",
+   "disp": 100.0,
+   "n_solic": 71,
+   "n_cero": 0,
+   "n_excl_granel": 0,
+   "n_anom_neg": 2,
+   "skus_cero": []
   }
  ]
 }
