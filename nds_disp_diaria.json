@@ -1,5 +1,5 @@
 {
- "generado": "2026-10-23T12:43:24",
+ "generado": "2026-10-26T09:53:48",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -5292,6 +5292,52 @@
    "n_excl_granel": 0,
    "n_anom_neg": 2,
    "skus_cero": []
+  },
+  {
+   "fecha": "2026-10-26",
+   "disp": 98.0,
+   "n_solic": 457,
+   "n_cero": 9,
+   "n_excl_granel": 7,
+   "n_anom_neg": 4,
+   "skus_cero": [
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400091",
+     "desc": "FILM (BROWNIE) BOPP 230 X 0,040 C/TACA"
+    },
+    {
+     "sku": "400358",
+     "desc": "BOLSA CAS MOLDE BLANCO XL PROM 12.24"
+    },
+    {
+     "sku": "400467",
+     "desc": "ETIQ CAST MEDIALUNA AVELLANA 03.25"
+    },
+    {
+     "sku": "400577",
+     "desc": "ETIQ CAS GALL AMAPOLA LIMÓN 90G 08.25 FR"
+    },
+    {
+     "sku": "400634",
+     "desc": "FILM CAS CROCATA 4 UN 01.26"
+    },
+    {
+     "sku": "400644",
+     "desc": "ETIQ CAS ENSALADA GARBANZO Y ATÚN 12.25"
+    }
+   ]
   }
  ]
 }
