@@ -1,5 +1,5 @@
 {
- "generado": "2026-10-27T09:56:39",
+ "generado": "2026-10-28T09:52:36",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -5378,6 +5378,44 @@
     {
      "sku": "400634",
      "desc": "FILM CAS CROCATA 4 UN 01.26"
+    },
+    {
+     "sku": "400644",
+     "desc": "ETIQ CAS ENSALADA GARBANZO Y ATÚN 12.25"
+    },
+    {
+     "sku": "400713",
+     "desc": "CAJA PAN 600 X 400 X 210"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-10-28",
+   "disp": 98.5,
+   "n_solic": 468,
+   "n_cero": 7,
+   "n_excl_granel": 7,
+   "n_anom_neg": 3,
+   "skus_cero": [
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400091",
+     "desc": "FILM (BROWNIE) BOPP 230 X 0,040 C/TACA"
+    },
+    {
+     "sku": "400467",
+     "desc": "ETIQ CAST MEDIALUNA AVELLANA 03.25"
     },
     {
      "sku": "400644",
