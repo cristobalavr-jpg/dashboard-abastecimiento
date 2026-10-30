@@ -1,5 +1,5 @@
 {
- "generado": "2026-10-29T10:19:43",
+ "generado": "2026-10-30T10:55:52",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -5466,6 +5466,20 @@
     {
      "sku": "400713",
      "desc": "CAJA PAN 600 X 400 X 210"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-10-30",
+   "disp": 98.3,
+   "n_solic": 58,
+   "n_cero": 1,
+   "n_excl_granel": 0,
+   "n_anom_neg": 2,
+   "skus_cero": [
+    {
+     "sku": "400292",
+     "desc": "FILM CAS MINI QUEQUE VAINILLA(IND)06.24"
     }
    ]
   }
