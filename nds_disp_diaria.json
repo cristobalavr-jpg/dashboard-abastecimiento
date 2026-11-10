@@ -1,5 +1,5 @@
 {
- "generado": "2026-11-09T09:56:54",
+ "generado": "2026-11-10T10:17:10",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -5740,6 +5740,56 @@
     {
      "sku": "400675",
      "desc": "PP CAJA ENSENADA FSECOS 500G 09.26"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-11-10",
+   "disp": 97.8,
+   "n_solic": 449,
+   "n_cero": 10,
+   "n_excl_granel": 7,
+   "n_anom_neg": 4,
+   "skus_cero": [
+    {
+     "sku": "300178",
+     "desc": "MINI GOTITAS CHOCOLATE"
+    },
+    {
+     "sku": "300183",
+     "desc": "PIMIENTA MOLIDA"
+    },
+    {
+     "sku": "300211",
+     "desc": "CIBOULETTE"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400091",
+     "desc": "FILM (BROWNIE) BOPP 230 X 0,040 C/TACA"
+    },
+    {
+     "sku": "400127",
+     "desc": "ETIQ DD SW CROCATA POLLO MAYO 08.21"
+    },
+    {
+     "sku": "400292",
+     "desc": "FILM CAS MINI QUEQUE VAINILLA(IND)06.24"
+    },
+    {
+     "sku": "400580",
+     "desc": "ETIQ CAS GALL MANTEQUILLA 80G 08.25 POS"
     }
    ]
   }
