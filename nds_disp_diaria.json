@@ -1,5 +1,5 @@
 {
- "generado": "2026-11-10T10:17:10",
+ "generado": "2026-11-11T09:50:57",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -5790,6 +5790,72 @@
     {
      "sku": "400580",
      "desc": "ETIQ CAS GALL MANTEQUILLA 80G 08.25 POS"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-11-11",
+   "disp": 96.8,
+   "n_solic": 444,
+   "n_cero": 14,
+   "n_excl_granel": 7,
+   "n_anom_neg": 4,
+   "skus_cero": [
+    {
+     "sku": "300183",
+     "desc": "PIMIENTA MOLIDA"
+    },
+    {
+     "sku": "300211",
+     "desc": "CIBOULETTE"
+    },
+    {
+     "sku": "300318",
+     "desc": "CILANTRO FRESCO"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300331",
+     "desc": "OPTIFORM ACE S61"
+    },
+    {
+     "sku": "300409",
+     "desc": "ENZIMA PROTEASA"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400091",
+     "desc": "FILM (BROWNIE) BOPP 230 X 0,040 C/TACA"
+    },
+    {
+     "sku": "400282",
+     "desc": "BOLSA CAS MIGA BLANCO 440G 05.24 PEBD40"
+    },
+    {
+     "sku": "400452",
+     "desc": "PP ETIQ. ROJO 80x100MM"
+    },
+    {
+     "sku": "400483",
+     "desc": "BOLSA CAS PAN COPIHUE 03.25 PEBD40"
+    },
+    {
+     "sku": "400626",
+     "desc": "FILM CAST BROWNIE CHIPS (PACK4) 01.26"
+    },
+    {
+     "sku": "400713",
+     "desc": "CAJA PAN 600 X 400 X 210"
     }
    ]
   }
