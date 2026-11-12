@@ -1,7 +1,7 @@
 # Merma por semana
 
 **Dato al 12/11/2026** · semana ISO en curso **46** (parcial, incompleta) · última semana cerrada con servicio medido: **45**  
-*Generado automáticamente el 12/11/2026 12:22 — no editar a mano.*
+*Generado automáticamente el 12/11/2026 12:26 — no editar a mano.*
 
 Merma = movimientos 551 menos sus reversas 552. La tasa sobre consumo es la comparable; la tasa sobre stock sirve sólo para dimensionar.
 
