@@ -1,7 +1,7 @@
 # Datos en vivo del DA — índice
 
 **Dato al 12/11/2026** · semana ISO en curso **46** (parcial, incompleta) · última semana cerrada con servicio medido: **45**  
-*Generado automáticamente el 12/11/2026 12:26 — no editar a mano.*
+*Generado automáticamente el 12/11/2026 12:27 — no editar a mano.*
 
 Un archivo por tema; cada uno se lee solo.
 
