@@ -1,7 +1,7 @@
 # Foto de hoy — titulares del DA
 
 **Dato al 12/11/2026** · semana ISO en curso **46** (parcial, incompleta) · última semana cerrada con servicio medido: **45**  
-*Generado automáticamente el 12/11/2026 12:22 — no editar a mano.*
+*Generado automáticamente el 12/11/2026 12:26 — no editar a mano.*
 
 > Datos del Dashboard de Abastecimiento (DA). Montos en pesos chilenos. Las definiciones y reglas de cada indicador están en la base de conocimiento del Asistente DA, no en este archivo.
 
