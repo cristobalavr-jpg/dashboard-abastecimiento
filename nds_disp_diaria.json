@@ -1,5 +1,5 @@
 {
- "generado": "2026-11-11T09:50:57",
+ "generado": "2026-11-12T09:53:39",
  "dias": [
   {
    "fecha": "2025-12-30",
@@ -5852,6 +5852,64 @@
     {
      "sku": "400626",
      "desc": "FILM CAST BROWNIE CHIPS (PACK4) 01.26"
+    },
+    {
+     "sku": "400713",
+     "desc": "CAJA PAN 600 X 400 X 210"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-11-12",
+   "disp": 97.4,
+   "n_solic": 457,
+   "n_cero": 12,
+   "n_excl_granel": 7,
+   "n_anom_neg": 4,
+   "skus_cero": [
+    {
+     "sku": "300007",
+     "desc": "PP ESENCIA PP NT"
+    },
+    {
+     "sku": "300166",
+     "desc": "HUEVOS DUROS"
+    },
+    {
+     "sku": "300183",
+     "desc": "PIMIENTA MOLIDA"
+    },
+    {
+     "sku": "300211",
+     "desc": "CIBOULETTE"
+    },
+    {
+     "sku": "300326",
+     "desc": "OREGANO HOJA KG"
+    },
+    {
+     "sku": "300506",
+     "desc": "SABORIZANTE QUESO MANTECOSO Q2576926"
+    },
+    {
+     "sku": "400043",
+     "desc": "ETIQ.SATO LOTE/CONSUMIR HASTA"
+    },
+    {
+     "sku": "400091",
+     "desc": "FILM (BROWNIE) BOPP 230 X 0,040 C/TACA"
+    },
+    {
+     "sku": "400358",
+     "desc": "BOLSA CAS MOLDE BLANCO XL PROM 12.24"
+    },
+    {
+     "sku": "400633",
+     "desc": "BOLSA CAS MIGA SW 440G 12.25 (PEBD)"
+    },
+    {
+     "sku": "400634",
+     "desc": "FILM CAS CROCATA 4 UN 01.26"
     },
     {
      "sku": "400713",
