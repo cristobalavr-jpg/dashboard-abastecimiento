@@ -1,7 +1,7 @@
 # Quiebres
 
 **Dato al 12/11/2026** · semana ISO en curso **46** (parcial, incompleta) · última semana cerrada con servicio medido: **45**  
-*Generado automáticamente el 12/11/2026 12:22 — no editar a mano.*
+*Generado automáticamente el 12/11/2026 12:26 — no editar a mano.*
 
 Los carga cada comprador a mano, un registro por SKU y por día. **Quiebres reales** son los de tipo «Quiebre Real»; el resto son faltantes en los que el material existe (otra bodega, traslado, cambio de código).
 
