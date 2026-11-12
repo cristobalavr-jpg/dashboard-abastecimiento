@@ -96,6 +96,13 @@ table.qtbl td.col-stock input,table.qtbl td.col-fc input{text-align:right}
 .basebar .bt{font-size:.78rem;font-weight:700;color:#334155}
 .basebar .bi{font-size:.7rem;color:#64748b}
 .basebar .bspacer{flex:1}
+/* Quien cargo este dia (se arma con los registros de la nube) */
+.cargabar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:8px;padding:9px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;font-size:.72rem}
+.cargabar .cb-t{font-weight:700;color:#334155}
+.cargabar .cb-pill{background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;border-radius:999px;padding:2px 9px}
+.cargabar .cb-pill.me{background:#6366f1;border-color:#6366f1;color:#fff}
+.cargabar .cb-falta{color:#94a3b8;font-style:italic}
+.cargabar .cb-none{color:#94a3b8}
 .bbtn{font-size:.74rem;font-weight:600;border:1px solid #cbd5e1;border-radius:8px;padding:7px 13px;background:#fff;color:#475569;cursor:pointer}
 .bbtn:hover{background:#fff;filter:brightness(.97)}
 .bbtn.primary{background:#6366f1;border-color:#6366f1;color:#fff}
@@ -202,10 +209,12 @@ table.qtbl td.col-stock input,table.qtbl td.col-fc input{text-align:right}
       <span class="bt">📚 Base compilada <span id="cloudDot" style="color:#94a3b8" title="">●</span></span>
       <span class="bi" id="baseInfo">0 registros</span>
       <span class="bspacer"></span>
+      <button class="bbtn" id="pullMineBtn" onclick="qdTraerMisQuiebres()" title="Trae a la tabla los quiebres que ya guardaste hoy. Usalo si los cargaste desde otro computador o navegador.">⬇️ Traer lo que ya guardé</button>
       <button class="bbtn primary" id="saveBaseBtn" onclick="qdSaveToBase()">💾 Guardar día en base</button>
       <button class="bbtn" id="expBaseBtn" onclick="qdExportBase()">📦 Exportar base (CSV)</button>
       <button class="bbtn danger" id="clrBaseBtn" onclick="qdClearBase()">🗑️ Vaciar</button>
     </div>
+    <div class="cargabar" id="cargasHoy"></div>
   </div>
 </div>
 
@@ -217,12 +226,16 @@ table.qtbl td.col-stock input,table.qtbl td.col-fc input{text-align:right}
   <label>¿Quién eres?</label>
   <select id="userSel">
     <option value="">-- selecciona tu nombre --</option>
-    <option>Cristobal V</option>
-    <option>Hector N</option>
-    <option>Vicente C</option>
-    <option>Javiera O</option>
-    <option>Jose Q</option>
-    <option>Matiaz Z</option>
+    <!-- data-cartera="1" = comprador que carga sus propios quiebres. De aqui sale
+         la lista de "quienes cargaron este dia"; es la unica fuente de nombres.
+         NO renombrar una opcion existente: el nombre es la clave de union con la
+         nube (fecha+usuario) y renombrarla deja los registros viejos huerfanos. -->
+    <option data-cartera="1">Cristobal V</option>
+    <option data-cartera="1">Vicente C</option>
+    <option data-cartera="1">Javiera O</option>
+    <option data-cartera="1">Jose Q</option>
+    <option data-cartera="1">Matiaz Z</option>
+    <option data-cartera="1">Pamela C</option>
   </select>
   <div class="merr" id="pinErr">PIN incorrecto o usuario no seleccionado.</div>
   <div class="mbtns">
@@ -522,7 +535,7 @@ function qdChangeDate(){
   QD_DATE = el('qdDate').value || todayStr();
   ROWS = loadRows(QD_DATE);
   el('subTit').textContent = 'Quiebres del '+QD_DATE.split('-').reverse().join('/')+' · los indicadores y gráficos se actualizan en vivo';
-  renderTable(); recompute();
+  renderTable(); recompute(); renderCargasHoy();
 }
 
 // ── CSV del día ──
@@ -611,6 +624,88 @@ function qbCloudSaveDay(records){
 
 // Fuente de la base según haya backend o no
 function baseSource(){ return CLOUD_OK ? CLOUD_ROWS : baseLoad(); }
+
+// ── Carga multi-comprador ──────────────────────────────────────────────────
+// Cada comprador carga SOLO sus quiebres. El backend reemplaza únicamente los
+// registros de (fecha + usuario) y deja intactos los de los demás: guardar es
+// aditivo entre personas y sustitutivo para uno mismo.
+//
+// El riesgo no es el merge, es la tabla: ROWS vive en el localStorage de ESTE
+// navegador. Si guardaste 5 quiebres en la mañana y en la tarde abres el DA en
+// otro computador, la tabla llega vacía — y guardar 2 filas borraría esos 5 sin
+// avisar. De ahí "Traer lo que ya guardé" y la confirmación de abajo.
+
+// Lista de compradores: sale del propio selector (data-cartera), para no tener
+// los nombres escritos en dos lugares que después se desincronizan.
+function compradoresList(){
+  return Array.from(document.querySelectorAll('#userSel option[data-cartera]'))
+    .map(function(o){ return (o.value || o.textContent || '').trim(); })
+    .filter(function(v){ return !!v; });
+}
+
+// Lo que la nube ya tiene a nombre del usuario activo, en la fecha activa
+function misEnNube(){
+  return baseSource().filter(function(r){
+    return String(r.fecha) === String(QD_DATE) &&
+           String(r.usuario || '') === String(QD_USUARIO || '');
+  });
+}
+
+// Quién cargó este día. Los "sin registros" NO son una alerta: un comprador sin
+// quiebres no tiene nada que cargar, y eso es buena noticia, no un pendiente.
+function renderCargasHoy(){
+  const box = el('cargasHoy'); if(!box) return;
+  const delDia = baseSource().filter(function(r){ return String(r.fecha) === String(QD_DATE); });
+  if(!delDia.length){
+    box.innerHTML = '<span class="cb-none">Todavía nadie registró quiebres de este día.</span>';
+    return;
+  }
+  const porU = {};
+  delDia.forEach(function(r){
+    const u = String(r.usuario || '').trim() || '(sin nombre)';
+    porU[u] = (porU[u] || 0) + 1;
+  });
+  const pills = Object.keys(porU).sort().map(function(u){
+    const mio = (u === String(QD_USUARIO || '')) ? ' me' : '';
+    return '<span class="cb-pill' + mio + '">' + esc(u) + ' · <b>' + porU[u] + '</b></span>';
+  }).join('');
+  const faltan = compradoresList().filter(function(u){ return !porU[u]; });
+  box.innerHTML = '<span class="cb-t">Registraron este día:</span>' + pills +
+    (faltan.length ? '<span class="cb-falta">sin registros: ' + faltan.map(esc).join(', ') +
+                     ' — puede ser que no tengan quiebres</span>' : '');
+}
+
+// Trae a la tabla los quiebres que el usuario ya guardó en la nube para esta
+// fecha. Suma por id: nunca descarta lo que haya sin guardar en la tabla.
+function qdTraerMisQuiebres(){
+  if(!QD_EDIT){ notif('Activa modo edición primero', false); return; }
+  const btn = el('pullMineBtn'); btn.disabled = true;
+  const refresco = QD_BACKEND_URL ? qbCloudGet() : Promise.resolve(false);
+  refresco.then(function(){
+    const mios = misEnNube();
+    if(!mios.length){
+      notif('No tienes quiebres guardados en esta fecha', false);
+      renderCargasHoy(); btn.disabled = false; return;
+    }
+    const yaEnTabla = {};
+    ROWS.forEach(function(r){ if(r.id) yaEnTabla[r.id] = 1; });
+    const nuevos = mios.filter(function(r){ return !yaEnTabla[r.id]; }).map(function(r){
+      return { id: r.id, sku: r.sku || '', desc: r.desc || '', cat: r.cat || '',
+               tipo: r.tipo || '', motivo: r.motivo || '', obs: r.obs || '',
+               stock: (r.stock === '' || r.stock == null) ? '' : r.stock,
+               fc: (r.fc === '' || r.fc == null) ? '' : r.fc };
+    });
+    if(!nuevos.length){
+      notif('La tabla ya tiene todo lo que guardaste en esta fecha');
+    } else {
+      ROWS = ROWS.concat(nuevos); saveRows();
+      renderTable(); recompute();
+      notif(nuevos.length + ' quiebre' + (nuevos.length === 1 ? '' : 's') + ' recuperado' +
+            (nuevos.length === 1 ? '' : 's') + ' de la nube ✓');
+    }
+    updateBaseUI(); btn.disabled = false;
+  });
+}
 function updateBaseUI(){
   const src = baseSource();
   const dias = new Set(src.map(r=>r.fecha)).size;
@@ -623,7 +718,9 @@ function updateBaseUI(){
     else { dot.style.color='#dc2626'; dot.title='Backend configurado pero no responde — se usa copia local'; }
   }
   el('saveBaseBtn').disabled = !QD_EDIT;
+  if(el('pullMineBtn')) el('pullMineBtn').disabled = !QD_EDIT;
   el('expBaseBtn').disabled = !src.length;
+  renderCargasHoy();
   // Vaciar: deshabilitado cuando hay backend (no se borra la base compartida desde la UI)
   if(QD_BACKEND_URL){ el('clrBaseBtn').disabled = true; el('clrBaseBtn').title = 'La base en la nube no se vacía desde aquí'; }
   else { el('clrBaseBtn').disabled = !QD_EDIT || !baseLoad().length; el('clrBaseBtn').title=''; }
@@ -635,6 +732,63 @@ function qdSaveToBase(){
   const fechaLbl = QD_DATE.split('-').reverse().join('/');
   if(QD_BACKEND_URL){
     el('saveBaseBtn').disabled = true;
+    // Refrescar ANTES de avisar: la cache se cargó al abrir la página y otro
+    // comprador pudo haber guardado despues. Un aviso calculado sobre datos
+    // viejos es peor que no avisar.
+    qbCloudGet().then(function(){
+      renderCargasHoy();
+      if(!qdConfirmarReemplazo(records)){
+        el('saveBaseBtn').disabled = false;
+        notif('Guardado cancelado — no se tocó nada en la nube', false);
+        return;
+      }
+      qdEnviarGuardado(records, fechaLbl);
+    });
+  } else {
+    if(!qdConfirmarReemplazo(records)){ notif('Guardado cancelado', false); return; }
+    saveLocalBase(records); updateBaseUI();
+    notif(records.length+' registro'+(records.length===1?'':'s')+' del '+fechaLbl+' guardados en la base (local) ✓');
+  }
+}
+
+// Avisa cuando guardar va a REEMPLAZAR registros propios ya guardados, y sobre
+// todo cuando va a eliminar algunos que no están en la tabla. Ese es el caso de
+// la carga desde otro computador y el de haber elegido el nombre equivocado en
+// el selector: los dos borran trabajo ajeno o propio sin dejar rastro.
+function qdConfirmarReemplazo(records){
+  const ya = misEnNube();
+  if(!ya.length) return true;                 // primera carga del día: nada que reemplazar
+  const enTabla = {};
+  records.forEach(function(r){ if(r.id) enTabla[r.id] = 1; });
+  const seEliminan = ya.filter(function(r){ return !enTabla[r.id]; });
+
+  // Caso normal: la tabla contiene todo lo ya guardado y además lo nuevo. No se
+  // pierde nada, así que no se pregunta — una confirmación sin nada en riesgo
+  // enseña a apretar "Aceptar" sin leer, y después no sirve cuando sí importa.
+  if(!seEliminan.length) return true;
+
+  let msg = 'Ya hay ' + ya.length + ' quiebre' + (ya.length === 1 ? '' : 's') +
+            ' guardado' + (ya.length === 1 ? '' : 's') + ' en la nube del ' +
+            QD_DATE.split('-').reverse().join('/') + ' a nombre de "' + (QD_USUARIO || '') + '".\n\n' +
+            'Al guardar, esos ' + ya.length + ' se reemplazan por ' + records.length +
+            ' de esta tabla.\n';
+
+  if(seEliminan.length){
+    msg += '\n⚠ SE VAN A ELIMINAR ' + seEliminan.length +
+           ' que no están en tu tabla:\n' +
+           seEliminan.slice(0, 8).map(function(r){
+             return '   · ' + (r.sku || '(sin SKU)') + '  ' + String(r.desc || '').slice(0, 40);
+           }).join('\n') +
+           (seEliminan.length > 8 ? '\n   · ...y ' + (seEliminan.length - 8) + ' más' : '') +
+           '\n\nSi los cargaste desde otro computador, CANCELA y usa el botón' +
+           ' "Traer lo que ya guardé".\nSi "' + (QD_USUARIO || '') + '" no eres tú,' +
+           ' CANCELA: estarías borrando los quiebres de otra persona.\n';
+  }
+  return confirm(msg + '\n¿Continuar?');
+}
+
+function qdEnviarGuardado(records, fechaLbl){
+  {
     qbCloudSaveDay(records).then(res=>{
       if(res && res.ok){
         // refleja el cambio en la cache local (reemplaza fecha+usuario)
@@ -648,10 +802,8 @@ function qdSaveToBase(){
         updateBaseUI();
         notif('No se pudo guardar en la nube — guardado solo local', false);
       }
+      el('saveBaseBtn').disabled = !QD_EDIT;
     });
-  } else {
-    saveLocalBase(records); updateBaseUI();
-    notif(records.length+' registro'+(records.length===1?'':'s')+' del '+fechaLbl+' guardados en la base (local) ✓');
   }
 }
 function saveLocalBase(records){
