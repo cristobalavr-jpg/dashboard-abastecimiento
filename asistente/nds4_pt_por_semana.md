@@ -1,7 +1,7 @@
 # PT no fabricados por falta de materia prima — por semana
 
 **Dato al 12/11/2026** · semana ISO en curso **46** (parcial, incompleta) · última semana cerrada con servicio medido: **45**  
-*Generado automáticamente el 12/11/2026 12:22 — no editar a mano.*
+*Generado automáticamente el 12/11/2026 12:26 — no editar a mano.*
 
 Órdenes de producto terminado que **no se completaron** y que tenían un componente de materia prima **en quiebre el día exacto en que se necesitaba**. Es el detalle que compone el indicador NDS-4.
 
