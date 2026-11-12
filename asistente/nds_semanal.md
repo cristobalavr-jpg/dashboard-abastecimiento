@@ -1,7 +1,7 @@
 # NDS semana por semana
 
 **Dato al 12/11/2026** · semana ISO en curso **46** (parcial, incompleta) · última semana cerrada con servicio medido: **45**  
-*Generado automáticamente el 12/11/2026 12:26 — no editar a mano.*
+*Generado automáticamente — no editar a mano.*
 
 Una fila por semana ISO. Lo que responde cada columna está en la base de conocimiento (NDS-1a / NDS-1b / NDS-3 / NDS-4).
 
