@@ -1,7 +1,7 @@
 # Alertas por SKU
 
 **Dato al 12/11/2026** · semana ISO en curso **46** (parcial, incompleta) · última semana cerrada con servicio medido: **45**  
-*Generado automáticamente el 12/11/2026 12:26 — no editar a mano.*
+*Generado automáticamente — no editar a mano.*
 
 Universo de compra (ZMPR + ZEMP) sin PPA, igual que el DA por defecto. Umbrales: riesgo < 1 semana y sobrestock > 10 semanas; la cartera importada usa riesgo < 5 y sobrestock > 20, porque su lead time es de 8 a 12 semanas.
 
